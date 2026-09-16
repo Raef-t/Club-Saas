@@ -184,6 +184,13 @@ class PlayerRegistrationService
             if (isset($data['reason'])) {
                 $memberUpdateData['reason'] = $data['reason'];
             }
+            if (isset($data['membership_status'])) {
+                $memberUpdateData['membership_status'] = $data['membership_status'];
+            } elseif (isset($data['status'])) {
+                $memberUpdateData['membership_status'] = $data['status'];
+            } elseif (isset($data['is_active'])) {
+                $memberUpdateData['membership_status'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) ? 'active' : 'inactive';
+            }
             if (!empty($memberUpdateData)) {
                 $member->update($memberUpdateData);
             }

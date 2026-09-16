@@ -357,6 +357,13 @@ class AllSystemPermissionsSeeder extends Seeder
             'accounting.salary.view-any',
             'accounting.salary.create',
             'accounting.salary.delete',
+
+            // ─── App Versions ───────────────────────────────────────────────
+            'app-version.view-any',
+            'app-version.create',
+            'app-version.view',
+            'app-version.update',
+            'app-version.delete',
         ];
 
         // Ensure absolute uniqueness
@@ -463,6 +470,24 @@ class AllSystemPermissionsSeeder extends Seeder
             'notification.mark-all-read',
             'notification.view',
             'notification.mark-read',
+        ]);
+
+        // 4. Player permissions subset (المشترك / اللاعب)
+        $playerRole = Role::firstOrCreate(['name' => 'player', 'guard_name' => 'sanctum']);
+        $playerRole->syncPermissions([
+            'member.view',
+            'player-subscription.view-any',
+            'player-subscription.view',
+            'attendance.history',
+            'locker.view-any',
+            'branch.view-any',
+            'profile.update',
+            'coach.view-any',
+            'coach.view',
+            'activity.view-any',
+            'activity-type.view-any',
+            'subscription-plan.view-any',
+            'subscription-plan.view',
         ]);
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();

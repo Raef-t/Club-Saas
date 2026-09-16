@@ -10,6 +10,9 @@ use Modules\Core\Http\Controllers\Api\BaseController;
 use Modules\AttendanceManager\Models\Attendance;
 use Modules\AttendanceManager\Http\Resources\AttendanceResource;
 use Modules\AttendanceManager\Http\Requests\UpdateLockerHolderRequest;
+use Modules\AttendanceManager\Http\Requests\ReceptionCheckInAndDeductRequest;
+use Modules\AttendanceManager\Services\UnifiedAttendanceService;
+use Modules\AttendanceManager\Services\SessionDeductionService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -519,6 +522,111 @@ class ReceptionAttendanceController extends BaseController
             $attendance = $sessionDeductionService->deductMultipleSessions($attendanceId, $subscriptionIds, $reason);
 
             return $this->successResponse(new AttendanceResource($attendance), __('Sessions deducted successfully.'));
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    //  1.6 Check In and Deduct Session (Single Unified Reception Step)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    #[OA\Post(
+        path: '/v1/reception/check-in-and-deduct',
+        summary: '⚡ تسجيل دخول العضو وخصم الجلسة في خطوة واحدة موحدة (للاستقبال)',
+        description: 'يقوم بتسجيل حضور المشترك (Member Check-in) وخصم جلسة من اشتراكه/اشتراكاته المحددة في طلب واحد وبشكل ذري (Atomic Transaction). إذا لم يتم إرسال معرف الاشتراك، يكتشف النظام تلقائياً الاشتراك المتاح والمجدول لليوم ويخصم منه. في حال وجود أي خطأ أو مانع مالي أو نفاد جلسات، يتم التراجع عن تسجيل الحضور بالكامل.',
+        tags: ['Reception'],
+        security: [['bearerAuth' => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        description: 'بيانات المشترك، الفرع، والاشتراكات المراد خصم الجلسات منها',
+        content: new OA\JsonContent(
+            required: ['branch_id'],
+            properties: [
+                new OA\Property(property: 'member_id', type: 'integer', example: 10, description: 'المعرف الرقمي للاعب / المشترك (أو attendable_id)'),
+                new OA\Property(property: 'attendable_id', type: 'integer', example: 10, description: 'المعرف الرقمي للاعب / المشترك (بديل لـ member_id)'),
+                new OA\Property(property: 'branch_id', type: 'integer', example: 1, description: 'معرف الفرع (إلزامي)'),
+                new OA\Property(
+                    property: 'player_subscription_ids',
+                    type: 'array',
+                    items: new OA\Items(type: 'integer'),
+                    example: [5],
+                    description: 'مصفوفة معرفات الاشتراكات المراد الخصم منها (اختياري، في حال عدم الإرسال سيتم الخصم تلقائياً من اشتراك اليوم المتاح)'
+                ),
+                new OA\Property(property: 'locker_id', type: 'integer', nullable: true, example: 7, description: 'معرف الخزانة المخصصة (اختياري)'),
+                new OA\Property(property: 'check_in_at', type: 'string', format: 'date-time', example: '2026-08-19 16:10:00', description: 'تاريخ ووقت تسجيل الحضور المخصص (اختياري)'),
+                new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'تسجيل دخول وخصم فوري من الاستقبال', description: 'ملاحظات أو سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي خارج وقت الجلسة)')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: '✅ تم تسجيل الدخول وخصم الجلسات بنجاح',
+        content: new OA\JsonContent(
+            example: [
+                'status' => 'success',
+                'message' => 'Checked in and sessions deducted successfully.',
+                'data' => [
+                    'id' => 105,
+                    'attendable_type' => 'Modules\\MemberManager\\Models\\Member',
+                    'attendable_id' => 10,
+                    'member_id' => 10,
+                    'branch_id' => 1,
+                    'check_in' => '2026-08-19T16:10:00.000000Z',
+                    'status' => 'checked_in',
+                    'consumptions' => [
+                        [
+                            'id' => 1,
+                            'player_subscription_id' => 5,
+                            'subscription_plan_id' => 2,
+                            'subscription_plan_name' => 'اشتراك سباحة وجيم ثلاثي الأشهر'
+                        ]
+                    ]
+                ]
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: '❌ خطأ في تسجيل الحضور أو خصم الجلسة (وجود ديون، نفاد الرصيد، الحضور مسجل مسبقاً، أو خارج الموعد دون سبب)'
+    )]
+    public function checkInAndDeduct(
+        ReceptionCheckInAndDeductRequest $request,
+        UnifiedAttendanceService $attendanceService,
+        SessionDeductionService $sessionDeductionService
+    ) {
+        try {
+            $memberId = (int) ($request->input('member_id') ?? $request->input('attendable_id'));
+            $branchId = (int) $request->input('branch_id');
+            $checkInAt = $request->input('check_in_at');
+            $lockerId = $request->filled('locker_id') ? (int) $request->input('locker_id') : null;
+            $notes = $request->input('notes') ?? $request->input('reason') ?? $request->input('override_reason');
+
+            // 1. Resolve subscription IDs: explicit or auto-detect for member today
+            $subscriptionIds = $request->input('player_subscription_ids');
+            if (empty($subscriptionIds)) {
+                $targetDate = $checkInAt ? \Carbon\Carbon::parse($checkInAt)->toDateString() : now()->toDateString();
+                $subscriptionIds = $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate($memberId, $targetDate);
+            }
+
+            // 2. Perform check-in and atomic session deduction
+            $attendance = $attendanceService->checkIn(
+                type: 'member',
+                entityId: $memberId,
+                branchId: $branchId,
+                checkInAt: $checkInAt,
+                subscriptionIds: $subscriptionIds,
+                lockerId: $lockerId,
+                notes: $notes
+            );
+
+            $attendance->load(['consumptions.subscriptionPlan', 'locker']);
+
+            return $this->successResponse(
+                new AttendanceResource($attendance),
+                __('Checked in and sessions deducted successfully.')
+            );
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }

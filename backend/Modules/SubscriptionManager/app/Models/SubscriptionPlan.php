@@ -297,6 +297,10 @@ class SubscriptionPlan extends Model
                 if (!empty($activity->is_private_equipment)) {
                     return true;
                 }
+                $type = $activity->relationLoaded('activityType') ? $activity->activityType : $activity->activityType()->first();
+                if ($type && !empty($type->is_private_equipment)) {
+                    return true;
+                }
                 $name = trim((string) $activity->name);
                 $lowerName = strtolower($name);
                 if (in_array($name, ['أجهزة خاص', 'اجهزة خاص', 'تدريب خاص', 'خاص أجهزة', 'خاص اجهزة'])) {
@@ -305,6 +309,28 @@ class SubscriptionPlan extends Model
                 if (str_contains($name, 'خاص') || str_contains($lowerName, 'private')) {
                     return true;
                 }
+            }
+        }
+
+        if ($this->exists) {
+            $hasPrivate = $this->planActivities()
+                ->where(function ($q) {
+                    $q->whereHas('staffActivity.activity', function ($aq) {
+                        $aq->where('is_private_equipment', true)
+                           ->orWhereHas('activityType', function ($tq) {
+                               $tq->where('is_private_equipment', true);
+                           });
+                    })->orWhereHas('activity', function ($aq) {
+                        $aq->where('is_private_equipment', true)
+                           ->orWhereHas('activityType', function ($tq) {
+                               $tq->where('is_private_equipment', true);
+                           });
+                    });
+                })
+                ->exists();
+
+            if ($hasPrivate) {
+                return true;
             }
         }
 
@@ -330,11 +356,8 @@ class SubscriptionPlan extends Model
             $staffActivity = $planActivity->staffActivity;
             $activity = $staffActivity ? $staffActivity->activity : ($planActivity->activity ?? null);
             if ($activity) {
-                if (method_exists($activity, 'isGroupSession') && $activity->isGroupSession()) {
-                    return true;
-                }
                 $type = $activity->relationLoaded('activityType') ? $activity->activityType : $activity->activityType()->first();
-                if ($type && $type->is_session_based) {
+                if ($type && !empty($type->is_session_based)) {
                     return true;
                 }
             }
@@ -342,20 +365,16 @@ class SubscriptionPlan extends Model
 
         if ($this->exists) {
             $hasSessionBased = $this->planActivities()
-                ->whereHas('staffActivity.activity.activityType', function ($q) {
-                    $q->where('is_session_based', true);
+                ->where(function ($q) {
+                    $q->whereHas('staffActivity.activity.activityType', function ($tq) {
+                        $tq->where('is_session_based', true);
+                    })->orWhereHas('activity.activityType', function ($tq) {
+                        $tq->where('is_session_based', true);
+                    });
                 })
                 ->exists();
 
             if ($hasSessionBased) {
-                return true;
-            }
-        }
-
-        $planName = trim((string) $this->name);
-        $groupKeywords = ['حصة جماعية', 'حصة_جماعية', 'حصة جماعيه', 'جماعي', 'جماعية', 'group', 'session'];
-        foreach ($groupKeywords as $kw) {
-            if (str_contains($planName, $kw)) {
                 return true;
             }
         }

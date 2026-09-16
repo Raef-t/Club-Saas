@@ -37,6 +37,7 @@ class AttendanceResource extends JsonResource
             'consumptions'     => $this->consumptions ? $this->consumptions->map(function ($consumption) {
                 return [
                     'id'                     => $consumption->id,
+                    'player_subscription_id' => $consumption->player_subscription_id,
                     'subscription_plan_id'   => $consumption->subscription_plan_id,
                     'subscription_plan_name' => $consumption->subscriptionPlan?->name,
                 ];

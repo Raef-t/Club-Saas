@@ -21,10 +21,9 @@ export const updateLockerSchema = z.object({
     .min(1, "رقم الخزانة مطلوب")
     .max(50, "رقم الخزانة طويل جداً"),
   key_number: z.string().optional().nullable(),
-  status: z.string({ required_error: "الحالة مطلوبة" }).min(1, "الحالة مطلوبة"),
-  holder_type: z.string().optional(),
-  holder_id: z.union([z.number(), z.string().transform(Number)]).optional(),
-  holder_name: z.string().optional(),
+  status: z.enum(["available", "maintenance"], {
+    error: "الحالة يجب أن تكون متاحة أو صيانة",
+  }),
   reason: modificationReasonSchema,
 });
 

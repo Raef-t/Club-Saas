@@ -31,6 +31,9 @@ class UpdatePlayerRequest extends FormRequest
             'additional_contacts.*.relation' => 'nullable|string|max:50',
             
             'branch_id' => 'nullable|exists:branches,id',
+            'membership_status' => 'nullable|string|in:active,inactive,frozen,expired',
+            'status' => 'nullable|string|in:active,inactive,frozen,expired',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

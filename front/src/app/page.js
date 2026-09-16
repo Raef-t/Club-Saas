@@ -8,5 +8,13 @@ import { getFirstAccessiblePath } from "@/lib/permissions";
  */
 export default async function HomePage() {
   const { user } = await verifySession();
+  const isPlayer =
+    user?.roles?.some((r) => (typeof r === "string" ? r : r?.name) === "player") ||
+    user?.role === "player";
+
+  if (isPlayer) {
+    redirect("/my-profile");
+  }
+
   redirect(getFirstAccessiblePath(user) || "/forbidden");
 }

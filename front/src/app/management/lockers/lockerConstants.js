@@ -63,6 +63,11 @@ export const LOCKER_STATUS_OPTIONS = Object.entries(LOCKER_STATUS_LABELS).map(([
   label,
 }));
 
+export const LOCKER_EDIT_STATUS_OPTIONS = [
+  { value: "available", label: "متاحة" },
+  { value: "maintenance", label: "صيانة" },
+];
+
 export const LOCKER_HOLDER_TYPE_OPTIONS = [
   { value: "", label: "لا يوجد" },
   { value: "member", label: "لاعب" },

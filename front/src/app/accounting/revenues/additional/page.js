@@ -6,7 +6,6 @@ import { additionalRevenueColumns, additionalRevenues, revenueStats } from "@/da
 const tabs = [
   { title: "إيرادات الاشتراكات", href: "/accounting/revenues" },
   { title: "إيرادات إضافية", href: "/accounting/revenues/additional" },
-  { title: "العروض الترويجية", href: "/accounting/revenues/offers" },
 ];
 
 export default function AdditionalRevenuesPage() {

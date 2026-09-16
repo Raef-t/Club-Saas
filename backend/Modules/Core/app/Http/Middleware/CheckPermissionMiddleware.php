@@ -284,6 +284,7 @@ class CheckPermissionMiddleware
         // ─── Reception ────────────────────────────────────────────────────────
         'GET:v1/reception/members/{memberId}/subscriptions'             => 'reception.view-member-subscriptions',
         'POST:v1/reception/attendances/{id}/deduct'                     => 'reception.deduct-session',
+        'POST:v1/reception/check-in-and-deduct'                         => 'reception.deduct-session',
         'DELETE:v1/reception/attendances/{id}/rollback'                 => 'reception.rollback-attendance',
         'POST:v1/qr/check-in'                                           => 'reception.qr-check-in',
 

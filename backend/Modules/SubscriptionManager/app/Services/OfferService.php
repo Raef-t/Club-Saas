@@ -14,16 +14,30 @@ class OfferService
      */
     public function getAllOffers(array $filters = [])
     {
-        $query = Offer::with(['plans' => function($q) {
-            $q->active();
-        }]);
+        $query = Offer::with([
+            'branch:id,name',
+            'plans' => function($q) {
+                $q->whereIn('status', ['active', 'completed'])
+                  ->with(['planActivities.staffActivity.activity.activityType']);
+            }
+        ]);
 
         if (isset($filters['branch_id'])) {
             $query->where('branch_id', $filters['branch_id']);
         }
 
+        if (isset($filters['offer_type']) && in_array($filters['offer_type'], [Offer::TYPE_BUNDLE, Offer::TYPE_SINGLE_CHOICE], true)) {
+            $query->where('offer_type', $filters['offer_type']);
+        }
+
         if (isset($filters['is_active'])) {
             $query->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if (isset($filters['activity_type_id']) && $filters['activity_type_id'] !== '' && $filters['activity_type_id'] !== 'all') {
+            $query->whereHas('plans', function($q) use ($filters) {
+                $q->forActivityType($filters['activity_type_id']);
+            });
         }
 
         $query->latest();
@@ -33,12 +47,28 @@ class OfferService
 
             if (isset($filters['available_only']) && filter_var($filters['available_only'], FILTER_VALIDATE_BOOLEAN)) {
                 $offers = $offers->filter(function ($offer) {
-                    foreach ($offer->plans as $plan) {
-                        if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                            return false;
-                        }
+                    if (!$offer->is_active || !$offer->isDateValid()) {
+                        return false;
                     }
-                    return true;
+
+                    if ($offer->isBundle()) {
+                        foreach ($offer->plans as $plan) {
+                            $current = method_exists($plan, 'getCurrentSubscribersCount') ? $plan->getCurrentSubscribersCount() : (int) $plan->current_subscribers;
+                            if ($plan->max_subscribers > 0 && $current >= $plan->max_subscribers) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    } else {
+                        // single_choice: at least one plan must have capacity
+                        foreach ($offer->plans as $plan) {
+                            $current = method_exists($plan, 'getCurrentSubscribersCount') ? $plan->getCurrentSubscribersCount() : (int) $plan->current_subscribers;
+                            if ($plan->max_subscribers == 0 || $current < $plan->max_subscribers) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
                 });
             }
 
@@ -59,6 +89,7 @@ class OfferService
                 'branch_id' => $data['branch_id'],
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
+                'offer_type' => $data['offer_type'] ?? Offer::TYPE_BUNDLE,
                 'price' => $data['price'],
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
@@ -77,7 +108,7 @@ class OfferService
      */
     public function getOfferById(int $id)
     {
-        return Offer::with('plans')->findOrFail($id);
+        return Offer::with(['branch:id,name', 'plans.planActivities.staffActivity.activity.activityType'])->findOrFail($id);
     }
 
     /**

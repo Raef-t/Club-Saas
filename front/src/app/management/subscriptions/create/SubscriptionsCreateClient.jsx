@@ -32,11 +32,13 @@ export default function SubscriptionsCreateClient({ initialData }) {
   const {
     members,
     plans,
+    offers,
     activityTypes,
     selectedActivityTypeId,
     setSelectedActivityTypeId,
     isPlansLoading,
     plansErrorMessage,
+    isOffersLoading,
     isActivityTypesLoading,
     activityTypesErrorMessage,
     activities,
@@ -157,6 +159,8 @@ export default function SubscriptionsCreateClient({ initialData }) {
             activityTypesErrorMessage={activityTypesErrorMessage}
             activities={activities}
             coaches={coaches}
+            offers={offers}
+            isOffersLoading={isOffersLoading}
             onSubmit={submit}
             onCancel={() => router.push("/management/subscriptions")}
             isLoading={isCreating}

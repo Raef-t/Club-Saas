@@ -159,7 +159,26 @@ describe("subscription create validation", () => {
     expect(screen.getByText("(150 ل.س)")).toBeInTheDocument();
   });
 
-  it("treats complete coach and branch prices as a private plan", () => {
+  it("renders safely when private activity type is selected but no plan is selected yet", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "تدريب خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
+  });
+
+  it("shows only the general receipt for a non-private type even when its plan has split prices", () => {
     render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
@@ -646,5 +665,126 @@ describe("subscription edit receipts", () => {
     fireEvent.submit(container.querySelector("form"));
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ paid_amount: 425 }));
+  });
+
+  it("does not display offers dropdown when no offers match or exist", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        offers={[]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/باقة العروض الترويجية/)).not.toBeInTheDocument();
+  });
+
+  it("displays offers dropdown when available offer matches activity type and sets price from offer", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        activityTypes={[{ id: 5, name: "سباحة" }]}
+        selectedActivityTypeId="5"
+        offers={[
+          {
+            id: 10,
+            name: "عرض باقة الصيف",
+            price: 750,
+            is_available: true,
+            plans: [
+              {
+                id: 2,
+                name: "اشتراك شهري",
+                activity_types: [{ id: 5, name: "سباحة" }],
+              },
+            ],
+          },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/باقة العروض الترويجية/)).toBeInTheDocument();
+
+    // Select the offer
+    const offerDropdown = screen.getByRole("button", { name: /باقة العروض الترويجية/ });
+    fireEvent.click(offerDropdown);
+    fireEvent.click(screen.getByRole("option", { name: /عرض باقة الصيف/ }));
+
+    // Paid amount should now be set from the offer
+    const paidAmount = screen.getByLabelText(/المبلغ المدفوع/);
+    expect(paidAmount).toHaveValue(750);
+    expect(screen.getByText(/تم اختيار باقة عرض ترويجي/)).toBeInTheDocument();
+  });
+
+  it("displays each activity in single_choice offer directly as an offer option and sets discounted price immediately", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          { id: 20, name: "أيروبيك - كوتش سارة", base_price: 250 },
+          { id: 21, name: "أيروبيك - كوتش ريم", base_price: 250 },
+        ]}
+        activityTypes={[{ id: 6, name: "أيروبيك" }]}
+        selectedActivityTypeId="6"
+        offers={[
+          {
+            id: 15,
+            name: "عرض الأيروبيك المميز",
+            offer_type: "single_choice",
+            price: 200,
+            is_available: true,
+            plans: [
+              {
+                id: 20,
+                name: "أيروبيك - كوتش سارة",
+                base_price: 250,
+                current_subscribers: 5,
+                max_subscribers: 15,
+                activity_types: [{ id: 6, name: "أيروبيك" }],
+              },
+              {
+                id: 21,
+                name: "أيروبيك - كوتش ريم",
+                base_price: 250,
+                current_subscribers: 20,
+                max_subscribers: 20,
+                activity_types: [{ id: 6, name: "أيروبيك" }],
+              },
+            ],
+          },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const offerDropdown = screen.getByRole("button", { name: /باقة العروض الترويجية/ });
+    fireEvent.click(offerDropdown);
+
+    // Each activity appears directly as an offer option
+    const sarahOption = screen.getByRole("option", { name: /أيروبيك - كوتش سارة/ });
+    const reemOption = screen.getByRole("option", { name: /أيروبيك - كوتش ريم.*مكتملة السعة/ });
+
+    expect(sarahOption).toBeInTheDocument();
+    expect(reemOption).toBeDisabled();
+
+    // Select the available activity option directly
+    fireEvent.click(sarahOption);
+
+    // Paid amount should be 200
+    const paidAmount = screen.getByLabelText(/المبلغ المدفوع/);
+    expect(paidAmount).toHaveValue(200);
+
+    // Should indicate single_choice and show the confirmed plan directly
+    expect(screen.getByText(/يختار المشترك فعالية واحدة/)).toBeInTheDocument();
+    expect(screen.getByText(/الفعالية المحددة بالعرض:/)).toBeInTheDocument();
+    expect(screen.getAllByText("أيروبيك - كوتش سارة").length).toBeGreaterThanOrEqual(1);
+    // No redundant secondary plan dropdown
+    expect(screen.queryByText(/الفعالية المحددة للاشتراك بسعر العرض/)).not.toBeInTheDocument();
   });
 });

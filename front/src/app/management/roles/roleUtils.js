@@ -201,6 +201,15 @@ const WEB_PERMISSION_RULES = {
     "locker.release-reservation",
   ],
   member: ["member.view-any", "member.view", "member.create", "member.update", "member.delete"],
+  offer: [
+    "offer.view-any",
+    "offer.view",
+    "offer.create",
+    "offer.update",
+    "offer.delete",
+    "offer.restore",
+    "offer.subscribe",
+  ],
   payslip: true,
   permission: ["permission.view-any"],
   "player-subscription": [
@@ -461,6 +470,7 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
   { name: "staff-commission-rule.create", module: "staff-commission-rule" },
   { name: "staff-commission-rule.update", module: "staff-commission-rule" },
   { name: "staff-commission-rule.delete", module: "staff-commission-rule" },
+  { name: "staff-commission-rule.delete", module: "staff-commission-rule" },
 
   // Branch
   { name: "branch.view-any", module: "branch" },
@@ -528,10 +538,14 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
   { name: "payroll.create", module: "payroll" },
   { name: "payroll.delete", module: "payroll" },
   { name: "payroll.process", module: "payroll" },
+  { name: "payroll.rollback", module: "payroll" },
   { name: "payroll.generate-payslips", module: "payroll" },
   { name: "payslip.view-any", module: "payslip" },
   { name: "payslip.view", module: "payslip" },
   { name: "payslip.download", module: "payslip" },
+  { name: "payslip.generate", module: "payslip" },
+  { name: "payslip.confirm", module: "payslip" },
+  { name: "payslip.update", module: "payslip" },
 
   // Offer
   { name: "offer.view-any", module: "offer" },
@@ -572,10 +586,10 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
 export function mergePermissionCatalog(permissions = [], role = null) {
   const byName = new Map();
 
-  for (const permission of SYSTEM_PERMISSIONS_CATALOG) {
-    const normalized = normalizePermission(permission);
-    if (normalized) byName.set(normalized.name, normalized);
-  }
+  // NOTE: SYSTEM_PERMISSIONS_CATALOG is intentionally NOT used here.
+  // Permissions are sourced exclusively from the backend API (/v1/permissions)
+  // and from the permissions already assigned to each role.
+  // This prevents phantom/invalid permissions from reaching the sync payload.
 
   for (const permission of [...(permissions || []), ...(role?.permissions || [])]) {
     const normalized = normalizePermission(permission);

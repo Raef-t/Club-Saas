@@ -333,6 +333,16 @@ class UnifiedAttendanceController extends BaseController
         $entityId = $request->filled('attendable_id') ? (int) $request->input('attendable_id') : null;
         $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : ($request->filled('branch') ? (int) $request->input('branch') : null);
 
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+            $type = 'member';
+            $entityId = $member?->id ?: 0;
+            if ($member && $member->branch_id) {
+                $branchId = $member->branch_id;
+            }
+        }
+
         $query = $this->attendanceService->getHistory(
             $type,
             $entityId,
@@ -341,6 +351,9 @@ class UnifiedAttendanceController extends BaseController
             $branchId
         );
 
+        $totalMinutes = (int) (clone $query)->sum('duration_minutes');
+        $totalHours = round($totalMinutes / 60, 2);
+
         if ($request->has('per_page') && $request->input('per_page') !== 'all') {
             $perPage = min(max((int) $request->input('per_page'), 1), 100);
             $history = $query->paginate($perPage);
@@ -348,7 +361,17 @@ class UnifiedAttendanceController extends BaseController
             $history = $query->get();
         }
 
-        return $this->successResponse(AttendanceResource::collection($history), __('Attendance history retrieved'));
+        $responseData = [
+            'data' => AttendanceResource::collection($history),
+            'stats' => [
+                'total_attendances' => $history instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator ? $history->total() : $history->count(),
+                'total_training_minutes' => $totalMinutes,
+                'total_training_hours' => $totalHours,
+                'period' => $period ?: 'all',
+            ]
+        ];
+
+        return $this->successResponse($responseData, __('Attendance history retrieved'));
     }
 
     #[OA\Delete(

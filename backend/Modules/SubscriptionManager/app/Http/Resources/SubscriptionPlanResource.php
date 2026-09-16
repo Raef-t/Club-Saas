@@ -23,8 +23,12 @@ class SubscriptionPlanResource extends JsonResource
             'max_subscribers' => $this->max_subscribers,
             'current_subscribers' => method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers,
             'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),
+            'is_available' => ($this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE : $this->status === 'active') && ($this->max_subscribers == 0 || (int) (method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers) < (int) $this->max_subscribers),
+            'available_slots' => $this->max_subscribers > 0 ? max(0, (int) $this->max_subscribers - (int) (method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers)) : null,
             'gender_restriction' => $this->gender_restriction,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
+            'is_private_equipment' => (bool) (method_exists($this->resource, 'isPrivateEquipmentPlan') ? $this->isPrivateEquipmentPlan() : false),
+            'is_session_based' => (bool) (method_exists($this->resource, 'isGroupSessionPlan') ? $this->isGroupSessionPlan() : false),
             'reason' => $this->reason,
             'is_suspended' => $this->relationLoaded('activeSuspension') 
                 ? $this->activeSuspension !== null 

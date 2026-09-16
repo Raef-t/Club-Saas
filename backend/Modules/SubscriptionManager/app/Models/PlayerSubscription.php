@@ -25,13 +25,26 @@ class PlayerSubscription extends Model
         'branch_receipt_number',
         'offer_id',
         'reason',
+        'is_discount',
+        'discount_percentage',
+        'discount_amount',
+        'discount_reason',
+        'coach_discount_percentage',
+        'branch_discount_percentage',
     ];
 
     protected $casts = [
         'months_count' => 'integer',
         'start_date' => 'date:Y-m-d',
         'end_date' => 'date:Y-m-d',
+        'total_amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'remaining_amount' => 'decimal:2',
+        'discount_percentage' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'coach_discount_percentage' => 'decimal:2',
+        'branch_discount_percentage' => 'decimal:2',
+        'is_discount' => 'boolean',
         'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::class,
     ];
 

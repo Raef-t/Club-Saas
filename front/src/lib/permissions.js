@@ -12,6 +12,7 @@ const ACCESSIBLE_LANDING_PATHS = [
   "/management/staff",
   "/management/activities",
   "/management/subscription-plans",
+  "/management/offers",
   "/management/users",
   "/management/roles",
   "/management/settings",
@@ -115,6 +116,17 @@ const ROUTE_ACCESS_RULES = [
   {
     path: "/management/subscription-plans",
     all: ["subscription-plan.view-any", "branch.view-any", "activity.view-any", "coach.view-any"],
+  },
+  {
+    path: "/management/offers",
+    any: [
+      "offer.view-any",
+      "offer.view",
+      "subscription-plan.view-any",
+      "subscription-plan.view",
+      "player-subscription.view-any",
+      "player-subscription.view",
+    ],
   },
   {
     path: "/management/subscriptions",

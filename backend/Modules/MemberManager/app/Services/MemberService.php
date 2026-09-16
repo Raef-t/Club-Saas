@@ -46,8 +46,14 @@ class MemberService
         }
 
         // 2. Filtering by Status
-        if (!empty($filters['status'])) {
-            $query->where('membership_status', $filters['status']);
+        $statusFilter = $filters['status'] ?? $filters['membership_status'] ?? null;
+        if (!empty($statusFilter) && $statusFilter !== 'all') {
+            $query->where('membership_status', $statusFilter);
+        } elseif (isset($filters['is_active']) && $filters['is_active'] !== '' && $filters['is_active'] !== 'all') {
+            $isActive = filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($isActive !== null) {
+                $query->where('membership_status', $isActive ? 'active' : 'inactive');
+            }
         }
 
         // 3. Filtering by Gender
@@ -350,6 +356,7 @@ class MemberService
         return [
             'total_members'               => (clone $baseQuery)->count(),
             'active_members'              => (clone $baseQuery)->where('membership_status', 'active')->count(),
+            'inactive_members'            => (clone $baseQuery)->where('membership_status', 'inactive')->count(),
             'total_subscribed_members'    => (clone $baseQuery)->whereHas('subscriptions', function ($q) {
                 $q->where('status', 'active')->whereDate('end_date', '>=', now());
             })->count(),

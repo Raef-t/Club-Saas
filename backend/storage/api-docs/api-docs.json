@@ -4123,6 +4123,114 @@
                 ]
             }
         },
+        "/v1/reception/check-in-and-deduct": {
+            "post": {
+                "tags": [
+                    "Reception"
+                ],
+                "summary": "⚡ تسجيل دخول العضو وخصم الجلسة في خطوة واحدة موحدة (للاستقبال)",
+                "description": "يقوم بتسجيل حضور المشترك (Member Check-in) وخصم جلسة من اشتراكه/اشتراكاته المحددة في طلب واحد وبشكل ذري (Atomic Transaction). إذا لم يتم إرسال معرف الاشتراك، يكتشف النظام تلقائياً الاشتراك المتاح والمجدول لليوم ويخصم منه. في حال وجود أي خطأ أو مانع مالي أو نفاد جلسات، يتم التراجع عن تسجيل الحضور بالكامل.",
+                "operationId": "5e1bde3d837d141b7109a06e5dee4be1",
+                "requestBody": {
+                    "description": "بيانات المشترك، الفرع، والاشتراكات المراد خصم الجلسات منها",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "branch_id"
+                                ],
+                                "properties": {
+                                    "member_id": {
+                                        "description": "المعرف الرقمي للاعب / المشترك (أو attendable_id)",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "attendable_id": {
+                                        "description": "المعرف الرقمي للاعب / المشترك (بديل لـ member_id)",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "branch_id": {
+                                        "description": "معرف الفرع (إلزامي)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "player_subscription_ids": {
+                                        "description": "مصفوفة معرفات الاشتراكات المراد الخصم منها (اختياري، في حال عدم الإرسال سيتم الخصم تلقائياً من اشتراك اليوم المتاح)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            5
+                                        ]
+                                    },
+                                    "locker_id": {
+                                        "description": "معرف الخزانة المخصصة (اختياري)",
+                                        "type": "integer",
+                                        "example": 7,
+                                        "nullable": true
+                                    },
+                                    "check_in_at": {
+                                        "description": "تاريخ ووقت تسجيل الحضور المخصص (اختياري)",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-08-19 16:10:00"
+                                    },
+                                    "notes": {
+                                        "description": "ملاحظات أو سبب تسجيل الحضور في غير الموعد المجدول (اختياري / إلزامي خارج وقت الجلسة)",
+                                        "type": "string",
+                                        "example": "تسجيل دخول وخصم فوري من الاستقبال",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "✅ تم تسجيل الدخول وخصم الجلسات بنجاح",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": {
+                                    "status": "success",
+                                    "message": "Checked in and sessions deducted successfully.",
+                                    "data": {
+                                        "id": 105,
+                                        "attendable_type": "Modules\\MemberManager\\Models\\Member",
+                                        "attendable_id": 10,
+                                        "member_id": 10,
+                                        "branch_id": 1,
+                                        "check_in": "2026-08-19T16:10:00.000000Z",
+                                        "status": "checked_in",
+                                        "consumptions": [
+                                            {
+                                                "id": 1,
+                                                "player_subscription_id": 5,
+                                                "subscription_plan_id": 2,
+                                                "subscription_plan_name": "اشتراك سباحة وجيم ثلاثي الأشهر"
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "❌ خطأ في تسجيل الحضور أو خصم الجلسة (وجود ديون، نفاد الرصيد، الحضور مسجل مسبقاً، أو خارج الموعد دون سبب)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/v1/reception/attendances/{attendanceId}/rollback": {
             "delete": {
                 "tags": [
@@ -12059,7 +12167,7 @@
                     "Locker Management"
                 ],
                 "summary": "✏️ تعديل بيانات خزانة",
-                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.",
+                "description": "تحديث بيانات خزانة موجودة مثل رقمها أو حالتها.",
                 "operationId": "f35adb439a6ed9d1ed54c46deba80adf",
                 "parameters": [
                     {
@@ -15475,6 +15583,33 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "membership_status": {
+                                        "description": "حالة العضوية (نشط / غير نشط)",
+                                        "type": "string",
+                                        "example": "inactive",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "frozen",
+                                            "expired"
+                                        ]
+                                    },
+                                    "status": {
+                                        "description": "الاسم البديل لحالة العضوية",
+                                        "type": "string",
+                                        "example": "inactive",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "frozen",
+                                            "expired"
+                                        ]
+                                    },
+                                    "is_active": {
+                                        "description": "تحديد الحالة كقيمة منطقية (true: نشط, false: غير نشط)",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "additional_contacts": {
                                         "type": "array",
                                         "items": {
@@ -15959,6 +16094,47 @@
                                             "items": {
                                                 "$ref": "#/components/schemas/MemberResource"
                                             }
+                                        },
+                                        "stats": {
+                                            "properties": {
+                                                "total_members": {
+                                                    "type": "integer",
+                                                    "example": 120
+                                                },
+                                                "active_members": {
+                                                    "type": "integer",
+                                                    "example": 95
+                                                },
+                                                "inactive_members": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                },
+                                                "total_subscribed_members": {
+                                                    "type": "integer",
+                                                    "example": 88
+                                                },
+                                                "new_members_this_month": {
+                                                    "type": "integer",
+                                                    "example": 14
+                                                },
+                                                "renewed_members_this_month": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "expired_not_renewed_members": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "male_members": {
+                                                    "type": "integer",
+                                                    "example": 70
+                                                },
+                                                "female_members": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -15973,6 +16149,8 @@
                                             "member_number": "MEM-10023",
                                             "branch_id": 1,
                                             "status": "active",
+                                            "membership_status": "active",
+                                            "is_active": true,
                                             "person": {
                                                 "id": 25,
                                                 "full_name": "أحمد محمد",
@@ -15980,7 +16158,18 @@
                                                 "phone_number": "0501234567"
                                             }
                                         }
-                                    ]
+                                    ],
+                                    "stats": {
+                                        "total_members": 120,
+                                        "active_members": 95,
+                                        "inactive_members": 25,
+                                        "total_subscribed_members": 88,
+                                        "new_members_this_month": 14,
+                                        "renewed_members_this_month": 22,
+                                        "expired_not_renewed_members": 12,
+                                        "male_members": 70,
+                                        "female_members": 50
+                                    }
                                 }
                             }
                         }
@@ -21160,6 +21349,56 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "activity_type_id",
+                        "in": "query",
+                        "description": "تصفية حسب معرف نوع النشاط",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "activity_type",
+                        "in": "query",
+                        "description": "تصفية حسب نوع النشاط بالاسم أو المعرف (تدريب عام، حصة جماعية، تدريب خاص)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "حصة جماعية"
+                        }
+                    },
+                    {
+                        "name": "day_of_week",
+                        "in": "query",
+                        "description": "تصفية حسب يوم الدوام (0=الأحد، 1=الإثنين، ...، 5=الجمعة، 6=السبت) أو بالاسم مثل Friday أو الجمعة",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "5"
+                        }
+                    },
+                    {
+                        "name": "day",
+                        "in": "query",
+                        "description": "اسم يوم الدوام أو رقمه (الجمعة، الأحد، Friday، ...)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الجمعة"
+                        }
+                    },
+                    {
+                        "name": "duty_day",
+                        "in": "query",
+                        "description": "يوم الدوام للكوتش (الجمعة، الأحد، ...)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "الجمعة"
                         }
                     },
                     {
@@ -26913,32 +27152,260 @@
                 "tags": [
                     "Invoices & Payments"
                 ],
-                "summary": "💳 عرض فواتير العضو المصادق عليه",
-                "description": "استرجاع جميع فواتير العضو المصادق عليه متضمنة التفاصيل الإجمالية (إجمالي المدفوع، المتبقي، وإجمالي الفواتير).",
+                "summary": "💳 عرض فواتير العضو المصادق عليه مع أرقام الوصولات",
+                "description": "استرجاع جميع فواتير العضو المصادق عليه متضمنة التفاصيل الإجمالية، أرقام الوصولات (العام، الكوتش، والنادي)، وحالة التدريب الخاص مع قائمة الدفعات.",
                 "operationId": "a412a002aeeaa84bc19fc2f4ca32a0d4",
                 "responses": {
                     "200": {
                         "description": "✅ تم استرجاع قائمة فواتير العضو بنجاح",
                         "content": {
                             "application/json": {
-                                "schema": {},
-                                "example": {
-                                    "status": "success",
-                                    "message": "Invoices retrieved successfully",
-                                    "data": {
-                                        "total_paid": 1000,
-                                        "total_remaining": 500,
-                                        "total_amount": 1500,
-                                        "invoices": [
-                                            {
-                                                "code": "INV_123456789",
-                                                "created_at": "2026-06-30",
-                                                "paid_amount": 500,
-                                                "subscription_name": "الاشتراك الذهبي - Gold Plan",
-                                                "total": 1000,
-                                                "remaining_amount": 500
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invoices retrieved successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "total_paid": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500
+                                                },
+                                                "total_remaining": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 200
+                                                },
+                                                "total_amount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1700
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "SYP"
+                                                },
+                                                "currency_type": {
+                                                    "type": "string",
+                                                    "example": "SYP"
+                                                },
+                                                "invoices": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "code": {
+                                                                "type": "string",
+                                                                "example": "INV_123456789",
+                                                                "nullable": true
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date",
+                                                                "example": "2026-09-12"
+                                                            },
+                                                            "subscription_name": {
+                                                                "type": "string",
+                                                                "example": "تدريب خاص - كوتش أحمد"
+                                                            },
+                                                            "total": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "paid_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 500
+                                                            },
+                                                            "remaining_amount": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            },
+                                                            "currency": {
+                                                                "type": "string",
+                                                                "example": "USD"
+                                                            },
+                                                            "currency_type": {
+                                                                "type": "string",
+                                                                "example": "USD"
+                                                            },
+                                                            "is_private": {
+                                                                "description": "هل الفاتورة لاشتراك تدريب خاص",
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            },
+                                                            "receipt_number": {
+                                                                "description": "رقم الوصل العام / أحدث وصل",
+                                                                "type": "string",
+                                                                "example": "REC-CLUB-999",
+                                                                "nullable": true
+                                                            },
+                                                            "coach_receipt_number": {
+                                                                "description": "رقم وصل الكوتش (في حال التدريب الخاص)",
+                                                                "type": "string",
+                                                                "example": "REC-COACH-888",
+                                                                "nullable": true
+                                                            },
+                                                            "branch_receipt_number": {
+                                                                "description": "رقم وصل النادي",
+                                                                "type": "string",
+                                                                "example": "REC-CLUB-999",
+                                                                "nullable": true
+                                                            },
+                                                            "employee_name": {
+                                                                "description": "اسم الموظف الذي استلم الدفعة (أو منشئ الفاتورة)",
+                                                                "type": "string",
+                                                                "example": "أحمد المحمد",
+                                                                "nullable": true
+                                                            },
+                                                            "payments": {
+                                                                "description": "سجل الدفعات التابعة للفاتورة",
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "receipt_number": {
+                                                                            "type": "string",
+                                                                            "example": "REC-COACH-888",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "number",
+                                                                            "format": "float",
+                                                                            "example": 300
+                                                                        },
+                                                                        "is_coach_payment": {
+                                                                            "description": "true لدفعة الكوتش، false لدفعة النادي",
+                                                                            "type": "boolean",
+                                                                            "example": true
+                                                                        },
+                                                                        "payment_method": {
+                                                                            "type": "string",
+                                                                            "example": "cash",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "paid_at": {
+                                                                            "type": "string",
+                                                                            "format": "date",
+                                                                            "example": "2026-09-12",
+                                                                            "nullable": true
+                                                                        },
+                                                                        "employee_name": {
+                                                                            "description": "اسم الموظف الذي استلم الدفعة",
+                                                                            "type": "string",
+                                                                            "example": "أحمد المحمد",
+                                                                            "nullable": true
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "examples": {
+                                    "Private Training Invoice": {
+                                        "summary": "مثال: فاتورة تدريب خاص (وصل كوتش + وصل نادي)",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "Invoices retrieved successfully",
+                                            "data": {
+                                                "total_paid": 500,
+                                                "total_remaining": 0,
+                                                "total_amount": 500,
+                                                "currency": "USD",
+                                                "currency_type": "USD",
+                                                "invoices": [
+                                                    {
+                                                        "code": "INV_202609001",
+                                                        "created_at": "2026-09-12",
+                                                        "subscription_name": "تدريب خاص - كوتش أحمد",
+                                                        "total": 500,
+                                                        "paid_amount": 500,
+                                                        "remaining_amount": 0,
+                                                        "currency": "USD",
+                                                        "currency_type": "USD",
+                                                        "is_private": true,
+                                                        "receipt_number": "REC-CLUB-999",
+                                                        "coach_receipt_number": "REC-COACH-888",
+                                                        "branch_receipt_number": "REC-CLUB-999",
+                                                        "employee_name": "أحمد المحمد",
+                                                        "payments": [
+                                                            {
+                                                                "receipt_number": "REC-COACH-888",
+                                                                "amount": 300,
+                                                                "is_coach_payment": true,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-12",
+                                                                "employee_name": "أحمد المحمد"
+                                                            },
+                                                            {
+                                                                "receipt_number": "REC-CLUB-999",
+                                                                "amount": 200,
+                                                                "is_coach_payment": false,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-12",
+                                                                "employee_name": "أحمد المحمد"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
                                             }
-                                        ]
+                                        }
+                                    },
+                                    "Regular Subscription Invoice": {
+                                        "summary": "مثال: فاتورة اشتراك عام عادي",
+                                        "value": {
+                                            "status": "success",
+                                            "message": "Invoices retrieved successfully",
+                                            "data": {
+                                                "total_paid": 1000,
+                                                "total_remaining": 200,
+                                                "total_amount": 1200,
+                                                "currency": "SYP",
+                                                "currency_type": "SYP",
+                                                "invoices": [
+                                                    {
+                                                        "code": "INV_202609002",
+                                                        "created_at": "2026-09-10",
+                                                        "subscription_name": "اشتراك فتنس عام",
+                                                        "total": 1200,
+                                                        "paid_amount": 1000,
+                                                        "remaining_amount": 200,
+                                                        "currency": "SYP",
+                                                        "currency_type": "SYP",
+                                                        "is_private": false,
+                                                        "receipt_number": "REC-SUB-1045",
+                                                        "coach_receipt_number": null,
+                                                        "branch_receipt_number": "REC-SUB-1045",
+                                                        "employee_name": "أحمد المحمد",
+                                                        "payments": [
+                                                            {
+                                                                "receipt_number": "REC-SUB-1045",
+                                                                "amount": 1000,
+                                                                "is_coach_payment": false,
+                                                                "payment_method": "cash",
+                                                                "paid_at": "2026-09-10",
+                                                                "employee_name": "أحمد المحمد"
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -28973,6 +29440,46 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "is_discount": {
+                                        "description": "هل الاشتراك مشمول بحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري، تحسب تلقائياً إذا تم إدخال السعر بعد الحسم)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع/النادي (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "قيمة مبلغ الحسم المقطوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "حسم خاص لمشتركة قديمة",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -29353,6 +29860,46 @@
                                         "description": "رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)",
                                         "type": "string",
                                         "example": "REC-CLUB-006",
+                                        "nullable": true
+                                    },
+                                    "is_discount": {
+                                        "description": "تفعيل أو إلغاء الحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "مبلغ الحسم (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 60000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "تعديل سبب الحسم",
                                         "nullable": true
                                     },
                                     "notes": {
@@ -35779,36 +36326,13 @@
                         "nullable": true
                     },
                     "status": {
-                        "description": "حالة الخزانة: available (متاحة), with_member (مع لاعب), with_staff (مع موظف), with_coach (مع مدرب), maintenance (صيانة / معطلة)",
+                        "description": "حالة الخزانة: available (متاحة), maintenance (صيانة / معطلة)",
                         "type": "string",
                         "example": "available",
                         "enum": [
                             "available",
-                            "with_member",
-                            "with_staff",
-                            "with_coach",
                             "maintenance"
                         ]
-                    },
-                    "holder_id": {
-                        "type": "integer",
-                        "example": 5,
-                        "nullable": true
-                    },
-                    "holder_type": {
-                        "type": "string",
-                        "example": "member",
-                        "nullable": true,
-                        "enum": [
-                            "member",
-                            "staff",
-                            "coach"
-                        ]
-                    },
-                    "holder_name": {
-                        "type": "string",
-                        "example": "أحمد محمد",
-                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -36008,6 +36532,14 @@
                     "membership_status": {
                         "type": "string",
                         "example": "active"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
                     },
                     "reason": {
                         "description": "آخر سبب للتعديل",

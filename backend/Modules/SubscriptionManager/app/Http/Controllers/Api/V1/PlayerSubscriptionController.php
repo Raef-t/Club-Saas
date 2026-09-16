@@ -79,6 +79,14 @@ class PlayerSubscriptionController extends BaseController
     public function index(Request $request)
     {
         $filters = $request->all();
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+            $filters['member_id'] = $member?->id ?: 0;
+            if ($member && $member->branch_id) {
+                $filters['branch_id'] = $member->branch_id;
+            }
+        }
         $subscriptions = $this->subscriptionService->getAllSubscriptions($filters);
         $stats = $this->subscriptionService->getSubscriptionStatistics($filters);
 
@@ -127,7 +135,13 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'coach_receipt_number', type: 'string', example: 'REC-COACH-001', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'branch_receipt_number', type: 'string', example: 'REC-CLUB-001', description: 'رقم إيصال دفعة النادي للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'coach_paid_amount', type: 'number', format: 'float', example: 200.00, description: 'مبلغ دفعة الكوتش (اختياري)'),
-                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', example: 100.00, description: 'مبلغ دفعة النادي (اختياري)')
+                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', example: 100.00, description: 'مبلغ دفعة النادي (اختياري)'),
+                new OA\Property(property: 'is_discount', type: 'boolean', nullable: true, example: true, description: 'هل الاشتراك مشمول بحسم (اختياري)'),
+                new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة الحسم من 0 إلى 100% (اختياري، تحسب تلقائياً إذا تم إدخال السعر بعد الحسم)'),
+                new OA\Property(property: 'coach_discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة حسم حصة الكوتش (اختياري)'),
+                new OA\Property(property: 'branch_discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة حسم حصة الفرع/النادي (اختياري)'),
+                new OA\Property(property: 'discount_amount', type: 'number', format: 'float', nullable: true, example: 150000.00, description: 'قيمة مبلغ الحسم المقطوع (اختياري)'),
+                new OA\Property(property: 'discount_reason', type: 'string', nullable: true, example: 'حسم خاص لمشتركة قديمة', description: 'سبب الحسم (اختياري)')
             ]
         )
     )]
@@ -236,6 +250,13 @@ class PlayerSubscriptionController extends BaseController
     {
         try {
             $subscription = $this->subscriptionService->getSubscriptionById($id);
+            $user = auth()->user();
+            if ($user && $user->hasRole('player')) {
+                $memberId = $user->person?->member?->id;
+                if (!$memberId || (int)$subscription->member_id !== (int)$memberId) {
+                    return response()->json(['message' => __('Unauthorized access')], 403);
+                }
+            }
             $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
@@ -278,6 +299,12 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-004', description: 'رقم إيصال الدفع العام (اختياري)'),
                 new OA\Property(property: 'coach_receipt_number', type: 'string', nullable: true, example: 'REC-COACH-005', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'branch_receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-006', description: 'رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'is_discount', type: 'boolean', nullable: true, example: true, description: 'تفعيل أو إلغاء الحسم (اختياري)'),
+                new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة الحسم من 0 إلى 100% (اختياري)'),
+                new OA\Property(property: 'coach_discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة حسم حصة الكوتش (اختياري)'),
+                new OA\Property(property: 'branch_discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة حسم حصة الفرع (اختياري)'),
+                new OA\Property(property: 'discount_amount', type: 'number', format: 'float', nullable: true, example: 60000.00, description: 'مبلغ الحسم (اختياري)'),
+                new OA\Property(property: 'discount_reason', type: 'string', nullable: true, example: 'تعديل سبب الحسم', description: 'سبب الحسم (اختياري)'),
                 new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'ملاحظات إضافية معدلة', description: 'ملاحظات (اختياري)')
             ],
             example: [
@@ -325,7 +352,7 @@ class PlayerSubscriptionController extends BaseController
     public function update(UpdatePlayerSubscriptionRequest $request, $id)
     {
         try {
-            $data = array_filter($request->validated(), fn ($val) => !is_null($val));
+            $data = $request->validated();
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(

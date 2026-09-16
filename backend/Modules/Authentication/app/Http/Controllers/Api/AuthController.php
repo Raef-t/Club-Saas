@@ -422,6 +422,8 @@ class AuthController extends BaseController
 
                 $healthProfile = DB::table('member_health_profiles')->where('member_id', $member->id)->first();
 
+                $profileData['member_id'] = $member->id;
+                $profileData['branch_id'] = $member->branch_id;
                 $profileData['member'] = [
                     'id' => $member->id,
                     'member_number' => $member->member_number,

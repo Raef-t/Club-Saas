@@ -11,16 +11,7 @@ class PlayerSubscriptionResource extends JsonResource
         return [
             'id' => $this->id,
             'branch_id' => $this->plan ? $this->plan->branch_id : null,
-            'member' => $this->member ? [
-                'id' => $this->member->id,
-                'member_number' => $this->member->memberNumber,
-                'membership_status' => $this->member->status,
-                'person' => $this->member->person ? [
-                    'full_name' => $this->member->person->fullName,
-                    'email' => $this->member->person->email,
-                    'phone' => $this->member->person->mobile1,
-                ] : null,
-            ] : null,
+            'member' => $this->resolveMemberData($this->member),
             'plan' => new SubscriptionPlanResource($this->whenLoaded('plan')),
             'months_count' => $this->months_count ?? 1,
             'start_date' => $this->start_date ? (\Illuminate\Support\Carbon::parse($this->start_date)->format('Y-m-d')) : null,
@@ -29,8 +20,15 @@ class PlayerSubscriptionResource extends JsonResource
             'status_label' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->label() : $this->status,
             'is_expiring_soon' => method_exists($this->resource, 'isExpiringSoon') ? $this->isExpiringSoon() : false,
             'total_amount' => $this->total_amount,
+            'original_total_amount' => round((float) $this->total_amount + (float) ($this->discount_amount ?? 0), 2),
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,
+            'is_discount' => (bool) ($this->is_discount ?? false),
+            'discount_percentage' => $this->discount_percentage ?? 0,
+            'coach_discount_percentage' => $this->coach_discount_percentage ?? 0,
+            'branch_discount_percentage' => $this->branch_discount_percentage ?? 0,
+            'discount_amount' => $this->discount_amount ?? 0,
+            'discount_reason' => $this->discount_reason,
             'currency' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
             'currency_type' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
             'notes' => $this->notes,
@@ -101,6 +99,44 @@ class PlayerSubscriptionResource extends JsonResource
                 'coach_amount' => $this->revenueSplit->coach_amount,
                 'coach_receipt_number' => $this->revenueSplit->coach_receipt_number,
                 'branch_receipt_number' => $this->revenueSplit->branch_receipt_number,
+            ] : null,
+        ];
+    }
+
+    protected function resolveMemberData($member): ?array
+    {
+        if (!$member) {
+            return null;
+        }
+
+        if ($member instanceof \Modules\Core\DTOs\MemberDTO) {
+            $person = $member->person;
+            return [
+                'id' => $member->id,
+                'member_number' => $member->memberNumber,
+                'membership_status' => $member->status,
+                'status' => $member->status,
+                'is_active' => $member->isActive,
+                'person' => $person ? [
+                    'full_name' => $person->fullName,
+                    'email' => $person->email,
+                    'phone' => $person->mobile1,
+                ] : null,
+            ];
+        }
+
+        $person = $member->person;
+        $status = $member->membership_status ?? ($member->status ?? null);
+        return [
+            'id' => $member->id,
+            'member_number' => $member->member_number ?? ($member->memberNumber ?? null),
+            'membership_status' => $status,
+            'status' => $status,
+            'is_active' => $member->is_active ?? ($status === 'active'),
+            'person' => $person ? [
+                'full_name' => $person->full_name ?? ($person->fullName ?? null),
+                'email' => $person->email,
+                'phone' => $person->contacts?->first()?->phone_number ?? ($person->mobile1 ?? null),
             ] : null,
         ];
     }

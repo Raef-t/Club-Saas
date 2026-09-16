@@ -147,6 +147,12 @@ class LockerController extends BaseController
     public function index(Request $request)
     {
         $filters = $request->all();
+        $user = auth()->user();
+        if ($user && $user->hasRole('player')) {
+            $memberId = $user->person?->member?->id;
+            $filters['holder_id'] = $memberId ?: 0;
+            $filters['holder_type'] = 'member';
+        }
         $branchId = !empty($filters['branch_id']) ? (int) $filters['branch_id'] : null;
 
         $lockers = $this->lockerService->getAllLockers($filters);
@@ -288,7 +294,7 @@ class LockerController extends BaseController
     #[OA\Put(
         path: '/v1/lockers/{id}',
         summary: '✏️ تعديل بيانات خزانة',
-        description: 'تحديث بيانات خزانة موجودة مثل رقمها أو حالتها أو حامل مفتاحها.',
+        description: 'تحديث بيانات خزانة موجودة مثل رقمها أو حالتها.',
         tags: ['Locker Management'],
         security: [['bearerAuth' => []]]
     )]
