@@ -1,5 +1,6 @@
 import { getBranchName, getDisplayName, getPersonName } from "./reportSharedUtils";
 import { getWorkStatusMeta } from "@/lib/workStatus";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 /**
  * Creates a printable member registry report.
@@ -10,7 +11,7 @@ export function createMembersReport(members) {
     female: "أنثى",
   };
   const rows = members.map((member) => ({
-    membershipNumber: member?.member_number || member?.id || "-",
+    accountName: getMemberAccountName(member) || "-",
     member: getPersonName(member),
     gender: genderLabels[member?.person?.gender || member?.gender] || "غير محدد",
     phone: member?.person?.phone || member?.person?.mobile || member?.mobile || "-",
@@ -28,7 +29,7 @@ export function createMembersReport(members) {
       { label: "غير النشطين", value: rows.filter((row) => row.status === "غير نشط").length },
     ],
     columns: [
-      { key: "membershipNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "member", label: "الاسم" },
       { key: "gender", label: "الجنس" },
       { key: "phone", label: "الهاتف" },

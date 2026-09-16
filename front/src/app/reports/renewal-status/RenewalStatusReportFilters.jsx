@@ -85,7 +85,7 @@ export default function RenewalStatusReportFilters({
           label="البحث"
           required={false}
           icon={SearchIcon}
-          placeholder="اسم اللاعب، رقم الهاتف، أو رقم العضوية"
+          placeholder="اسم اللاعب، اسم الحساب، أو رقم الهاتف"
           value={filters.search}
           onChange={(event) => onChange("search", event.target.value)}
           className="md:col-span-2"

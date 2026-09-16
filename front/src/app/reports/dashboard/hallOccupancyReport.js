@@ -5,6 +5,7 @@ import {
   getPersonName,
   parseReportDate,
 } from "./reportSharedUtils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 /**
  * Normalizes Arabic and English activity names for reliable classification.
@@ -94,8 +95,7 @@ export function createHallOccupancyReport(attendances) {
 
     return {
       member: getPersonName(record),
-      membershipNumber:
-        record?.member?.member_number || record?.member_number || record?.attendable_id || "-",
+      accountName: getMemberAccountName(record?.member, record) || "-",
       activity,
       category:
         category === "general" ? "أجهزة عام" : category === "private" ? "أجهزة خاص" : "نشاط آخر",
@@ -118,7 +118,7 @@ export function createHallOccupancyReport(attendances) {
       { label: "أنشطة أخرى", value: rows.length - generalCount - privateCount },
     ],
     columns: [
-      { key: "membershipNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "member", label: "المشترك" },
       { key: "activity", label: "النشاط" },
       { key: "category", label: "التصنيف" },

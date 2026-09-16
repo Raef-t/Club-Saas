@@ -1,5 +1,6 @@
 import { formatDate, formatLocalizedName, getBranchesArray } from "../../../lib/utils";
 import { ATTENDANCE_STATUS_LABELS } from "./attendanceConstants";
+import { getMemberAccountName } from "../../../lib/memberIdentity";
 
 /**
  * Extracts an array from the supported backend collection response shapes.
@@ -104,7 +105,7 @@ export function createAttendanceMember(response, memberId) {
   return {
     id: member.id || memberId,
     name: fullName,
-    number: member.member_number || `M-${memberId}`,
+    number: getMemberAccountName(member) || "-",
     avatar: fullName.charAt(0) || "ع",
     photoUrl: person.photo_url || null,
   };

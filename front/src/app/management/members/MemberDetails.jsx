@@ -16,6 +16,7 @@ import {
   MEMBER_GENDER_LABELS as genderLabels,
   RELATION_LABELS as relationLabels,
 } from "./memberConstants";
+import { getMemberAccountName, getMemberCreatorUsername } from "@/lib/memberIdentity";
 
 const MEMBER_STATUS_META = {
   active: { label: "نشط", className: "bg-app-green/10 text-app-green" },
@@ -405,7 +406,7 @@ export default function MemberDetails({
     <div className="space-y-5">
       <ProfileIdentityCard
         name={fullName}
-        username={member.generated_username || member.username}
+        username={getMemberAccountName(member)}
         qrCode={member.today_qr_code || member.qr_code}
         status={status}
       />
@@ -466,7 +467,7 @@ export default function MemberDetails({
         <div className="space-y-5">
           <Section title="بيانات اللاعب">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <DetailItem label="اسم المستخدم المخصص" value={member.custom_username || "-"} />
+              <DetailItem label="اسم الحساب" value={getMemberAccountName(member) || "-"} />
               <DetailItem label="الفرع" value={branchName} tone="yellow" />
               <DetailItem label="الجنس" value={genderLabels[gender] || gender} />
               <DetailItem label="الهاتف" value={mobile ? `${countryCode} ${mobile}`.trim() : "-"} />
@@ -474,10 +475,7 @@ export default function MemberDetails({
               <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
               <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
               <DetailItem label="سبب آخر تعديل" value={member.reason || "-"} />
-              <DetailItem
-                label="الموظف المسجل"
-                value={member.created_by?.name || member.registered_by?.full_name || "-"}
-              />
+              <DetailItem label="الموظف المسجل" value={getMemberCreatorUsername(member) || "-"} />
             </div>
           </Section>
 

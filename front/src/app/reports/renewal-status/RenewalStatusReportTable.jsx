@@ -15,27 +15,20 @@ function StatusBadge({ statusType, label }) {
           : "border border-app-red/30 bg-app-red/10 text-app-red"
       }`}
     >
-      <span
-        className={`size-1.5 rounded-full ${isRenewed ? "bg-app-green" : "bg-app-red"}`}
-      />
+      <span className={`size-1.5 rounded-full ${isRenewed ? "bg-app-green" : "bg-app-red"}`} />
       {label}
     </span>
   );
 }
 
-export default function RenewalStatusReportTable({
-  rows,
-  summary,
-  isLoading,
-  onSelectRecord,
-}) {
+export default function RenewalStatusReportTable({ rows, summary, isLoading, onSelectRecord }) {
   const currency = summary.currency_type === "SYP" ? "ل.س" : summary.currency_type;
 
   const columns = [
     {
-      key: "memberNumber",
-      label: "رقم العضوية",
-      width: "90px",
+      key: "accountName",
+      label: "اسم الحساب",
+      width: "130px",
     },
     {
       key: "memberName",
@@ -71,9 +64,7 @@ export default function RenewalStatusReportTable({
       render: (value) => (
         <span
           className={`text-xs ${
-            value === "لم يحضر أبدًا"
-              ? "text-app-red font-medium"
-              : "text-app-muted-light"
+            value === "لم يحضر أبدًا" ? "text-app-red font-medium" : "text-app-muted-light"
           }`}
         >
           {value}
@@ -103,9 +94,7 @@ export default function RenewalStatusReportTable({
       width: "minmax(85px, 0.8fr)",
       type: "money",
       render: (value) => (
-        <span className="font-medium text-app-yellow">
-          {formatMoney(value, currency)}
-        </span>
+        <span className="font-medium text-app-yellow">{formatMoney(value, currency)}</span>
       ),
     },
     {
@@ -113,9 +102,7 @@ export default function RenewalStatusReportTable({
       label: "حالة التجديد",
       width: "minmax(100px, 0.9fr)",
       sortable: false,
-      render: (value, row) => (
-        <StatusBadge statusType={row.statusType} label={value} />
-      ),
+      render: (value, row) => <StatusBadge statusType={row.statusType} label={value} />,
     },
     {
       key: "actions",

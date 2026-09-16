@@ -44,7 +44,7 @@ describe("member comprehensive profile", () => {
           generated_username: "tec-ply-10007",
           custom_username: "dania.player",
           membership_status: "active",
-          created_by: { id: 1, name: "John Doe" },
+          created_by: { id: 1, name: "John Doe", username: "john.reception" },
           person: {
             full_name: "دانية مولوي",
             gender: "female",
@@ -87,15 +87,16 @@ describe("member comprehensive profile", () => {
 
     expect(screen.getByText("دانية مولوي")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "نسخ اسم المستخدم tec-ply-10007" }),
+      screen.getByRole("button", { name: "نسخ اسم المستخدم dania.player" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("dania.player")).toBeInTheDocument();
-    expect(screen.getByText("اسم المستخدم المخصص")).toBeInTheDocument();
+    expect(screen.getAllByText("dania.player")).toHaveLength(2);
+    expect(screen.queryByText("MEM-0007")).not.toBeInTheDocument();
+    expect(screen.getByText("اسم الحساب")).toBeInTheDocument();
     expect(screen.getAllByText("لياقة شهرية").length).toBeGreaterThan(0);
     expect(screen.getByText("أيروبيك")).toBeInTheDocument();
     expect(screen.getByText("خزانة L-12")).toBeInTheDocument();
     expect(screen.getByText("والدة دانية")).toBeInTheDocument();
-    expect(screen.getByText("John Doe")).toBeInTheDocument();
+    expect(screen.getByText("john.reception")).toBeInTheDocument();
     const paidAmountCard = screen.getByText("المبلغ المدفوع").closest("div.rounded-xl");
     expect(paidAmountCard).toHaveTextContent("250 ل.س");
     expect(paidAmountCard).not.toHaveTextContent("المبلغ المتبقي");

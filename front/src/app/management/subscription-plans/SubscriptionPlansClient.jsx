@@ -49,6 +49,7 @@ import {
 } from "./subscriptionPlanFormUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 function CoachDropdown({ branchId, activityId, value, onChange, error, optional = false }) {
   const { data, isLoading } = useGetCoachesQuery(
@@ -436,9 +437,9 @@ function PlanPlayers({ data, isLoading, error, onRetry }) {
                 <p className="truncate text-sm font-medium text-app-text">
                   {player.full_name || "اسم غير متوفر"}
                 </p>
-                {player.member_number && (
+                {getMemberAccountName(player) && (
                   <p className="mt-0.5 text-[11px] text-app-muted-light">
-                    رقم العضوية: {player.member_number}
+                    اسم الحساب: {getMemberAccountName(player)}
                   </p>
                 )}
               </div>

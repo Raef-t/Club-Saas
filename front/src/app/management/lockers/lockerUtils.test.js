@@ -239,7 +239,7 @@ describe("locker utilities", () => {
       ]),
     ).toEqual({
       available_lockers_count: 1,
-      unavailable_lockers_count: 1,
+      maintenance_lockers_count: 1,
       assigned_to_member_count: 1,
       assigned_to_staff_or_coach_count: 1,
     });

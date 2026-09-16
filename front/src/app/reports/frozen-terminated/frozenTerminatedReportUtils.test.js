@@ -52,6 +52,7 @@ describe("frozenTerminatedReportUtils", () => {
       status: "frozen",
       member_name: "سارة أحمد",
       member_number: "MEM-001",
+      custom_username: "sara.player",
       plan_name: "أجهزة عام",
       event_date: "2026-09-10",
       reason: "سفر لمدة أسبوعين",
@@ -67,6 +68,7 @@ describe("frozenTerminatedReportUtils", () => {
     expect(normalized.status).toBe("frozen");
     expect(normalized.statusLabel).toBe("مجمّد");
     expect(normalized.isFrozen).toBe(true);
+    expect(normalized.accountName).toBe("sara.player");
     expect(normalized.reason).toBe("سفر لمدة أسبوعين");
     expect(normalized.frozenDays).toBe(14);
   });
@@ -125,14 +127,14 @@ describe("frozenTerminatedReportUtils", () => {
       validateFrozenTerminatedFilters({
         startDate: "2026-10-01",
         endDate: "2026-09-01",
-      })
+      }),
     ).toBe("يجب أن يكون تاريخ البداية قبل تاريخ النهاية أو مساوياً له.");
 
     expect(
       validateFrozenTerminatedFilters({
         startDate: "2026-09-01",
         endDate: "2026-10-01",
-      })
+      }),
     ).toBe("");
   });
 
