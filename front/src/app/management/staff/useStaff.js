@@ -7,6 +7,7 @@ import {
   useDeleteStaffMemberMutation,
   useGetStaffMemberQuery,
   useGetStaffQuery,
+  useUpdateStaffPhotoMutation,
   useUpdateStaffMemberMutation,
 } from "@/lib/api/staffApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
@@ -70,6 +71,12 @@ export function createStaffUpdatePayload(values) {
     address: values.address?.trim() || null,
     branch_ids: Array.isArray(values.branch_ids) ? values.branch_ids.map(Number) : [],
   };
+}
+
+export function createStaffPhotoFormData(photo) {
+  const formData = new FormData();
+  if (photo instanceof File) formData.append("photo", photo);
+  return formData;
 }
 
 export function useStaff({
@@ -137,6 +144,7 @@ export function useStaff({
   });
   const [createStaffMember, { isLoading: isCreating }] = useCreateStaffMemberMutation();
   const [updateStaffMember, { isLoading: isUpdating }] = useUpdateStaffMemberMutation();
+  const [updateStaffPhoto, { isLoading: isUpdatingPhoto }] = useUpdateStaffPhotoMutation();
   const [deleteStaffMember, { isLoading: isDeleting }] = useDeleteStaffMemberMutation();
 
   const canUseInitialStaff =
@@ -251,6 +259,14 @@ export function useStaff({
         id: selectedStaffId,
         body: createStaffUpdatePayload(values),
       }).unwrap();
+
+      if (values.photoChanged) {
+        await updateStaffPhoto({
+          id: selectedStaffId,
+          body: createStaffPhotoFormData(values.photo),
+        }).unwrap();
+      }
+
       toast.success(response?.message || "تم تعديل بيانات الموظف بنجاح.");
       return response;
     } catch (submitError) {
@@ -326,7 +342,7 @@ export function useStaff({
     isFetchingDetails,
     refetchDetails,
     isCreating,
-    isUpdating,
+    isUpdating: isUpdating || isUpdatingPhoto,
     isDeleting,
     handleCreate,
     handleUpdate,

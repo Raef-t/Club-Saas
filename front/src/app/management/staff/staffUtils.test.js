@@ -73,6 +73,7 @@ describe("staff utilities", () => {
           country_code: "+963",
           phone_number: "981642443",
           address: "الرياض",
+          photo_url: "storage/photos/staff-5.jpg",
         },
       },
     });
@@ -86,6 +87,7 @@ describe("staff utilities", () => {
       end_time: "16:45",
       base_salary: "4500",
       work_status: "suspended",
+      photo: "storage/photos/staff-5.jpg",
     });
     expect(values).not.toHaveProperty("shifts");
   });

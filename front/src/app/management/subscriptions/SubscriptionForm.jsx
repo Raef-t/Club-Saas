@@ -335,7 +335,7 @@ export function SubscriptionCreateForm({
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
               <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.coach_price)})
+                ({formatMoney(selectedPlanObj?.coach_price)})
               </span>
               <input
                 type="text"
@@ -368,7 +368,7 @@ export function SubscriptionCreateForm({
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
               <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.branch_price)})
+                ({formatMoney(selectedPlanObj?.branch_price)})
               </span>
               <input
                 type="text"
