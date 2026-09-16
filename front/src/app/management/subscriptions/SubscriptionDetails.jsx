@@ -9,9 +9,11 @@ import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
 import { formatDate } from "@/lib/utils";
 import { getMemberAccountName } from "@/lib/memberIdentity";
+import { printSubscriptionReceipt } from "./subscriptionReceiptPrint";
 import {
   formatSubscriptionMoney,
   getSubscriptionCreatorName,
+  getSubscriptionDiscountSummary,
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
@@ -125,6 +127,7 @@ export default function SubscriptionDetails({
   const activityNames =
     [...new Set(items.map((item) => item.activity?.name).filter(Boolean))].join("، ") || "-";
   const revenueSplit = subscription.revenue_split;
+  const discount = getSubscriptionDiscountSummary(subscription);
 
   return (
     <div className="space-y-6">
@@ -138,7 +141,17 @@ export default function SubscriptionDetails({
               {accountName || "-"}
             </p>
           </div>
-          <SubscriptionStatusBadge status={subscription.status} />
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            <SubscriptionStatusBadge status={subscription.status} />
+            {discount.isDiscount && (
+              <span
+                className="inline-flex rounded-full border border-app-yellow/30 bg-app-yellow/10 px-2.5 py-1 text-[11px] font-semibold text-app-yellow"
+                title={subscription.discount_reason || undefined}
+              >
+                حسم {discount.discountPercentage}%
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -167,9 +180,22 @@ export default function SubscriptionDetails({
       </DetailSection>
 
       <DetailSection title="المدفوعات">
+        {discount.isDiscount && (
+          <DetailItem
+            label="السعر الأصلي"
+            value={formatSubscriptionMoney(discount.originalTotal)}
+          />
+        )}
+        {discount.isDiscount && (
+          <DetailItem
+            label={`قيمة الحسم (${discount.discountPercentage}%)`}
+            value={`- ${formatSubscriptionMoney(discount.discountAmount)}`}
+            tone="red"
+          />
+        )}
         <DetailItem
-          label="إجمالي الاشتراك"
-          value={formatSubscriptionMoney(subscription.total_amount)}
+          label={discount.isDiscount ? "الصافي المستحق" : "إجمالي الاشتراك"}
+          value={formatSubscriptionMoney(discount.finalPrice)}
           tone="yellow"
         />
         <DetailItem
@@ -185,8 +211,27 @@ export default function SubscriptionDetails({
         <DetailItem label="المدرب المسؤول" value={coachNames} />
       </DetailSection>
 
+      {discount.isDiscount && subscription.discount_reason && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-medium text-app-yellow">سبب الحسم</h3>
+          <p className="rounded-lg border border-app-yellow/20 bg-app-yellow/[0.04] p-3 text-sm leading-6 text-app-text">
+            {subscription.discount_reason}
+          </p>
+        </section>
+      )}
+
       <section className="space-y-3">
-        <h3 className="text-sm font-medium text-app-yellow">الإيصالات</h3>
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-sm font-medium text-app-yellow">الإيصالات</h3>
+          <Button
+            type="button"
+            tone="outline"
+            className="h-8 px-3 text-xs"
+            onClick={() => printSubscriptionReceipt(subscription)}
+          >
+            طباعة الوصل
+          </Button>
+        </div>
         <div className="rounded-lg border border-app-line bg-app-card-soft/70 p-3">
           <SubscriptionReceiptBadges
             subscription={subscription}

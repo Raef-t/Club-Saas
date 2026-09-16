@@ -14,9 +14,112 @@ import {
   getSubscriptionEndDate,
   isDailyEntrySubscriptionPlan,
   isPrivateSubscriptionPlan,
+  calculateDiscountFromFinalPrice,
+  calculateDiscountFromPercentage,
+  getSubscriptionDiscountSummary,
+  getSubscriptionOriginalAmounts,
 } from "./subscriptionUtils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { getMemberAccountName } from "@/lib/memberIdentity";
+import SubscriptionDiscountFields from "./SubscriptionDiscountFields";
+
+function getResetDiscountFields(plan, monthsCount = 1) {
+  const { originalTotal, coachOriginal, branchOriginal } = getSubscriptionOriginalAmounts(
+    plan,
+    monthsCount,
+  );
+
+  return {
+    is_discount: false,
+    discount_mode: "unified",
+    discount_percentage: 0,
+    discount_amount: 0,
+    discount_reason: "",
+    final_price: originalTotal,
+    coach_final_price: coachOriginal,
+    branch_final_price: branchOriginal,
+    coach_discount_percentage: 0,
+    branch_discount_percentage: 0,
+    coach_paid_amount: coachOriginal,
+    branch_paid_amount: branchOriginal,
+    paid_amount: originalTotal,
+  };
+}
+
+function getUnifiedDiscountFields(originalAmounts, percentageOrPrice, source = "percentage") {
+  const calculation =
+    source === "price"
+      ? calculateDiscountFromFinalPrice(originalAmounts.originalTotal, percentageOrPrice)
+      : calculateDiscountFromPercentage(originalAmounts.originalTotal, percentageOrPrice);
+  const coach = calculateDiscountFromPercentage(
+    originalAmounts.coachOriginal,
+    calculation.discountPercentage,
+  );
+  const branch = calculateDiscountFromPercentage(
+    originalAmounts.branchOriginal,
+    calculation.discountPercentage,
+  );
+
+  return {
+    discount_percentage: calculation.discountPercentage,
+    discount_amount: calculation.discountAmount,
+    final_price: calculation.finalPrice,
+    coach_discount_percentage: calculation.discountPercentage,
+    branch_discount_percentage: calculation.discountPercentage,
+    coach_final_price: coach.finalPrice,
+    branch_final_price: branch.finalPrice,
+    coach_paid_amount: coach.finalPrice,
+    branch_paid_amount: branch.finalPrice,
+    paid_amount: calculation.finalPrice,
+  };
+}
+
+function getSplitDiscountFields(current, originalAmounts, side, value, source = "price") {
+  const original =
+    side === "coach" ? originalAmounts.coachOriginal : originalAmounts.branchOriginal;
+  const calculation =
+    source === "price"
+      ? calculateDiscountFromFinalPrice(original, value)
+      : calculateDiscountFromPercentage(original, value);
+  const otherFinal =
+    Number(side === "coach" ? current.branch_final_price : current.coach_final_price) || 0;
+  const finalPrice = Number((calculation.finalPrice + otherFinal).toFixed(2));
+  const overall = calculateDiscountFromFinalPrice(originalAmounts.originalTotal, finalPrice);
+
+  return {
+    [`${side}_final_price`]: calculation.finalPrice,
+    [`${side}_discount_percentage`]: calculation.discountPercentage,
+    [`${side}_paid_amount`]: calculation.finalPrice,
+    final_price: finalPrice,
+    discount_percentage: overall.discountPercentage,
+    discount_amount: overall.discountAmount,
+    paid_amount: finalPrice,
+  };
+}
+
+function getSplitDiscountFieldsFromPercentages(current, originalAmounts) {
+  const coach = calculateDiscountFromPercentage(
+    originalAmounts.coachOriginal,
+    current.coach_discount_percentage,
+  );
+  const branch = calculateDiscountFromPercentage(
+    originalAmounts.branchOriginal,
+    current.branch_discount_percentage,
+  );
+  const finalPrice = Number((coach.finalPrice + branch.finalPrice).toFixed(2));
+  const overall = calculateDiscountFromFinalPrice(originalAmounts.originalTotal, finalPrice);
+
+  return {
+    coach_final_price: coach.finalPrice,
+    branch_final_price: branch.finalPrice,
+    coach_paid_amount: coach.finalPrice,
+    branch_paid_amount: branch.finalPrice,
+    final_price: finalPrice,
+    paid_amount: finalPrice,
+    discount_percentage: overall.discountPercentage,
+    discount_amount: overall.discountAmount,
+  };
+}
 
 /**
  * Collects and validates the values required to create a member subscription.
@@ -151,13 +254,13 @@ export function SubscriptionCreateForm({
           : "",
       offer_id: "",
       plan_id: initialPlan?.id ? String(initialPlan.id) : "",
-      paid_amount: initialPlan?.base_price ? String(initialPlan.base_price) : "0",
       months_count: "1",
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
       start_date: initialDate,
       end_date: initialDate,
+      ...getResetDiscountFields(initialPlan, 1),
     };
   });
   const [errors, setErrors] = useState({});
@@ -300,7 +403,7 @@ export function SubscriptionCreateForm({
       ...current,
       offer_id: "",
       plan_id: planId,
-      paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
+      ...getResetDiscountFields(nextPlan, nextIsDailyEntry ? 1 : current.months_count),
       months_count: nextIsDailyEntry ? "1" : current.months_count,
       receipt_number: "",
       coach_receipt_number: "",
@@ -328,7 +431,7 @@ export function SubscriptionCreateForm({
       ...current,
       offer_id: "",
       plan_id: "",
-      paid_amount: "0",
+      ...getResetDiscountFields(null, current.months_count),
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
@@ -337,6 +440,69 @@ export function SubscriptionCreateForm({
     }));
     setErrors((current) => ({ ...current, plan_id: null, paid_amount: null, offer_id: null }));
     onActivityTypeChange?.(activityTypeId);
+  }
+
+  function handleMonthsChange(value) {
+    const nextMonths = isDailyEntryPlan ? "1" : value;
+    const nextOriginalAmounts = getSubscriptionOriginalAmounts(selectedPlanObj, nextMonths);
+
+    setForm((current) => ({
+      ...current,
+      months_count: nextMonths,
+      ...(current.is_discount
+        ? current.discount_mode === "split" && isPrivatePlan
+          ? getSplitDiscountFieldsFromPercentages(current, nextOriginalAmounts)
+          : getUnifiedDiscountFields(nextOriginalAmounts, current.discount_percentage, "percentage")
+        : getResetDiscountFields(selectedPlanObj, nextMonths)),
+      end_date:
+        current.start_date && !isDailyEntryPlan
+          ? getSubscriptionEndDate(current.start_date, nextMonths)
+          : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, months_count: null, paid_amount: null }));
+  }
+
+  function toggleDiscount(checked) {
+    setForm((current) => ({
+      ...current,
+      ...getResetDiscountFields(selectedPlanObj, current.months_count),
+      is_discount: checked,
+    }));
+  }
+
+  function changeDiscountMode(mode) {
+    setForm((current) => ({
+      ...current,
+      discount_mode: mode,
+      ...getUnifiedDiscountFields(originalAmounts, current.discount_percentage, "percentage"),
+    }));
+  }
+
+  function changeUnifiedDiscount(value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getUnifiedDiscountFields(originalAmounts, value, source),
+    }));
+  }
+
+  function changeSplitDiscount(side, value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getSplitDiscountFields(current, originalAmounts, side, value, source),
+    }));
+  }
+
+  function changePrivatePaidAmount(side, value) {
+    setForm((current) => {
+      const normalized = Math.max(0, Number(value) || 0);
+      const other =
+        Number(side === "coach" ? current.branch_paid_amount : current.coach_paid_amount) || 0;
+      return {
+        ...current,
+        [`${side}_paid_amount`]: value,
+        paid_amount: Number((normalized + other).toFixed(2)),
+      };
+    });
   }
 
   function handleSubmit(event) {
@@ -676,7 +842,7 @@ export function SubscriptionCreateForm({
           min="1"
           step="1"
           value={form.months_count}
-          onChange={(event) => updateField("months_count", event.target.value)}
+          onChange={(event) => handleMonthsChange(event.target.value)}
           disabled={isDailyEntryPlan}
           aria-invalid={Boolean(errors && errors.months_count)}
           className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:opacity-60 ${
@@ -692,6 +858,81 @@ export function SubscriptionCreateForm({
           </span>
         )}
       </label>
+
+      <SubscriptionDiscountFields
+        form={form}
+        originalTotal={originalAmounts.originalTotal}
+        coachOriginal={originalAmounts.coachOriginal}
+        branchOriginal={originalAmounts.branchOriginal}
+        isPrivatePlan={isPrivatePlan}
+        errors={errors}
+        onToggle={toggleDiscount}
+        onModeChange={changeDiscountMode}
+        onFinalPriceChange={(value) => changeUnifiedDiscount(value, "price")}
+        onPercentageChange={(value) => changeUnifiedDiscount(value, "percentage")}
+        onCoachPriceChange={(value) => changeSplitDiscount("coach", value, "price")}
+        onCoachPercentageChange={(value) => changeSplitDiscount("coach", value, "percentage")}
+        onBranchPriceChange={(value) => changeSplitDiscount("branch", value, "price")}
+        onBranchPercentageChange={(value) => changeSplitDiscount("branch", value, "percentage")}
+        onReasonChange={(value) => updateField("discount_reason", value)}
+      />
+
+      {isPrivatePlan ? (
+        <div className="grid gap-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4 sm:grid-cols-2">
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة الكوتش ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.coach_final_price}
+              step="0.01"
+              value={form.coach_paid_amount}
+              onChange={(event) => changePrivatePaidAmount("coach", event.target.value)}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none focus:border-app-yellow/70"
+            />
+          </label>
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة النادي ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.branch_final_price}
+              step="0.01"
+              value={form.branch_paid_amount}
+              onChange={(event) => changePrivatePaidAmount("branch", event.target.value)}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none focus:border-app-yellow/70"
+            />
+          </label>
+          <p className="text-xs text-app-muted-light sm:col-span-2">
+            إجمالي المدفوع:{" "}
+            <span className="font-medium text-app-green">{formatMoney(form.paid_amount)}</span>
+          </p>
+        </div>
+      ) : (
+        <label className="block text-right text-sm text-app-muted-light">
+          المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
+          <input
+            type="number"
+            min="0"
+            max={form.final_price}
+            step="0.01"
+            value={form.paid_amount}
+            onChange={(event) => updateField("paid_amount", event.target.value)}
+            aria-invalid={Boolean(errors.paid_amount)}
+            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
+              errors.paid_amount
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
+            required
+          />
+          {errors.paid_amount && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.paid_amount}
+            </span>
+          )}
+        </label>
+      )}
 
       {isPrivatePlan ? (
         <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
@@ -884,6 +1125,12 @@ export function SubscriptionEditForm({
   canEditPaidAmount = false,
 }) {
   const initialReceiptNumbers = getSubscriptionReceiptNumbers(subscription);
+  const initialDiscountSummary = getSubscriptionDiscountSummary(subscription);
+  const initialOriginalAmounts = getSubscriptionOriginalAmounts(
+    subscription?.plan,
+    subscription?.months_count,
+  );
+  const initialSplitPayments = getSubscriptionSplitPaymentAmounts(subscription);
   const [form, setForm] = useState(() => ({
     member_id: String(subscription?.member_id || subscription?.member?.id || ""),
     plan_id: String(subscription?.plan_id || subscription?.plan?.id || ""),
@@ -896,6 +1143,42 @@ export function SubscriptionEditForm({
     receipt_number: String(initialReceiptNumbers.receiptNumber ?? ""),
     coach_receipt_number: String(initialReceiptNumbers.coachReceiptNumber ?? ""),
     branch_receipt_number: String(initialReceiptNumbers.branchReceiptNumber ?? ""),
+    is_discount: initialDiscountSummary.isDiscount,
+    discount_mode:
+      Number(subscription?.coach_discount_percentage || 0) !==
+      Number(subscription?.branch_discount_percentage || 0)
+        ? "split"
+        : "unified",
+    discount_percentage: initialDiscountSummary.discountPercentage,
+    discount_amount: initialDiscountSummary.discountAmount,
+    discount_reason: subscription?.discount_reason || "",
+    final_price: initialDiscountSummary.finalPrice,
+    coach_discount_percentage: Number(
+      subscription?.coach_discount_percentage ?? initialDiscountSummary.discountPercentage,
+    ),
+    branch_discount_percentage: Number(
+      subscription?.branch_discount_percentage ?? initialDiscountSummary.discountPercentage,
+    ),
+    coach_final_price: Math.max(
+      0,
+      initialOriginalAmounts.coachOriginal -
+        (initialOriginalAmounts.coachOriginal *
+          Number(
+            subscription?.coach_discount_percentage ?? initialDiscountSummary.discountPercentage,
+          )) /
+          100,
+    ),
+    branch_final_price: Math.max(
+      0,
+      initialOriginalAmounts.branchOriginal -
+        (initialOriginalAmounts.branchOriginal *
+          Number(
+            subscription?.branch_discount_percentage ?? initialDiscountSummary.discountPercentage,
+          )) /
+          100,
+    ),
+    coach_paid_amount: initialSplitPayments.coachPaidAmount,
+    branch_paid_amount: initialSplitPayments.branchPaidAmount,
     notes: subscription?.notes || "",
     reason: "",
   }));
@@ -906,16 +1189,8 @@ export function SubscriptionEditForm({
     (activityType) => String(activityType.id) === String(selectedActivityTypeId),
   );
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(resolvedPlan);
-  const originalPlanId = subscription?.plan_id || subscription?.plan?.id;
-  const isOriginalPlanSelected = String(form.plan_id) === String(originalPlanId);
   const isPrivatePlan = isPrivateSubscriptionPlan(resolvedPlan, selectedActivityType);
-  const splitPaymentAmounts = getSubscriptionSplitPaymentAmounts(
-    subscription,
-    resolvedPlan,
-    form.paid_amount,
-    isOriginalPlanSelected,
-  );
-
+  const originalAmounts = getSubscriptionOriginalAmounts(resolvedPlan, form.months_count);
   function updateField(field, value) {
     setForm((current) => {
       const nextState = { ...current, [field]: value };
@@ -940,7 +1215,7 @@ export function SubscriptionEditForm({
       return {
         ...current,
         plan_id: planId,
-        paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
+        ...getResetDiscountFields(nextPlan, current.months_count),
         receipt_number: "",
         coach_receipt_number: "",
         branch_receipt_number: "",
@@ -966,6 +1241,7 @@ export function SubscriptionEditForm({
     setForm((current) => ({
       ...current,
       plan_id: "",
+      ...getResetDiscountFields(null, current.months_count),
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
@@ -974,6 +1250,68 @@ export function SubscriptionEditForm({
     }));
     setErrors((current) => ({ ...current, plan_id: null }));
     onActivityTypeChange?.(activityTypeId);
+  }
+
+  function handleEditMonthsChange(value) {
+    const nextMonths = isDailyEntryPlan ? "1" : value;
+    const nextOriginalAmounts = getSubscriptionOriginalAmounts(resolvedPlan, nextMonths);
+    setForm((current) => ({
+      ...current,
+      months_count: nextMonths,
+      ...(current.is_discount
+        ? current.discount_mode === "split" && isPrivatePlan
+          ? getSplitDiscountFieldsFromPercentages(current, nextOriginalAmounts)
+          : getUnifiedDiscountFields(nextOriginalAmounts, current.discount_percentage, "percentage")
+        : getResetDiscountFields(resolvedPlan, nextMonths)),
+      end_date:
+        current.start_date && !isDailyEntryPlan
+          ? getSubscriptionEndDate(current.start_date, nextMonths)
+          : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, months_count: null, paid_amount: null }));
+  }
+
+  function toggleEditDiscount(checked) {
+    setForm((current) => ({
+      ...current,
+      ...getResetDiscountFields(resolvedPlan, current.months_count),
+      is_discount: checked,
+    }));
+  }
+
+  function changeEditDiscountMode(mode) {
+    setForm((current) => ({
+      ...current,
+      discount_mode: mode,
+      ...getUnifiedDiscountFields(originalAmounts, current.discount_percentage, "percentage"),
+    }));
+  }
+
+  function changeEditUnifiedDiscount(value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getUnifiedDiscountFields(originalAmounts, value, source),
+    }));
+  }
+
+  function changeEditSplitDiscount(side, value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getSplitDiscountFields(current, originalAmounts, side, value, source),
+    }));
+  }
+
+  function changeEditPrivatePaidAmount(side, value) {
+    setForm((current) => {
+      const normalized = Math.max(0, Number(value) || 0);
+      const other =
+        Number(side === "coach" ? current.branch_paid_amount : current.coach_paid_amount) || 0;
+      return {
+        ...current,
+        [`${side}_paid_amount`]: value,
+        paid_amount: Number((normalized + other).toFixed(2)),
+      };
+    });
   }
 
   function handleSubmit(event) {
@@ -992,10 +1330,21 @@ export function SubscriptionEditForm({
         ? {
             coach_receipt_number: form.coach_receipt_number,
             branch_receipt_number: form.branch_receipt_number,
-            coach_paid_amount: splitPaymentAmounts.coachPaidAmount,
-            branch_paid_amount: splitPaymentAmounts.branchPaidAmount,
+            coach_paid_amount: Number(form.coach_paid_amount) || 0,
+            branch_paid_amount: Number(form.branch_paid_amount) || 0,
           }
         : { receipt_number: form.receipt_number }),
+      is_discount: form.is_discount,
+      discount_percentage: form.is_discount ? Number(form.discount_percentage) || 0 : 0,
+      discount_amount: form.is_discount ? Number(form.discount_amount) || 0 : 0,
+      discount_reason: form.is_discount ? form.discount_reason : "",
+      coach_discount_percentage:
+        isPrivatePlan && form.is_discount ? Number(form.coach_discount_percentage) || 0 : undefined,
+      branch_discount_percentage:
+        isPrivatePlan && form.is_discount
+          ? Number(form.branch_discount_percentage) || 0
+          : undefined,
+      currency: subscription?.currency || subscription?.currency_type || "SYP",
       notes: form.notes.trim(),
       reason: form.reason,
     };
@@ -1123,7 +1472,7 @@ export function SubscriptionEditForm({
             type="number"
             min="1"
             value={form.months_count}
-            onChange={(event) => updateField("months_count", event.target.value)}
+            onChange={(event) => handleEditMonthsChange(event.target.value)}
             className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${errors.months_count ? "border-app-red" : "focus:border-app-yellow/70"}`}
           />
           {errors.months_count && (
@@ -1131,6 +1480,55 @@ export function SubscriptionEditForm({
           )}
         </label>
       </div>
+
+      <SubscriptionDiscountFields
+        form={form}
+        originalTotal={originalAmounts.originalTotal}
+        coachOriginal={originalAmounts.coachOriginal}
+        branchOriginal={originalAmounts.branchOriginal}
+        isPrivatePlan={isPrivatePlan}
+        errors={errors}
+        onToggle={toggleEditDiscount}
+        onModeChange={changeEditDiscountMode}
+        onFinalPriceChange={(value) => changeEditUnifiedDiscount(value, "price")}
+        onPercentageChange={(value) => changeEditUnifiedDiscount(value, "percentage")}
+        onCoachPriceChange={(value) => changeEditSplitDiscount("coach", value, "price")}
+        onCoachPercentageChange={(value) => changeEditSplitDiscount("coach", value, "percentage")}
+        onBranchPriceChange={(value) => changeEditSplitDiscount("branch", value, "price")}
+        onBranchPercentageChange={(value) => changeEditSplitDiscount("branch", value, "percentage")}
+        onReasonChange={(value) => updateField("discount_reason", value)}
+      />
+
+      {isPrivatePlan && (
+        <div className="grid gap-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4 sm:grid-cols-2">
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة الكوتش ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.coach_final_price}
+              step="0.01"
+              value={form.coach_paid_amount}
+              onChange={(event) => changeEditPrivatePaidAmount("coach", event.target.value)}
+              disabled={!canEditPaidAmount}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-app-yellow/70"
+            />
+          </label>
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة النادي ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.branch_final_price}
+              step="0.01"
+              value={form.branch_paid_amount}
+              onChange={(event) => changeEditPrivatePaidAmount("branch", event.target.value)}
+              disabled={!canEditPaidAmount}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-app-yellow/70"
+            />
+          </label>
+        </div>
+      )}
 
       {isPrivatePlan ? (
         <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
@@ -1257,18 +1655,29 @@ export function SubscriptionEditForm({
             step="0.01"
             value={form.paid_amount}
             onChange={(event) => updateField("paid_amount", event.target.value)}
-            disabled={!canEditPaidAmount}
-            title={!canEditPaidAmount ? "تعديل المبلغ متاح للأدمن فقط" : undefined}
+            max={form.final_price}
+            disabled={isPrivatePlan || !canEditPaidAmount}
+            title={
+              isPrivatePlan
+                ? "إجمالي محسوب من دفعتي الكوتش والنادي"
+                : !canEditPaidAmount
+                  ? "تعديل المبلغ متاح للأدمن فقط"
+                  : undefined
+            }
             className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.paid_amount ? "border-app-red" : "focus:border-app-yellow/70"}`}
           />
           {errors.paid_amount && (
             <span className="mt-1 block text-xs text-app-red">{errors.paid_amount}</span>
           )}
-          {!canEditPaidAmount && (
+          {isPrivatePlan ? (
+            <span className="mt-1.5 block text-xs text-app-muted-light">
+              الإجمالي محسوب تلقائياً من دفعتي الكوتش والنادي.
+            </span>
+          ) : !canEditPaidAmount ? (
             <span className="mt-1.5 block text-xs text-app-muted-light">
               تعديل المبلغ متاح للأدمن فقط.
             </span>
-          )}
+          ) : null}
         </label>
       </div>
 

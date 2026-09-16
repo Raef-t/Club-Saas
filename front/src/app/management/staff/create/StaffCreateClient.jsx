@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import AccountCredentialsDialog from "@/components/ui/AccountCredentialsDialog";
@@ -9,6 +9,7 @@ import { FormCard, UploadBox } from "@/components/forms/FormControls";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import StaffForm from "../StaffForm";
 import { useStaff } from "../useStaff";
+import { resolveStaffPhotoUrl } from "../staffUtils";
 import { extractCreatedAccount } from "@/lib/generatedAccount";
 
 const FORM_ID = "staff-form";
@@ -20,6 +21,7 @@ export default function StaffCreateClient() {
   const editId = Number(searchParams.get("id"));
   const isEdit = searchParams.get("mode") === "edit" && Number.isFinite(editId) && editId > 0;
   const [photo, setPhoto] = useState([]);
+  const [photoChanged, setPhotoChanged] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState(null);
   const {
     branches,
@@ -36,6 +38,12 @@ export default function StaffCreateClient() {
     fetchDetails: isEdit,
   });
   const editInitialValues = isEdit ? getEditInitialValues() : null;
+  const initialPhoto = editInitialValues?.photo;
+
+  useEffect(() => {
+    if (!isEdit || !initialPhoto || photoChanged) return;
+    setPhoto([resolveStaffPhotoUrl(initialPhoto)]);
+  }, [initialPhoto, isEdit, photoChanged]);
 
   async function submit(values) {
     const response = await handleCreate({ ...values, photo: photo[0] || null });
@@ -57,8 +65,17 @@ export default function StaffCreateClient() {
   }
 
   async function submitEdit(values) {
-    const response = await handleUpdate(values);
+    const response = await handleUpdate({
+      ...values,
+      photo: photo[0] || null,
+      photoChanged,
+    });
     if (response) router.push("/management/staff");
+  }
+
+  function changePhoto(nextPhoto) {
+    setPhoto(nextPhoto);
+    setPhotoChanged(true);
   }
 
   function closeCredentialsDialog() {
@@ -76,7 +93,7 @@ export default function StaffCreateClient() {
         isSubmitting={isEdit ? isUpdating : isCreating}
         submitLabel={isEdit ? "حفظ التعديلات" : "إضافة الموظف"}
       >
-        <div className={isEdit ? "mx-auto max-w-3xl" : "entry-form-side-layout"}>
+        <div className="entry-form-side-layout">
           <FormCard title="البيانات الشخصية والوظيفية" className="entry-form-card p-5">
             {isEdit && detailsError ? (
               <div className="space-y-4 py-8 text-center">
@@ -103,18 +120,20 @@ export default function StaffCreateClient() {
             )}
           </FormCard>
 
-          {!isEdit && (
-            <UploadBox
-              className="entry-form-card"
-              label="صورة الموظف"
-              subtitle="الصورة الشخصية (اختيارية)"
-              accept=".png,.jpg,.jpeg"
-              multiple={false}
-              maxSizeMB={2}
-              value={photo}
-              onChange={setPhoto}
-            />
-          )}
+          <UploadBox
+            className="entry-form-card"
+            label="صورة الموظف"
+            subtitle={
+              isEdit && initialPhoto
+                ? "يمكن استبدال الصورة الحالية أو حذفها"
+                : "الصورة الشخصية (اختيارية)"
+            }
+            accept=".png,.jpg,.jpeg"
+            multiple={false}
+            maxSizeMB={2}
+            value={photo}
+            onChange={isEdit ? changePhoto : setPhoto}
+          />
         </div>
       </ManagementCreatePage>
 

@@ -17,6 +17,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { getPasswordStatus, getUserRoleLabel, getUserRoles } from "./usersUtils";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { usePermissions } from "@/lib/PermissionContext";
+import { DEFAULT_PASSWORD, hashDefaultPassword } from "@/lib/passwordHash";
 
 const USER_TABLE_GRID =
   "60px minmax(220px,1.6fr) minmax(150px,1fr) minmax(150px,1fr) minmax(170px,1fr) 120px 80px";
@@ -49,9 +50,13 @@ export default function UsersClient({ initialUsers }) {
     if (!userToResetPassword) return;
 
     try {
-      await resetPassword({ user_id: userToResetPassword.id }).unwrap();
+      const passwordHash = await hashDefaultPassword();
+      await resetPassword({
+        user_id: userToResetPassword.id,
+        password: passwordHash,
+      }).unwrap();
       toast.success(
-        `تم إعادة تعيين كلمة المرور للمستخدم ${userToResetPassword.name || userToResetPassword.username || ""} بنجاح إلى 12345678`
+        `تم إعادة تعيين كلمة المرور للمستخدم ${userToResetPassword.name || userToResetPassword.username || ""} بنجاح إلى ${DEFAULT_PASSWORD}`,
       );
       setUserToResetPassword(null);
     } catch (error) {
@@ -167,10 +172,7 @@ export default function UsersClient({ initialUsers }) {
               align: "center",
               sortable: false,
               render: (_, user) => (
-                <RowActions
-                  onEdit={() => setSelectedUser(user)}
-                  editTitle="عرض الصلاحيات"
-                />
+                <RowActions onEdit={() => setSelectedUser(user)} editTitle="عرض الصلاحيات" />
               ),
             },
           ]
@@ -286,7 +288,7 @@ export default function UsersClient({ initialUsers }) {
         title="إعادة تعيين كلمة المرور"
         message={`هل أنت متأكد من رغبتك في إعادة تعيين كلمة المرور للمستخدم (${
           userToResetPassword?.name || userToResetPassword?.username || ""
-        }) إلى "12345678"؟`}
+        }) إلى "${DEFAULT_PASSWORD}"؟`}
         confirmLabel="إعادة تعيين"
         cancelLabel="إلغاء"
         tone="danger"

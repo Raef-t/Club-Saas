@@ -4,6 +4,8 @@ import Link from "next/link";
 import SubscriptionDetails from "./SubscriptionDetails";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
+import SubscriptionAmountBadges from "./SubscriptionAmountBadges";
+import SubscriptionMemberIdentity from "./SubscriptionMemberIdentity";
 import RenewSubscriptionModal from "./RenewSubscriptionModal";
 import { useMemo } from "react";
 import PageHeader from "@/components/common/PageHeader";
@@ -24,7 +26,7 @@ import {
 import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_PERIOD_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
-import { formatSubscriptionMoney, getSubscriptionCreatorName } from "./subscriptionUtils";
+import { getSubscriptionCreatorName } from "./subscriptionUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { getMemberAccountName } from "@/lib/memberIdentity";
@@ -222,22 +224,7 @@ export default function SubscriptionsClient({ initialData }) {
           const person = member.person || {};
           return person.full_name || getMemberAccountName(member, subscription);
         },
-        render: (_, subscription) => {
-          const member = subscription.member || {};
-          const person = member.person || {};
-          const accountName = getMemberAccountName(member, subscription);
-
-          return (
-            <div className="min-w-0 text-center">
-              <p className="truncate text-sm font-medium text-app-text">
-                {person.full_name || "-"}
-              </p>
-              <p className="mt-1 truncate text-[11px] text-app-muted-light" dir="ltr">
-                {accountName || "-"} · {person.phone || "-"}
-              </p>
-            </div>
-          );
-        },
+        render: (_, subscription) => <SubscriptionMemberIdentity subscription={subscription} />,
       },
       {
         key: "plan",
@@ -275,12 +262,10 @@ export default function SubscriptionsClient({ initialData }) {
       },
       {
         key: "paid_amount",
-        label: "المبلغ المدفوع",
+        label: "الصافي / المدفوع",
         align: "center",
         sortValue: (subscription) => Number(subscription.paid_amount || 0),
-        render: (value) => (
-          <span className="font-medium text-app-green">{formatSubscriptionMoney(value)}</span>
-        ),
+        render: (_, subscription) => <SubscriptionAmountBadges subscription={subscription} />,
       },
       {
         key: "receipts",

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import BrandLogo from "@/components/common/BrandLogo";
 import Button from "@/components/ui/Button";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
+import { hashPassword } from "@/lib/passwordHash";
 
 const INITIAL_FORM = {
   custom_username: "",
@@ -81,6 +82,10 @@ export default function AccountSetupForm({ userId, displayName, systemUsername }
     setIsSaving(true);
 
     try {
+      const [newPasswordHash, confirmationHash] = await Promise.all([
+        hashPassword(form.new_password),
+        hashPassword(form.new_password_confirmation),
+      ]);
       const response = await fetch("/api/backend/auth/change-password", {
         method: "POST",
         credentials: "same-origin",
@@ -91,8 +96,8 @@ export default function AccountSetupForm({ userId, displayName, systemUsername }
         },
         body: JSON.stringify({
           user_id: Number(userId),
-          new_password: form.new_password,
-          new_password_confirmation: form.new_password_confirmation,
+          new_password: newPasswordHash,
+          new_password_confirmation: confirmationHash,
           custom_username: form.custom_username,
         }),
       });

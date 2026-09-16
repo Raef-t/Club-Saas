@@ -8,6 +8,31 @@ const optionalReceiptSchema = z
   .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف")
   .optional();
 
+const optionalAmountSchema = z.coerce
+  .number()
+  .finite("المبلغ غير صالح")
+  .nonnegative("المبلغ يجب أن يكون صفراً أو أكثر")
+  .optional();
+
+const optionalDiscountPercentageSchema = z.coerce
+  .number()
+  .finite("نسبة الحسم غير صالحة")
+  .min(0, "نسبة الحسم لا يمكن أن تكون سالبة")
+  .max(100, "نسبة الحسم لا يمكن أن تتجاوز 100%")
+  .optional();
+
+const discountFields = {
+  is_discount: z.boolean().optional(),
+  discount_percentage: optionalDiscountPercentageSchema,
+  discount_amount: optionalAmountSchema,
+  discount_reason: z.string().trim().max(500, "سبب الحسم يجب ألا يتجاوز 500 حرف").optional(),
+  coach_discount_percentage: optionalDiscountPercentageSchema,
+  branch_discount_percentage: optionalDiscountPercentageSchema,
+  coach_paid_amount: optionalAmountSchema,
+  branch_paid_amount: optionalAmountSchema,
+  currency: z.string().trim().max(10).optional(),
+};
+
 export const subscriptionRenewalSchema = z.object({
   plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
   paid_amount: z.preprocess(
@@ -56,6 +81,7 @@ export const subscriptionSchema = z
     coach_receipt_number: optionalReceiptSchema,
     branch_receipt_number: optionalReceiptSchema,
     is_private_plan: z.boolean().optional().default(false),
+    ...discountFields,
 
     start_date: z
       .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
@@ -128,6 +154,7 @@ export const subscriptionEditSchema = z
       .number()
       .nonnegative("مبلغ النادي يجب أن يكون صفراً أو أكثر")
       .optional(),
+    ...discountFields,
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
     reason: modificationReasonSchema,
   })

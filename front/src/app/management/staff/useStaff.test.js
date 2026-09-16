@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createStaffFormData, createStaffUpdatePayload } from "./useStaff";
+import {
+  createStaffFormData,
+  createStaffPhotoFormData,
+  createStaffUpdatePayload,
+} from "./useStaff";
 
 describe("staff form payload", () => {
   it("sends attendance times and does not assign coach-style shifts", () => {
@@ -66,5 +70,12 @@ describe("staff form payload", () => {
       address: null,
       branch_ids: [8],
     });
+  });
+
+  it("builds the photo request for replacement and leaves it empty for deletion", () => {
+    const photo = new File(["image"], "staff.jpg", { type: "image/jpeg" });
+
+    expect(createStaffPhotoFormData(photo).get("photo")).toBe(photo);
+    expect([...createStaffPhotoFormData(null).entries()]).toEqual([]);
   });
 });
