@@ -104,6 +104,7 @@ export default function Dropdown({
   }, [open, searchable]);
 
   function selectOption(option) {
+    if (option.disabled) return;
     onChange?.(option.value);
     setOpen(false);
   }
@@ -196,10 +197,13 @@ export default function Dropdown({
                     <button
                       key={option.value}
                       type="button"
+                      disabled={option.disabled}
                       className={`flex h-10 w-full shrink-0 items-center justify-between rounded-lg px-3 text-sm transition ${
-                        selected
-                          ? "bg-app-yellow-soft text-app-yellow"
-                          : "text-app-text hover:bg-app-card-hover"
+                        option.disabled
+                          ? "cursor-not-allowed opacity-50 text-app-muted"
+                          : selected
+                            ? "bg-app-yellow-soft text-app-yellow"
+                            : "text-app-text hover:bg-app-card-hover"
                       }`}
                       role="option"
                       aria-selected={selected}

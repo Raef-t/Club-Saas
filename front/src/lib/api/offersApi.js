@@ -117,3 +117,6 @@ export const {
   useRestoreOfferMutation,
   useSubscribeToOfferMutation,
 } = offersApi;
+
+export const useSubscribeOfferMutation = useSubscribeToOfferMutation;
+

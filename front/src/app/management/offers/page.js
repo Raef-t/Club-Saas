@@ -3,7 +3,7 @@ import OffersClient from "./OffersClient";
 import { verifyPageAccess } from "@/lib/server/auth";
 
 export const metadata = {
-  title: "العروض الترويجية والباقات | TechnoGYM",
+  title: "العروض الترويجية | TechnoGYM",
 };
 
 export default async function OffersPage() {
