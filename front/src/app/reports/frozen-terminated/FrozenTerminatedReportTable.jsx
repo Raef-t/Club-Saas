@@ -21,19 +21,14 @@ function StatusBadge({ status, label }) {
   );
 }
 
-export default function FrozenTerminatedReportTable({
-  rows,
-  summary,
-  isLoading,
-  onSelectRecord,
-}) {
+export default function FrozenTerminatedReportTable({ rows, summary, isLoading, onSelectRecord }) {
   const currency = summary.currency_type === "SYP" ? "ل.س" : summary.currency_type;
 
   const columns = [
     {
-      key: "memberNumber",
-      label: "رقم العضوية",
-      width: "90px",
+      key: "accountName",
+      label: "اسم الحساب",
+      width: "130px",
     },
     {
       key: "memberName",
@@ -60,9 +55,7 @@ export default function FrozenTerminatedReportTable({
       label: "الحالة",
       width: "minmax(95px, 0.8fr)",
       sortable: false,
-      render: (value, row) => (
-        <StatusBadge status={row.status} label={value} />
-      ),
+      render: (value, row) => <StatusBadge status={row.status} label={value} />,
     },
     {
       key: "eventDate",
@@ -86,9 +79,7 @@ export default function FrozenTerminatedReportTable({
       width: "minmax(85px, 0.8fr)",
       type: "money",
       render: (value) => (
-        <span className="font-medium text-app-yellow">
-          {formatMoney(value, currency)}
-        </span>
+        <span className="font-medium text-app-yellow">{formatMoney(value, currency)}</span>
       ),
     },
     {

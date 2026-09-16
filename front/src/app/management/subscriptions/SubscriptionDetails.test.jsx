@@ -5,7 +5,7 @@ import SubscriptionDetails from "./SubscriptionDetails";
 describe("subscription details", () => {
   afterEach(() => cleanup());
 
-  it("shows the member generated username in the identity header and member details", () => {
+  it("shows the preferred account name without exposing the membership number", () => {
     render(
       <SubscriptionDetails
         subscription={{
@@ -14,6 +14,7 @@ describe("subscription details", () => {
           member: {
             member_number: "MEM-2026-0034",
             generated_username: "tec-ply-18755",
+            custom_username: "engy.player",
             person: { full_name: "انجي مؤذن", phone: "955430964" },
           },
           plan: { name: "أجهزة عام" },
@@ -23,9 +24,10 @@ describe("subscription details", () => {
       />,
     );
 
-    expect(screen.getAllByText("tec-ply-18755")).toHaveLength(2);
-    expect(screen.getByText("اسم المستخدم المولّد")).toBeInTheDocument();
-    expect(screen.getByText("MEM-2026-0034")).toBeInTheDocument();
+    expect(screen.getAllByText("engy.player")).toHaveLength(2);
+    expect(screen.getByText("اسم الحساب")).toBeInTheDocument();
+    expect(screen.queryByText("tec-ply-18755")).not.toBeInTheDocument();
+    expect(screen.queryByText("MEM-2026-0034")).not.toBeInTheDocument();
   });
 
   it("uses the profile member as a fallback for subscription summaries", () => {

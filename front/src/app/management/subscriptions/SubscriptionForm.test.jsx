@@ -71,6 +71,25 @@ describe("subscription create validation", () => {
     expect(screen.getByText("لا توجد باقات اشتراك متاحة لنوع النشاط المحدد")).toBeInTheDocument();
   });
 
+  it("keeps the private-plan fields usable while its plans are still unavailable", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[]}
+        activityTypes={[
+          { id: 2, code: "private_training", name: "تدريب خاص", is_private_equipment: true },
+        ]}
+        selectedActivityTypeId="2"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("لا توجد باقات اشتراك متاحة لنوع النشاط المحدد")).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toBeInTheDocument();
+  });
+
   it("searches for a player by name without displaying membership numbers", () => {
     render(
       <SubscriptionCreateForm

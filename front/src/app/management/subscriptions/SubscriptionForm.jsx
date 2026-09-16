@@ -16,6 +16,7 @@ import {
   isPrivateSubscriptionPlan,
 } from "./subscriptionUtils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 /**
  * Collects and validates the values required to create a member subscription.
@@ -181,9 +182,15 @@ export function SubscriptionCreateForm({
           <div className="mt-2 flex h-11 items-center rounded-xl bg-app-card-soft px-3 text-white opacity-75">
             {(() => {
               const m = members.find((m) => String(m.id) === String(form.member_id));
-              return m
-                ? `${m.person?.full_name || `${m.first_name || ""} ${m.last_name || ""}`} (رقم العضوية: #${m.id})`
-                : `العضو #${form.member_id}`;
+              if (!m) return "العضو المحدد";
+
+              const memberName =
+                m.person?.full_name ||
+                `${m.first_name || ""} ${m.last_name || ""}`.trim() ||
+                "عضو بدون اسم";
+              const accountName = getMemberAccountName(m);
+
+              return accountName ? `${memberName} (${accountName})` : memberName;
             })()}
           </div>
         </div>
@@ -328,7 +335,7 @@ export function SubscriptionCreateForm({
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
               <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.coach_price)})
+                ({formatMoney(selectedPlanObj?.coach_price)})
               </span>
               <input
                 type="text"
@@ -361,7 +368,7 @@ export function SubscriptionCreateForm({
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
               <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.branch_price)})
+                ({formatMoney(selectedPlanObj?.branch_price)})
               </span>
               <input
                 type="text"

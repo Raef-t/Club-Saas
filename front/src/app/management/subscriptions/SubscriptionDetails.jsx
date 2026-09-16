@@ -8,6 +8,7 @@ import SkeletonPage from "@/components/ui/Skeleton";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
 import { formatDate } from "@/lib/utils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 import {
   formatSubscriptionMoney,
   getSubscriptionCreatorName,
@@ -111,8 +112,7 @@ export default function SubscriptionDetails({
     },
   };
   const person = member.person || {};
-  const generatedUsername =
-    member.generated_username || subscription.generated_username || member.username;
+  const accountName = getMemberAccountName(member, subscription);
   const plan = subscription.plan || {};
   const planName =
     typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
@@ -135,7 +135,7 @@ export default function SubscriptionDetails({
               {person.full_name || "-"}
             </h3>
             <p className="mt-1 text-xs text-app-muted-light" dir="ltr">
-              {generatedUsername || "-"}
+              {accountName || "-"}
             </p>
           </div>
           <SubscriptionStatusBadge status={subscription.status} />
@@ -144,8 +144,7 @@ export default function SubscriptionDetails({
 
       <DetailSection title="بيانات العضو">
         <DetailItem label="الاسم" value={person.full_name} />
-        <DetailItem label="اسم المستخدم المولّد" value={generatedUsername} />
-        <DetailItem label="رقم العضوية" value={member.member_number} />
+        <DetailItem label="اسم الحساب" value={accountName} />
         <DetailItem label="الهاتف" value={person.phone} />
       </DetailSection>
 

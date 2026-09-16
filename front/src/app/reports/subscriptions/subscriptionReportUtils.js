@@ -1,4 +1,5 @@
 import { formatLocalizedName } from "@/lib/utils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 export const SUBSCRIPTION_REPORT_STATUS_OPTIONS = [
   { value: "all", label: "كل حالات الاشتراك" },
@@ -167,14 +168,7 @@ export function normalizeSubscriptionReportRecord(record, index = 0) {
 
   return {
     id: firstValue(record?.id, record?.subscription_id, `subscription-${index}`),
-    membershipNumber: firstValue(
-      record?.membership_number,
-      record?.member_number,
-      member?.membership_number,
-      member?.member_number,
-      member?.id,
-      "-",
-    ),
+    accountName: getMemberAccountName(member, record) || "-",
     memberName: getPersonName(record),
     phone: firstValue(record?.phone, member?.phone, member?.phone_number, person?.phone, "-"),
     planName: firstValue(

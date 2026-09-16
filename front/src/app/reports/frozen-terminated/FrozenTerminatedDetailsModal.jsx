@@ -16,7 +16,7 @@ export default function FrozenTerminatedDetailsModal({ record, onClose }) {
       open={Boolean(record)}
       onClose={onClose}
       title={`تفاصيل اشتراك اللاعب: ${record.memberName}`}
-      subtitle={`رقم العضوية: ${record.memberNumber} • الفرع: ${record.branchName}`}
+      subtitle={`اسم الحساب: ${record.accountName} • الفرع: ${record.branchName}`}
       className="max-w-3xl"
     >
       <div className="space-y-6 text-right">
@@ -38,9 +38,7 @@ export default function FrozenTerminatedDetailsModal({ record, onClose }) {
             <TagIcon className="size-6 shrink-0 text-app-red" />
             <div className="min-w-0">
               <h4 className="text-sm font-semibold">اشتراك ملغى نهائياً (Terminated)</h4>
-              <p className="mt-0.5 text-xs text-app-red/80">
-                تم إنهاء الاشتراك وخروجه من الخدمة.
-              </p>
+              <p className="mt-0.5 text-xs text-app-red/80">تم إنهاء الاشتراك وخروجه من الخدمة.</p>
             </div>
           </div>
         )}
@@ -63,7 +61,7 @@ export default function FrozenTerminatedDetailsModal({ record, onClose }) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <DetailItem label="اسم اللاعب" value={record.memberName} />
-            <DetailItem label="رقم العضوية" value={record.memberNumber} />
+            <DetailItem label="اسم الحساب" value={record.accountName} />
             <DetailItem
               label="الهاتف"
               value={
@@ -119,11 +117,7 @@ export default function FrozenTerminatedDetailsModal({ record, onClose }) {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <DetailItem label="خطة الاشتراك" value={record.planName} />
             <DetailItem label="المدرب المسند" value={record.coachesNames} />
-            <DetailItem
-              label="تاريخ الحدث"
-              value={formatDate(record.eventDate)}
-              tone="yellow"
-            />
+            <DetailItem label="تاريخ الحدث" value={formatDate(record.eventDate)} tone="yellow" />
             <DetailItem label="تاريخ بداية الاشتراك" value={formatDate(record.startDate)} />
             <DetailItem label="تاريخ نهاية الاشتراك" value={formatDate(record.endDate)} />
             {isFrozen && record.frozenDays > 0 && (

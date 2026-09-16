@@ -163,6 +163,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
       end_time: "",
       address: "",
       branch_ids: defaultBranchId ? [defaultBranchId] : [],
+      photo: null,
       reason: "",
     };
   }
@@ -185,6 +186,7 @@ export function createStaffInitialValues({ staff, branches = [], selectedBranchI
     end_time: String(staff.end_time || "").slice(0, 5),
     address: staff.person?.address || "",
     branch_ids: getStaffBranchIds(staff, branches),
+    photo: staff.person?.photo_url || staff.person?.photo || null,
     reason: "",
   };
 }

@@ -1,4 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/utils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 export const RENEWAL_STATUS_TYPE_OPTIONS = [
   { value: "all", label: "الكل (الجميع)" },
@@ -109,9 +110,7 @@ export function normalizeRenewalRecord(record, index = 0) {
       ? formatDate(absencePeriod.last_attendance_date)
       : "لم يحضر أبدًا");
 
-  const contactPersons = Array.isArray(record?.contact_persons)
-    ? record.contact_persons
-    : [];
+  const contactPersons = Array.isArray(record?.contact_persons) ? record.contact_persons : [];
 
   const coaches = Array.isArray(record?.coaches) ? record.coaches : [];
   const activities = Array.isArray(record?.activities) ? record.activities : [];
@@ -122,7 +121,7 @@ export function normalizeRenewalRecord(record, index = 0) {
     statusType,
     statusLabel,
     memberId: record?.member_id,
-    memberNumber: record?.member_number || "-",
+    accountName: getMemberAccountName(record) || "-",
     memberName: record?.member_name || "-",
     memberPhone: getMemberPrimaryPhone(record),
     contactPersons,
@@ -151,8 +150,7 @@ export function normalizeRenewalRecord(record, index = 0) {
 }
 
 export function normalizeRenewalReportResponse(response) {
-  const payload =
-    response?.data && !Array.isArray(response.data) ? response.data : response || {};
+  const payload = response?.data && !Array.isArray(response.data) ? response.data : response || {};
   const rawSummary = payload?.summary || {};
 
   const summary = {
@@ -221,7 +219,7 @@ export function createPrintableRenewalReport(rows, summary) {
       },
     ],
     columns: [
-      { key: "memberNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "memberName", label: "اللاعب" },
       { key: "memberPhone", label: "الهاتف" },
       { key: "planName", label: "خطة الاشتراك" },

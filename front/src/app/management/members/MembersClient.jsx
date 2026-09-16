@@ -23,8 +23,9 @@ import { getMemberMembershipStatus } from "./memberFormUtils";
 import { useMembers } from "./useMembers";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
+import { getMemberAccountName, getMemberCreatorUsername } from "@/lib/memberIdentity";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) 170px 140px 100px 120px 100px 90px";
+const TABLE_GRID_COLUMNS = "54px minmax(180px,1.2fr) 170px 140px 100px 150px 100px 90px";
 
 const genderLabels = {
   male: "ذكر",
@@ -67,18 +68,6 @@ export const memberInitialForm = {
 };
 
 const initialForm = memberInitialForm;
-
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return "-";
-
-  return new Intl.DateTimeFormat("ar-SY", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
-}
 
 function DetailItem({ label, value, tone = "default" }) {
   const toneClass =
@@ -147,6 +136,13 @@ export default function MembersClient({ initialData }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "الاسم",
         align: "center",
@@ -158,12 +154,12 @@ export default function MembersClient({ initialData }) {
         ),
       },
       {
-        key: "custom_username",
-        label: "اسم المستخدم المخصص",
+        key: "account_name",
+        label: "اسم الحساب",
         align: "center",
-        sortValue: (member) => member.custom_username || "",
+        sortValue: (member) => getMemberAccountName(member),
         render: (_, member) => (
-          <CopyableUsername username={member.custom_username} align="center" />
+          <CopyableUsername username={getMemberAccountName(member)} align="center" />
         ),
       },
       {
@@ -218,18 +214,15 @@ export default function MembersClient({ initialData }) {
         },
       },
       {
-        key: "dob",
-        label: "تاريخ الميلاد",
+        key: "created_by",
+        label: "المستخدم المسؤول",
         align: "center",
-        sortValue: (member) => {
-          const person = member.person || {};
-          return person.dob || member.dob || "";
-        },
-        render: (_, member) => {
-          const person = member.person || {};
-          const dob = person.dob || member.dob;
-          return <span className="text-xs text-app-muted-light">{formatDate(dob)}</span>;
-        },
+        sortValue: (member) => getMemberCreatorUsername(member),
+        render: (_, member) => (
+          <span className="text-xs font-medium text-app-muted-light" dir="auto">
+            {getMemberCreatorUsername(member) || "-"}
+          </span>
+        ),
       },
       {
         key: "membership_status",

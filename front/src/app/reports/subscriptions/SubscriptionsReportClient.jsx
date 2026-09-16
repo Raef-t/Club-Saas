@@ -30,7 +30,7 @@ function createPrintableReport(rows, summary) {
       { label: "الملغى", value: summary.terminated_count.toLocaleString("ar") },
     ],
     columns: [
-      { key: "membershipNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "memberName", label: "اللاعب" },
       { key: "planName", label: "الخطة" },
       { key: "coachName", label: "الكوتش" },

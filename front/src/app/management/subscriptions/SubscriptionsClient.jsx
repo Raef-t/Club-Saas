@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import SubscriptionDetails from "./SubscriptionDetails";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
@@ -10,19 +11,125 @@ import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import Dropdown from "@/components/ui/Dropdown";
 import Drawer from "@/components/ui/Drawer";
-import RowActions from "@/components/ui/RowActions";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatsGrid from "@/components/ui/StatsGrid";
-import { FilterIcon, SearchIcon, PlusIcon } from "@/components/icons/Icons";
+import {
+  FilterIcon,
+  PencilIcon,
+  PlusIcon,
+  RefreshIcon,
+  SearchIcon,
+  TrashIcon,
+} from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_PERIOD_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { formatSubscriptionMoney, getSubscriptionCreatorName } from "./subscriptionUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 const TABLE_GRID_COLUMNS =
-  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) minmax(0,.7fr) 132px";
+  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) 96px 152px";
+
+const ACTION_BUTTON_CLASS =
+  "grid size-8 shrink-0 place-items-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-50";
+
+function MoreVerticalIcon({ className = "size-4" }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="12" cy="5" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="12" cy="19" r="1.5" />
+    </svg>
+  );
+}
+
+function SubscriptionTableActions({
+  subscription,
+  canView,
+  canUpdate,
+  canDelete,
+  canRenew,
+  isBusy,
+  onView,
+  onDelete,
+  onRenew,
+}) {
+  const canRenewSubscription = canRenew && subscription.status === "finished";
+
+  return (
+    <div className="flex w-full items-center justify-center gap-1.5" dir="rtl">
+      {canUpdate && (
+        <Link
+          href={`/management/subscriptions/create?mode=edit&id=${subscription.id}`}
+          title="تعديل الاشتراك"
+          aria-label="تعديل الاشتراك"
+          onClick={(event) => {
+            event.stopPropagation();
+            if (isBusy) event.preventDefault();
+          }}
+          className={`${ACTION_BUTTON_CLASS} border-app-line bg-slate-500/15 text-app-muted-light hover:border-slate-400/50 hover:bg-slate-500/25 hover:text-app-text ${
+            isBusy ? "pointer-events-none opacity-50" : ""
+          }`}
+          aria-disabled={isBusy}
+        >
+          <PencilIcon className="size-4" />
+        </Link>
+      )}
+
+      {canRenew &&
+        (canRenewSubscription ? (
+          <button
+            type="button"
+            title="تجديد الاشتراك"
+            aria-label="تجديد الاشتراك"
+            className={`${ACTION_BUTTON_CLASS} border-app-yellow/35 bg-app-yellow/15 text-app-yellow hover:border-app-yellow/70 hover:bg-app-yellow/25`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRenew(subscription);
+            }}
+            disabled={isBusy}
+          >
+            <RefreshIcon className="size-4" />
+          </button>
+        ) : (
+          <span className="size-8 shrink-0" aria-hidden="true" />
+        ))}
+
+      {canDelete && (
+        <button
+          type="button"
+          title="حذف الاشتراك"
+          aria-label="حذف الاشتراك"
+          className={`${ACTION_BUTTON_CLASS} border-app-red/25 bg-app-red/10 text-app-red hover:border-app-red/60 hover:bg-app-red/20`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(subscription);
+          }}
+          disabled={isBusy}
+        >
+          <TrashIcon className="size-4" />
+        </button>
+      )}
+
+      {canView && (
+        <button
+          type="button"
+          title="عرض التفاصيل"
+          aria-label="عرض التفاصيل"
+          className={`${ACTION_BUTTON_CLASS} border-app-line bg-slate-500/15 text-app-muted-light hover:border-slate-400/50 hover:bg-slate-500/25 hover:text-app-text`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onView(subscription);
+          }}
+        >
+          <MoreVerticalIcon />
+        </button>
+      )}
+    </div>
+  );
+}
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -113,11 +220,12 @@ export default function SubscriptionsClient({ initialData }) {
         sortValue: (subscription) => {
           const member = subscription.member || {};
           const person = member.person || {};
-          return person.full_name || member.member_number || "";
+          return person.full_name || getMemberAccountName(member, subscription);
         },
         render: (_, subscription) => {
           const member = subscription.member || {};
           const person = member.person || {};
+          const accountName = getMemberAccountName(member, subscription);
 
           return (
             <div className="min-w-0 text-center">
@@ -125,7 +233,7 @@ export default function SubscriptionsClient({ initialData }) {
                 {person.full_name || "-"}
               </p>
               <p className="mt-1 truncate text-[11px] text-app-muted-light" dir="ltr">
-                {member.member_number || "-"} · {person.phone || "-"}
+                {accountName || "-"} · {person.phone || "-"}
               </p>
             </div>
           );
@@ -212,35 +320,31 @@ export default function SubscriptionsClient({ initialData }) {
         align: "center",
         sortable: false,
         render: (_, subscription) => (
-          <div className="flex items-center justify-center gap-2">
-            {canRenew && subscription.status === "finished" && (
-              <button
-                type="button"
-                className="h-8 rounded-lg border border-app-yellow/45 bg-app-yellow-soft px-2.5 text-xs font-medium text-app-yellow transition hover:border-app-yellow hover:bg-app-yellow/15 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openRenewal(subscription);
-                }}
-                disabled={isRenewing}
-              >
-                تجديد
-              </button>
-            )}
-            <RowActions
-              disabled={isDeleting || isRenewing}
-              editHref={
-                canUpdate
-                  ? `/management/subscriptions/create?mode=edit&id=${subscription.id}`
-                  : undefined
-              }
-              editTitle="تعديل الاشتراك"
-              onDelete={canDelete ? () => handleDelete(subscription) : undefined}
-            />
-          </div>
+          <SubscriptionTableActions
+            subscription={subscription}
+            canView={canView}
+            canUpdate={canUpdate}
+            canDelete={canDelete}
+            canRenew={canRenew}
+            isBusy={isDeleting || isRenewing}
+            onView={(item) => setSelectedSubscriptionId(item.id)}
+            onDelete={handleDelete}
+            onRenew={openRenewal}
+          />
         ),
       },
     ],
-    [canDelete, canRenew, canUpdate, handleDelete, isDeleting, isRenewing, openRenewal],
+    [
+      canDelete,
+      canRenew,
+      canUpdate,
+      canView,
+      handleDelete,
+      isDeleting,
+      isRenewing,
+      openRenewal,
+      setSelectedSubscriptionId,
+    ],
   );
 
   const branchOptions = useMemo(
@@ -313,8 +417,9 @@ export default function SubscriptionsClient({ initialData }) {
             "لا توجد اشتراكات مطابقة للبحث الحالي."
           )
         }
-        rowClassName="gap-2 px-3 py-4"
-        headerClassName="gap-2 px-3"
+        desktopRowsClassName="divide-y divide-app-line/70"
+        rowClassName="gap-2 !rounded-none !border-0 !bg-transparent px-3 !py-3 hover:!bg-app-card-hover/50"
+        headerClassName="gap-2 rounded-t-lg bg-app-card-soft/70 px-3"
         onRowClick={
           canView ? (subscription) => setSelectedSubscriptionId(subscription.id) : undefined
         }
@@ -334,7 +439,7 @@ export default function SubscriptionsClient({ initialData }) {
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="بحث بالاسم، رقم العضو، الهاتف أو البريد"
+                placeholder="بحث بالاسم، اسم الحساب، الهاتف أو البريد"
                 type="search"
               />
             </label>

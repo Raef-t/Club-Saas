@@ -416,7 +416,7 @@ export function useAttendance({ initialBranches } = {}) {
       toast.success(response?.message || "تم تسجيل الدخول بنجاح.");
 
       if (!memberId) {
-        toast.warning("تم تسجيل الدخول، لكن الاستجابة لم تتضمن رقم العضو.");
+        toast.warning("تم تسجيل الدخول، لكن الاستجابة لم تتضمن معرّف اللاعب.");
       } else if (!attendanceId) {
         toast.warning("تم تسجيل الدخول، لكن لا توجد حركة متاحة لخصم الجلسة.");
       }

@@ -79,6 +79,7 @@ describe("renewalStatusReportUtils", () => {
       status_label: "منتهي ولم يجدد",
       member_id: 54,
       member_number: "MEM-2026-0008",
+      generated_username: "tec-ply-10008",
       member_name: "روان سودة",
       member_phone: "N/A",
       contact_persons: [
@@ -109,6 +110,7 @@ describe("renewalStatusReportUtils", () => {
 
     expect(normalized.id).toBe(111);
     expect(normalized.statusType).toBe("expired_non_renewed");
+    expect(normalized.accountName).toBe("tec-ply-10008");
     expect(normalized.memberPhone).toBe("986057151");
     expect(normalized.absenceFormatted).toBe("لم يحضر أبدًا");
     expect(normalized.totalAmount).toBe(225);
@@ -173,14 +175,14 @@ describe("renewalStatusReportUtils", () => {
       validateRenewalReportFilters({
         startDate: "2026-10-01",
         endDate: "2026-09-01",
-      })
+      }),
     ).toBe("يجب أن يكون تاريخ البداية قبل تاريخ النهاية أو مساوياً له.");
 
     expect(
       validateRenewalReportFilters({
         startDate: "2026-09-01",
         endDate: "2026-10-01",
-      })
+      }),
     ).toBe("");
   });
 
