@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import Button from "@/components/ui/Button";
@@ -33,6 +33,8 @@ export function SubscriptionCreateForm({
   activityTypesErrorMessage = "",
   activities = [],
   coaches = [],
+  offers = [],
+  isOffersLoading = false,
   onSubmit,
   onCancel,
   isLoading,
@@ -46,6 +48,97 @@ export function SubscriptionCreateForm({
   cancelLabel,
   showAddAnother = true,
 }) {
+  // Check if a plan matches selectedActivityTypeId
+  const isPlanMatchingActivityType = useCallback(
+    (plan) => {
+      if (!selectedActivityTypeId || selectedActivityTypeId === "all") return true;
+      if (
+        Array.isArray(plan.activity_types) &&
+        plan.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+      ) {
+        return true;
+      }
+      if (
+        Array.isArray(plan.activities) &&
+        plan.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+      ) {
+        return true;
+      }
+      const fullPlan = plans.find((pl) => String(pl.id) === String(plan.id));
+      if (fullPlan) {
+        if (
+          Array.isArray(fullPlan.activity_types) &&
+          fullPlan.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+        ) {
+          return true;
+        }
+        if (
+          Array.isArray(fullPlan.activities) &&
+          fullPlan.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [selectedActivityTypeId, plans],
+  );
+
+  // Filter offers by selectedActivityTypeId and availability
+  const availableOffers = useMemo(() => {
+    if (!Array.isArray(offers) || offers.length === 0) return [];
+    return offers.filter((offer) => {
+      if (!offer.is_available) return false;
+      if (selectedActivityTypeId && selectedActivityTypeId !== "all") {
+        const offerPlans = offer.plans || [];
+        return offerPlans.some(isPlanMatchingActivityType);
+      }
+      return true;
+    });
+  }, [offers, selectedActivityTypeId, isPlanMatchingActivityType]);
+
+  // Options for offers dropdown:
+  // For bundle: 1 option for the bundle
+  // For single_choice: expand each eligible activity as a direct offer choice ("نعامل كل فعالية كانها عرض")
+  const offerOptions = useMemo(() => {
+    const options = [{ value: "", label: "بدون عرض (اشتراك فردي اعتيادي)" }];
+
+    availableOffers.forEach((offer) => {
+      if (offer.offer_type === "single_choice") {
+        const eligiblePlans = (offer.plans || []).filter(isPlanMatchingActivityType);
+        eligiblePlans.forEach((plan) => {
+          const planName = formatLocalizedName(plan.name) || plan.name || "";
+          const isFull = plan.max_subscribers > 0 && plan.current_subscribers >= plan.max_subscribers;
+
+          const offerTitle = offer.name.startsWith("عرض") ? offer.name : `عرض ${offer.name}`;
+          const displayName = offerTitle.includes(planName)
+            ? offerTitle
+            : `${offerTitle} - ${planName}`;
+
+          options.push({
+            value: `offer_${offer.id}_plan_${plan.id}`,
+            offerId: String(offer.id),
+            planId: String(plan.id),
+            isBundle: false,
+            label: `${displayName} - ${formatMoney(offer.price)}${isFull ? " (⚠️ مكتملة السعة)" : ""}`,
+            disabled: isFull,
+          });
+        });
+      } else {
+        // bundle offer
+        options.push({
+          value: `offer_${offer.id}`,
+          offerId: String(offer.id),
+          planId: null,
+          isBundle: true,
+          label: `${offer.name} - ${formatMoney(offer.price)} (باقة مجمعة)`,
+        });
+      }
+    });
+
+    return options;
+  }, [availableOffers, isPlanMatchingActivityType]);
+
   const [form, setForm] = useState(() => {
     const initialPlan = plans[0] || null;
     const initialDate = isDailyEntrySubscriptionPlan(initialPlan) ? getLocalDateValue() : "";
@@ -56,6 +149,7 @@ export function SubscriptionCreateForm({
         : members[0]?.id
           ? String(members[0].id)
           : "",
+      offer_id: "",
       plan_id: initialPlan?.id ? String(initialPlan.id) : "",
       paid_amount: initialPlan?.base_price ? String(initialPlan.base_price) : "0",
       months_count: "1",
@@ -68,12 +162,35 @@ export function SubscriptionCreateForm({
   });
   const [errors, setErrors] = useState({});
   const [submitAction, setSubmitAction] = useState("normal");
-  const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
+  const selectedOfferObj = useMemo(() => {
+    return availableOffers.find((o) => String(o.id) === String(form.offer_id));
+  }, [availableOffers, form.offer_id]);
+
+  const isSelectedOfferSingleChoice = selectedOfferObj?.offer_type === "single_choice";
+
+  const matchingSingleChoiceOffer = useMemo(() => {
+    if (form.offer_id || !form.plan_id) return null;
+    return availableOffers.find((offer) => {
+      if (offer.offer_type !== "single_choice" || !offer.is_available) return false;
+      return (offer.plans || []).some((p) => String(p.id) === String(form.plan_id));
+    });
+  }, [availableOffers, form.offer_id, form.plan_id]);
+
+  const selectedPlanObj = useMemo(() => {
+    if (form.offer_id && isSelectedOfferSingleChoice && selectedOfferObj?.plans) {
+      return (
+        selectedOfferObj.plans.find((p) => String(p.id) === String(form.plan_id)) ||
+        plans.find((p) => String(p.id) === String(form.plan_id))
+      );
+    }
+    return plans.find((p) => String(p.id) === String(form.plan_id));
+  }, [plans, form.plan_id, form.offer_id, isSelectedOfferSingleChoice, selectedOfferObj]);
+
   const selectedActivityType = activityTypes.find(
     (activityType) => String(activityType.id) === String(selectedActivityTypeId),
   );
-  const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlanObj);
-  const isPrivatePlan = isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
+  const isDailyEntryPlan = !form.offer_id && isDailyEntrySubscriptionPlan(selectedPlanObj);
+  const isPrivatePlan = !form.offer_id && isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
 
   function updateField(field, value) {
     setForm((current) => {
@@ -88,6 +205,90 @@ export function SubscriptionCreateForm({
     if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
+  const selectedOfferDropdownValue = useMemo(() => {
+    if (!form.offer_id) return "";
+    if (isSelectedOfferSingleChoice) {
+      if (form.plan_id) {
+        const exact = `offer_${form.offer_id}_plan_${form.plan_id}`;
+        if (offerOptions.some((o) => o.value === exact)) return exact;
+      }
+      const match = offerOptions.find((o) => o.offerId === String(form.offer_id));
+      return match ? match.value : "";
+    }
+    const bundleVal = `offer_${form.offer_id}`;
+    if (offerOptions.some((o) => o.value === bundleVal)) return bundleVal;
+    return "";
+  }, [form.offer_id, form.plan_id, isSelectedOfferSingleChoice, offerOptions]);
+
+  function handleOfferOptionChange(val) {
+    if (!val) {
+      const defaultPlan = plans.find((p) => String(p.id) === String(form.plan_id)) || plans[0] || null;
+      const today = isDailyEntrySubscriptionPlan(defaultPlan) ? getLocalDateValue() : "";
+      setForm((current) => ({
+        ...current,
+        offer_id: "",
+        plan_id: defaultPlan?.id ? String(defaultPlan.id) : "",
+        paid_amount: defaultPlan?.base_price ? String(defaultPlan.base_price) : "0",
+        start_date: today || current.start_date,
+        end_date: today || current.end_date,
+      }));
+      setErrors((current) => ({ ...current, offer_id: null, plan_id: null, paid_amount: null }));
+      return;
+    }
+
+    let opt = offerOptions.find((o) => o.value === String(val));
+    if (!opt) {
+      opt = offerOptions.find((o) => o.offerId === String(val));
+    }
+    if (!opt) return;
+
+    const selectedOffer = availableOffers.find((o) => String(o.id) === String(opt.offerId));
+    if (!selectedOffer) return;
+
+    const offerPrice = String(selectedOffer.price ?? "0");
+    const today = getLocalDateValue();
+
+    if (selectedOffer.offer_type === "single_choice") {
+      setForm((current) => ({
+        ...current,
+        offer_id: String(selectedOffer.id),
+        plan_id: String(opt.planId),
+        paid_amount: offerPrice,
+        start_date: selectedOffer.start_date || current.start_date || today,
+        end_date:
+          selectedOffer.end_date ||
+          current.end_date ||
+          getSubscriptionEndDate(current.start_date || today, current.months_count || 1),
+      }));
+    } else {
+      // bundle
+      const offerPlans = selectedOffer.plans || [];
+      const firstPlan = offerPlans[0];
+      setForm((current) => ({
+        ...current,
+        offer_id: String(selectedOffer.id),
+        plan_id: firstPlan?.id ? String(firstPlan.id) : current.plan_id || "1",
+        paid_amount: offerPrice,
+        start_date: selectedOffer.start_date || current.start_date || today,
+        end_date:
+          selectedOffer.end_date ||
+          current.end_date ||
+          getSubscriptionEndDate(current.start_date || today, current.months_count || 1),
+      }));
+    }
+
+    setErrors((current) => ({
+      ...current,
+      offer_id: null,
+      plan_id: null,
+      paid_amount: null,
+    }));
+  }
+
+  function handleOfferChange(offerId) {
+    handleOfferOptionChange(offerId);
+  }
+
   function handlePlanChange(planId) {
     const nextPlan = plans.find((plan) => String(plan.id) === String(planId));
     const currentPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
@@ -97,6 +298,7 @@ export function SubscriptionCreateForm({
 
     setForm((current) => ({
       ...current,
+      offer_id: "",
       plan_id: planId,
       paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
       months_count: nextIsDailyEntry ? "1" : current.months_count,
@@ -109,6 +311,7 @@ export function SubscriptionCreateForm({
 
     setErrors((current) => ({
       ...current,
+      offer_id: null,
       plan_id: null,
       paid_amount: null,
       months_count: null,
@@ -123,6 +326,7 @@ export function SubscriptionCreateForm({
   function handleActivityTypeChange(activityTypeId) {
     setForm((current) => ({
       ...current,
+      offer_id: "",
       plan_id: "",
       paid_amount: "0",
       receipt_number: "",
@@ -131,24 +335,34 @@ export function SubscriptionCreateForm({
       start_date: isDailyEntryPlan ? "" : current.start_date,
       end_date: isDailyEntryPlan ? "" : current.end_date,
     }));
-    setErrors((current) => ({ ...current, plan_id: null, paid_amount: null }));
+    setErrors((current) => ({ ...current, plan_id: null, paid_amount: null, offer_id: null }));
     onActivityTypeChange?.(activityTypeId);
   }
 
   function handleSubmit(event) {
     event.preventDefault();
 
+    const isOfferSelected = Boolean(form.offer_id);
     const dailyEntryDate = isDailyEntryPlan ? getLocalDateValue() : "";
+
+    if (isOfferSelected && isSelectedOfferSingleChoice && !form.plan_id) {
+      setErrors((current) => ({
+        ...current,
+        plan_id: "يرجى اختيار الفعالية المراد الاشتراك بها ضمن العرض",
+      }));
+      return;
+    }
 
     const validationData = {
       member_id: Number(form.member_id),
-      plan_id: Number(form.plan_id),
+      plan_id: isOfferSelected ? Number(form.plan_id) || 1 : Number(form.plan_id),
+      offer_id: isOfferSelected ? Number(form.offer_id) : undefined,
       paid_amount: Number(form.paid_amount) || 0,
       months_count: isDailyEntryPlan ? 1 : form.months_count,
       receipt_number: form.receipt_number,
       coach_receipt_number: form.coach_receipt_number,
       branch_receipt_number: form.branch_receipt_number,
-      is_private_plan: isPrivatePlan,
+      is_private_plan: isOfferSelected ? false : isPrivatePlan,
       start_date: dailyEntryDate || form.start_date || "",
       end_date: dailyEntryDate || form.end_date || "",
     };
@@ -167,6 +381,7 @@ export function SubscriptionCreateForm({
     onSubmit(
       {
         ...result.data,
+        offer_id: isOfferSelected ? Number(form.offer_id) : undefined,
         payment_method: "cash",
         activities: [],
       },
@@ -241,46 +456,189 @@ export function SubscriptionCreateForm({
         )}
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        خطة الاشتراك
-        {isPlansLoading ? (
-          <div
-            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
-            role="status"
-          >
-            <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
-            جاري تحميل باقات الاشتراك...
-          </div>
-        ) : (
-          <Dropdown
-            className="mt-2 text-white"
-            buttonClassName="bg-app-card-soft h-11"
-            value={form.plan_id}
-            onChange={handlePlanChange}
-            options={plans.map((p) => ({
-              value: String(p.id),
-              label: formatLocalizedName(p.name) || p.name || "",
-            }))}
-            placeholder="اختر الخطة"
-            disabled={plans.length === 0 || Boolean(plansErrorMessage)}
-            error={errors && errors.plan_id}
-          />
-        )}
-        {plansErrorMessage ? (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {plansErrorMessage}
-          </span>
-        ) : (
-          !isPlansLoading &&
-          plans.length === 0 && (
-            <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
-              {selectedActivityTypeId
-                ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
-                : "لا توجد باقات اشتراك متاحة حالياً"}
+      {/* Offers Dropdown - Appears ONLY when offers are available matching the selected activity type */}
+      {offerOptions.length > 1 && (
+        <div className="rounded-xl border border-app-yellow/40 bg-app-yellow/[0.04] p-4 space-y-3">
+          <label className="block text-right text-sm font-medium text-white">
+            <span className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span>🎁</span>
+                <span>باقة العروض الترويجية (خصم خاص)</span>
+              </span>
+              <span className="text-xs text-app-yellow font-normal">
+                ({offerOptions.length - 1} {offerOptions.length - 1 === 1 ? "عرض متاح" : "عروض متاحة"})
+              </span>
             </span>
-          )
-        )}
-      </label>
+            <Dropdown
+              className="mt-2 text-white"
+              buttonClassName="bg-app-card-soft h-11 border-app-yellow/40"
+              value={selectedOfferDropdownValue}
+              onChange={handleOfferOptionChange}
+              options={offerOptions}
+              placeholder="اختر عرض ترويجي"
+            />
+          </label>
+
+          {/* تفاصيل العرض المختار */}
+          {form.offer_id && selectedOfferObj && (
+            <div className="rounded-xl border border-app-line bg-black/40 p-4 space-y-3 text-right">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-white">
+                    {isSelectedOfferSingleChoice && selectedPlanObj
+                      ? `${selectedOfferObj.name} - ${formatLocalizedName(selectedPlanObj.name) || selectedPlanObj.name}`
+                      : selectedOfferObj.name}
+                  </span>
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
+                      isSelectedOfferSingleChoice
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                        : "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                    }`}
+                  >
+                    {isSelectedOfferSingleChoice ? "🏷️ يختار المشترك فعالية واحدة" : "📦 باقة مجمعة"}
+                  </span>
+                </div>
+                <span className="text-sm font-black text-app-yellow">
+                  {formatMoney(selectedOfferObj.price)}
+                </span>
+              </div>
+
+              {selectedOfferObj.description && (
+                <p className="text-xs text-app-muted-light leading-relaxed">
+                  {selectedOfferObj.description}
+                </p>
+              )}
+
+              {isSelectedOfferSingleChoice ? (
+                <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 p-2.5 text-xs text-purple-200">
+                  💡 تم تطبيق سعر العرض المخفض ({formatMoney(selectedOfferObj.price)}) على فعالية{" "}
+                  <strong className="text-white">
+                    {formatLocalizedName(selectedPlanObj?.name) || selectedPlanObj?.name}
+                  </strong>
+                  {selectedPlanObj?.base_price && Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
+                    <span className="ms-1 text-emerald-400 font-semibold">
+                      (توفير {formatMoney(Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price))})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-xs text-app-muted-light">الفعاليات المشمولة بالباقة:</span>
+                  {(selectedOfferObj.plans || []).map((p) => (
+                    <span
+                      key={p.id}
+                      className="rounded bg-app-card-soft border border-app-line/60 px-2 py-0.5 text-[11px] text-gray-200"
+                    >
+                      ● {p.name} {p.session_count ? `(${p.session_count} حصة)` : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* خطة الاشتراك أو تأكيد العرض */}
+      {form.offer_id && !isSelectedOfferSingleChoice ? (
+        <div className="rounded-xl border border-app-yellow/40 bg-app-yellow/10 p-3.5 text-right text-xs text-app-muted-light space-y-1">
+          <p className="text-white font-medium flex items-center gap-1.5">
+            <span>📦</span>
+            <span>تم اختيار باقة عرض ترويجي مجمعة ({selectedOfferObj?.name})</span>
+          </p>
+          <p className="text-white">
+            سيتم تفعيل جميع خطط وفعاليات هذا العرض تلقائياً لحساب اللاعبة عند تأكيد الاشتراك.
+          </p>
+        </div>
+      ) : form.offer_id && isSelectedOfferSingleChoice ? (
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 text-right text-xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-white font-medium flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>الفعالية المحددة بالعرض: <strong className="text-purple-200">{formatLocalizedName(selectedPlanObj?.name) || selectedPlanObj?.name}</strong></span>
+            </span>
+            <span className="text-app-yellow font-bold">
+              {formatMoney(selectedOfferObj?.price)}
+            </span>
+          </div>
+          {selectedPlanObj?.base_price && (
+            <p className="text-app-muted-light text-[11px]">
+              السعر الأساسي للفعالية: {formatMoney(selectedPlanObj.base_price)}
+              {Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
+                <span className="text-emerald-400 font-semibold ms-1">
+                  (توفير {formatMoney(Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price))})
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {matchingSingleChoiceOffer && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-right flex items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5 min-w-0">
+                <span className="font-bold text-emerald-300 block truncate">
+                  🏷️ يتوفر عرض مخفض سارٍ على هذه الفعالية!
+                </span>
+                <span className="text-app-muted-light text-[11px] block">
+                  يمكن للاعبة الاستفادة من <strong className="text-white">{matchingSingleChoiceOffer.name}</strong> ودفع{" "}
+                  <strong className="text-app-yellow">{formatMoney(matchingSingleChoiceOffer.price)}</strong> بدلاً من {formatMoney(selectedPlanObj?.base_price)}.
+                </span>
+              </div>
+              <Button
+                type="button"
+                tone="success"
+                className="h-8 px-3 text-xs shrink-0 text-black font-semibold"
+                onClick={() => handleOfferOptionChange(`offer_${matchingSingleChoiceOffer.id}_plan_${form.plan_id}`)}
+              >
+                تطبيق العرض
+              </Button>
+            </div>
+          )}
+
+          <label className="block text-right text-sm text-app-muted-light">
+            خطة الاشتراك
+            {isPlansLoading ? (
+              <div
+                className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
+                role="status"
+              >
+                <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
+                جاري تحميل باقات الاشتراك...
+              </div>
+            ) : (
+              <Dropdown
+                className="mt-2 text-white"
+                buttonClassName="bg-app-card-soft h-11"
+                value={form.plan_id}
+                onChange={handlePlanChange}
+                options={plans.map((p) => ({
+                  value: String(p.id),
+                  label: formatLocalizedName(p.name) || p.name || "",
+                }))}
+                placeholder="اختر الخطة"
+                disabled={plans.length === 0 || Boolean(plansErrorMessage)}
+                error={errors && errors.plan_id}
+              />
+            )}
+            {plansErrorMessage ? (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {plansErrorMessage}
+              </span>
+            ) : (
+              !isPlansLoading &&
+              plans.length === 0 && (
+                <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
+                  {selectedActivityTypeId
+                    ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
+                    : "لا توجد باقات اشتراك متاحة حالياً"}
+                </span>
+              )
+            )}
+          </label>
+        </div>
+      )}
 
       <label className="block text-right text-sm text-app-muted-light">
         المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
@@ -295,7 +653,13 @@ export function SubscriptionCreateForm({
               ? "border border-app-red focus:border-app-red"
               : "focus:border-app-yellow/70"
           }`}
-          placeholder={selectedPlanObj ? `السعر الأساسي: ${selectedPlanObj.base_price}` : ""}
+          placeholder={
+            form.offer_id
+              ? "سعر العرض الترويجي"
+              : selectedPlanObj
+                ? `السعر الأساسي: ${selectedPlanObj.base_price}`
+                : ""
+          }
           required
         />
         {errors && errors.paid_amount && (
@@ -334,9 +698,11 @@ export function SubscriptionCreateForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.coach_price)})
-              </span>
+              {selectedPlanObj && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(selectedPlanObj?.coach_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.coach_receipt_number}
@@ -367,9 +733,11 @@ export function SubscriptionCreateForm({
 
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj.branch_price)})
-              </span>
+              {selectedPlanObj && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(selectedPlanObj?.branch_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.branch_receipt_number}
@@ -769,9 +1137,11 @@ export function SubscriptionEditForm({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(resolvedPlan?.coach_price)})
-              </span>
+              {resolvedPlan && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(resolvedPlan?.coach_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.coach_receipt_number}
@@ -795,9 +1165,11 @@ export function SubscriptionEditForm({
 
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(resolvedPlan?.branch_price)})
-              </span>
+              {resolvedPlan && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(resolvedPlan?.branch_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.branch_receipt_number}

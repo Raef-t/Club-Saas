@@ -54,6 +54,7 @@ class OfferController extends BaseController
                             new OA\Property(property: 'branch_id', type: 'integer', example: 1),
                             new OA\Property(property: 'name', type: 'string', example: 'باقة الصيف الرياضية'),
                             new OA\Property(property: 'description', type: 'string', nullable: true, example: 'اشتراك سباحة + لياقة بدنية بسعر مخفض'),
+                            new OA\Property(property: 'offer_type', type: 'string', enum: ['bundle', 'single_choice'], example: 'bundle'),
                             new OA\Property(property: 'price', type: 'number', format: 'float', example: 1500.00),
                             new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-06-01'),
                             new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-08-31'),
@@ -103,7 +104,8 @@ class OfferController extends BaseController
                 new OA\Property(property: 'branch_id', description: '(مطلوب) معرف الفرع', type: 'integer', example: 1),
                 new OA\Property(property: 'name', description: '(مطلوب) اسم العرض', type: 'string', example: 'عرض العيد الوطني'),
                 new OA\Property(property: 'description', description: '(اختياري) وصف العرض', type: 'string', nullable: true, example: 'خصومات حصرية لمشتركي النادي'),
-                new OA\Property(property: 'price', description: '(مطلوب) السعر الإجمالي', type: 'number', format: 'float', example: 1200.00),
+                new OA\Property(property: 'offer_type', description: 'نوع العرض (bundle للباقة المجمعة، single_choice لاختيار فعالية واحدة)', type: 'string', enum: ['bundle', 'single_choice'], example: 'bundle'),
+                new OA\Property(property: 'price', description: '(مطلوب) السعر الإجمالي أو سعر الفعالية الواحدة المشمولة', type: 'number', format: 'float', example: 1200.00),
                 new OA\Property(property: 'start_date', description: '(اختياري) تاريخ البداية', type: 'string', format: 'date', example: '2026-09-20'),
                 new OA\Property(property: 'end_date', description: '(اختياري) تاريخ النهاية', type: 'string', format: 'date', example: '2026-09-30'),
                 new OA\Property(property: 'is_active', description: 'حالة تفعيل العرض', type: 'boolean', example: true),
@@ -225,6 +227,7 @@ class OfferController extends BaseController
             properties: [
                 new OA\Property(property: 'name', type: 'string', example: 'عرض الشتاء المميز'),
                 new OA\Property(property: 'description', type: 'string', example: 'وصف العرض بعد التعديل'),
+                new OA\Property(property: 'offer_type', type: 'string', enum: ['bundle', 'single_choice'], example: 'single_choice'),
                 new OA\Property(property: 'price', type: 'number', example: 800.00),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-12-01'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2027-01-31'),
@@ -426,6 +429,7 @@ class OfferController extends BaseController
             required: ['member_id', 'paid_amount'],
             properties: [
                 new OA\Property(property: 'member_id', description: '(مطلوب) معرف اللاعب', type: 'integer', example: 5),
+                new OA\Property(property: 'plan_id', description: '(اختياري/مطلوب في حال كان العرض single_choice) معرف الخطة المختارة', type: 'integer', nullable: true, example: 1),
                 new OA\Property(property: 'paid_amount', description: '(مطلوب) المبلغ المدفوع', type: 'number', format: 'float', example: 1200.00),
                 new OA\Property(property: 'payment_method', description: 'طريقة الدفع (cash, card, wallet, bank_transfer)', type: 'string', enum: ['cash', 'card', 'wallet', 'bank_transfer'], example: 'cash'),
                 new OA\Property(property: 'receipt_number', description: '(اختياري) رقم إيصال القبض', type: 'string', nullable: true, example: 'REC-2026-105'),

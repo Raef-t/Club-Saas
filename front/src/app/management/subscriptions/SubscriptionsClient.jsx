@@ -379,6 +379,15 @@ export default function SubscriptionsClient({ initialData }) {
             </Button>
             {canCreate && (
               <Button
+                href="/management/offers"
+                tone="outline"
+                className="h-10 px-4 text-xs font-semibold border-app-yellow/50 text-app-yellow hover:bg-app-yellow/10 transition-colors"
+              >
+                🎁 باقات العروض
+              </Button>
+            )}
+            {canCreate && (
+              <Button
                 href="/management/subscriptions/create"
                 icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
                 style={{ color: "#000000" }}

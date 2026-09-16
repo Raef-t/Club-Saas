@@ -1712,7 +1712,7 @@ class SubscriptionService
     }
 
     /**
-     * Subscribe a member to an offer, enrolling them in all included plans.
+     * Subscribe a member to an offer, enrolling them in all included plans (bundle) or a selected plan (single_choice).
      */
     public function subscribeMemberToOffer(int $memberId, int $offerId, array $options = [])
     {
@@ -1722,9 +1722,39 @@ class SubscriptionService
             throw new Exception(__('This offer is no longer active.'));
         }
 
-        return DB::transaction(function () use ($memberId, $offer, $options) {
-            // Lock and check capacity for all plans inside transaction
-            foreach ($offer->plans as $planItem) {
+        if (method_exists($offer, 'isDateValid') && !$offer->isDateValid()) {
+            throw new Exception(__('This offer has expired or is not yet active.'));
+        }
+
+        $isSingleChoice = method_exists($offer, 'isSingleChoice') ? $offer->isSingleChoice() : ($offer->offer_type === 'single_choice');
+
+        if ($isSingleChoice) {
+            $selectedPlanId = $options['plan_id'] ?? null;
+            if (!$selectedPlanId) {
+                if ($offer->plans->count() === 1) {
+                    $selectedPlanId = $offer->plans->first()->id;
+                } else {
+                    throw new Exception(__('Please select a plan for this offer.'));
+                }
+            }
+
+            $matchingPlan = $offer->plans->firstWhere('id', (int) $selectedPlanId);
+            if (!$matchingPlan) {
+                throw new Exception(__('The selected plan does not belong to this offer.'));
+            }
+
+            $plansToEnroll = collect([$matchingPlan]);
+        } else {
+            $plansToEnroll = $offer->plans;
+        }
+
+        if ($plansToEnroll->isEmpty()) {
+            throw new Exception(__('This offer does not have any plans configured.'));
+        }
+
+        return DB::transaction(function () use ($memberId, $offer, $options, $plansToEnroll, $isSingleChoice) {
+            // Lock and check capacity for all plans to enroll inside transaction
+            foreach ($plansToEnroll as $planItem) {
                 $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planItem->id)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -1744,7 +1774,7 @@ class SubscriptionService
 
             // Fetch member details for financials
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId;
+            $branchId = $offer->branch_id ?: ($memberDTO->branchId ?? null);
             if (!$branchId) {
                 throw new Exception(__('Member does not belong to any branch.'));
             }
@@ -1766,12 +1796,16 @@ class SubscriptionService
 
             $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
 
-            // Create individual PlayerSubscriptions for each plan in the offer
-            foreach ($offer->plans as $plan) {
+            // Create individual PlayerSubscriptions for each plan in the enrollment list
+            foreach ($plansToEnroll as $plan) {
                 $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
                 if (!$endDate && !empty($options['duration_days'])) {
                     $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
                 }
+
+                $subTotal = $isSingleChoice ? $totalAmount : 0;
+                $subPaid = $isSingleChoice ? $paidAmount : 0;
+                $subRemaining = $isSingleChoice ? $remainingAmount : 0;
 
                 $subscription = $this->subscriptionRepository->create([
                     'member_id' => $memberId,
@@ -1779,21 +1813,25 @@ class SubscriptionService
                     'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
                     'currency' => $currency,
-                    'total_amount' => 0, // Zero because it's part of the offer
-                    'paid_amount' => 0,
-                    'remaining_amount' => 0,
+                    'total_amount' => $subTotal,
+                    'paid_amount' => $subPaid,
+                    'remaining_amount' => $subRemaining,
                     'start_date' => $startDate->toDateString(),
                     'end_date' => $endDate ? $endDate->toDateString() : null,
                     'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                     'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
                 ]);
 
+                if ($isSingleChoice) {
+                    $invoice->update(['player_subscription_id' => $subscription->id]);
+                }
+
                 // One item per plan activity; activity & coach derived from plan_activities → staff_activity
                 $sessionsAllocated = !is_null($plan->session_count)
                     ? ($plan->session_count * $monthsCount)
                     : null;
 
-                if ($plan->planActivities->isNotEmpty()) {
+                if ($plan->planActivities && $plan->planActivities->isNotEmpty()) {
                     foreach ($plan->planActivities as $planActivity) {
                         $subscription->items()->create([
                             'sessions_allocated' => $sessionsAllocated,
@@ -1901,6 +1939,7 @@ class SubscriptionService
     {
         if ($plan) {
             $plan->increment('current_subscribers');
+            $plan->refresh();
             if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                 $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
             }
@@ -1917,6 +1956,7 @@ class SubscriptionService
                 $plan->decrement('current_subscribers');
             }
             if ($plan->max_subscribers > 0) {
+                $plan->refresh();
                 $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
                     ? $plan->status->value
                     : $plan->status;

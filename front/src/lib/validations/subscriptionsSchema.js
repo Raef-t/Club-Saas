@@ -34,7 +34,16 @@ export const subscriptionSchema = z
     plan_id: z
       .number({ invalid_type_error: "يرجى اختيار الخطة" })
       .positive("يرجى اختيار الخطة")
-      .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number)),
+      .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number))
+      .optional()
+      .nullable(),
+
+    offer_id: z
+      .number()
+      .positive()
+      .or(z.string().min(1).transform(Number))
+      .optional()
+      .nullable(),
 
     paid_amount: z
       .number()
@@ -57,18 +66,28 @@ export const subscriptionSchema = z
       .min(1, "تاريخ نهاية الاشتراك مطلوب"),
   })
   .superRefine((data, ctx) => {
-    const requiredReceipts = data.is_private_plan
-      ? [
-          ["coach_receipt_number", data.coach_receipt_number, "رقم إيصال الكوتش مطلوب"],
-          ["branch_receipt_number", data.branch_receipt_number, "رقم إيصال النادي مطلوب"],
-        ]
-      : [["receipt_number", data.receipt_number, "رقم الإيصال مطلوب"]];
+    if (!data.offer_id && !data.plan_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "يرجى اختيار خطة الاشتراك أو باقة العرض",
+        path: ["plan_id"],
+      });
+    }
 
-    requiredReceipts.forEach(([field, value, message]) => {
-      if (!value) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
-      }
-    });
+    if (!data.offer_id) {
+      const requiredReceipts = data.is_private_plan
+        ? [
+            ["coach_receipt_number", data.coach_receipt_number, "رقم إيصال الكوتش مطلوب"],
+            ["branch_receipt_number", data.branch_receipt_number, "رقم إيصال النادي مطلوب"],
+          ]
+        : [["receipt_number", data.receipt_number, "رقم الإيصال مطلوب"]];
+
+      requiredReceipts.forEach(([field, value, message]) => {
+        if (!value) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+        }
+      });
+    }
   })
   .transform(({ is_private_plan, ...data }) => {
     const normalizedData = { ...data };

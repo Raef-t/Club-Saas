@@ -8,6 +8,7 @@ import { useGetMembersQuery } from "@/lib/api/membersApi";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useGetActivitiesQuery, useGetActivityTypesQuery } from "@/lib/api/activitiesApi";
 import { useGetCoachesQuery } from "@/lib/api/coachesApi";
+import { useGetOffersQuery, useSubscribeToOfferMutation } from "@/lib/api/offersApi";
 import { useToast } from "@/components/ui/Toast";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { withAllItems } from "@/lib/pagination";
@@ -76,6 +77,25 @@ export function useCreateSubscription({
   const [updatePlayerSubscription, { isLoading: isUpdating }] =
     useUpdatePlayerSubscriptionMutation();
 
+  const offerQueryParams = useMemo(() => {
+    const params = { all: true, available_only: true };
+    if (selectedBranchId && selectedBranchId !== "all") {
+      params.branch_id = selectedBranchId;
+    }
+    if (selectedActivityTypeId && selectedActivityTypeId !== "all") {
+      params.activity_type_id = selectedActivityTypeId;
+    }
+    return params;
+  }, [selectedBranchId, selectedActivityTypeId]);
+
+  const {
+    data: offersData,
+    isLoading: isOffersLoading,
+    isFetching: isOffersFetching,
+  } = useGetOffersQuery(offerQueryParams);
+
+  const [subscribeOffer, { isLoading: isSubscribingOffer }] = useSubscribeToOfferMutation();
+
   const allMembers = useMemo(
     () => getCollection(membersData || initialData?.members),
     [initialData?.members, membersData],
@@ -94,6 +114,61 @@ export function useCreateSubscription({
     () => getCollection(activityTypesData || initialData?.activityTypes),
     [activityTypesData, initialData?.activityTypes],
   );
+
+  const rawOffers = useMemo(
+    () => getCollection(offersData || initialData?.offers),
+    [offersData, initialData?.offers],
+  );
+
+  const offers = useMemo(() => {
+    return rawOffers.filter((offer) => {
+      if (!offer.is_available) return false;
+      if (
+        selectedBranchId &&
+        selectedBranchId !== "all" &&
+        offer.branch_id &&
+        String(offer.branch_id) !== String(selectedBranchId)
+      ) {
+        return false;
+      }
+      if (selectedActivityTypeId && selectedActivityTypeId !== "all") {
+        const offerPlans = offer.plans || [];
+        const matchesActivity = offerPlans.some((p) => {
+          if (
+            Array.isArray(p.activity_types) &&
+            p.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+          ) {
+            return true;
+          }
+          if (
+            Array.isArray(p.activities) &&
+            p.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+          ) {
+            return true;
+          }
+          const fullPlan = allPlans.find((pl) => String(pl.id) === String(p.id));
+          if (fullPlan) {
+            if (
+              Array.isArray(fullPlan.activity_types) &&
+              fullPlan.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+            ) {
+              return true;
+            }
+            if (
+              Array.isArray(fullPlan.activities) &&
+              fullPlan.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+            ) {
+              return true;
+            }
+          }
+          return false;
+        });
+        if (!matchesActivity) return false;
+      }
+      return true;
+    });
+  }, [rawOffers, selectedBranchId, selectedActivityTypeId, allPlans]);
+
   useEffect(() => {
     setSelectedActivityTypeId((currentId) => {
       if (!currentId || currentId === "all") return currentId;
@@ -134,12 +209,31 @@ export function useCreateSubscription({
   }, [selectedSubscription, selectedSubscriptionId]);
 
   /**
-   * Creates the subscription and reports validation or backend errors to the form.
+   * Creates the subscription or subscribes member to an offer.
    */
   async function handleCreateSubscription(values) {
     setFormError("");
 
     try {
+      if (values.offer_id) {
+        await subscribeOffer({
+          id: values.offer_id,
+          body: {
+            member_id: Number(values.member_id),
+            plan_id: values.plan_id ? Number(values.plan_id) : undefined,
+            paid_amount: Number(values.paid_amount),
+            payment_method: values.payment_method || "cash",
+            receipt_number: values.receipt_number || undefined,
+            start_date: values.start_date || undefined,
+            end_date: values.end_date || undefined,
+            months_count: Number(values.months_count) || 1,
+            notes: values.notes || undefined,
+          },
+        }).unwrap();
+        toast.success("تم تسجيل اشتراك اللاعب في العرض بنجاح!");
+        return true;
+      }
+
       await createPlayerSubscription(values).unwrap();
       toast.success("تم تسجيل الاشتراك الجديد بنجاح!");
       return true;
@@ -170,6 +264,7 @@ export function useCreateSubscription({
   return {
     members,
     plans,
+    offers,
     activityTypes,
     selectedActivityTypeId,
     setSelectedActivityTypeId,
@@ -177,6 +272,7 @@ export function useCreateSubscription({
     plansErrorMessage: plansError
       ? getApiErrorMessage(plansError, "تعذر تحميل باقات الاشتراك المتاحة.")
       : "",
+    isOffersLoading: isOffersLoading || isOffersFetching,
     isActivityTypesLoading: isActivityTypesLoading || isActivityTypesFetching,
     activityTypesErrorMessage: activityTypesError
       ? getApiErrorMessage(activityTypesError, "تعذر تحميل أنواع الأنشطة.")
@@ -189,7 +285,7 @@ export function useCreateSubscription({
     isSubscriptionDetailFetching,
     refetchSubscriptionDetail,
     formError,
-    isCreating,
+    isCreating: isCreating || isSubscribingOffer,
     isUpdating,
     handleCreateSubscription,
     handleUpdateSubscription,
