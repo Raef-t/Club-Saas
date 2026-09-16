@@ -1,4 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/utils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 export const FROZEN_TERMINATED_STATUS_OPTIONS = [
   { value: "all", label: "الكل (المجمدة والملغاة)" },
@@ -94,8 +95,7 @@ export function normalizeFrozenTerminatedRecord(record, index = 0) {
   const rawStatus = String(record?.status || record?.status_type || "").toLowerCase();
   const isFrozen = rawStatus === "frozen";
   const status = isFrozen ? "frozen" : "terminated";
-  const statusLabel =
-    record?.status_label || (isFrozen ? "مجمّد" : "ملغى");
+  const statusLabel = record?.status_label || (isFrozen ? "مجمّد" : "ملغى");
 
   const totalAmount = toFiniteNumber(record?.total_amount);
   const paidAmount = toFiniteNumber(record?.paid_amount);
@@ -117,12 +117,10 @@ export function normalizeFrozenTerminatedRecord(record, index = 0) {
     "-";
 
   const frozenDays = toFiniteNumber(
-    record?.frozen_days || record?.freeze_days_count || record?.days_count
+    record?.frozen_days || record?.freeze_days_count || record?.days_count,
   );
 
-  const contactPersons = Array.isArray(record?.contact_persons)
-    ? record.contact_persons
-    : [];
+  const contactPersons = Array.isArray(record?.contact_persons) ? record.contact_persons : [];
 
   const activities = Array.isArray(record?.activities) ? record.activities : [];
 
@@ -133,12 +131,9 @@ export function normalizeFrozenTerminatedRecord(record, index = 0) {
     statusLabel,
     isFrozen,
     memberId: record?.member_id || record?.member?.id,
-    memberNumber: record?.member_number || record?.member?.member_number || "-",
+    accountName: getMemberAccountName(record?.member, record) || "-",
     memberName:
-      record?.member_name ||
-      record?.member?.full_name ||
-      record?.member?.person?.full_name ||
-      "-",
+      record?.member_name || record?.member?.full_name || record?.member?.person?.full_name || "-",
     memberPhone: getMemberPrimaryPhone(record),
     contactPersons,
     eventDate,
@@ -164,8 +159,7 @@ export function normalizeFrozenTerminatedRecord(record, index = 0) {
 }
 
 export function normalizeFrozenTerminatedResponse(response) {
-  const payload =
-    response?.data && !Array.isArray(response.data) ? response.data : response || {};
+  const payload = response?.data && !Array.isArray(response.data) ? response.data : response || {};
   const rawSummary = payload?.summary || {};
 
   const summary = {
@@ -177,16 +171,12 @@ export function normalizeFrozenTerminatedResponse(response) {
   summary.total_frozen = toFiniteNumber(summary.total_frozen);
   summary.total_terminated = toFiniteNumber(summary.total_terminated);
   summary.total_frozen_revenue = toFiniteNumber(summary.total_frozen_revenue);
-  summary.total_lost_terminated_revenue = toFiniteNumber(
-    summary.total_lost_terminated_revenue
-  );
+  summary.total_lost_terminated_revenue = toFiniteNumber(summary.total_lost_terminated_revenue);
   summary.currency = String(rawSummary.currency || rawSummary.currency_type || "SYP");
   summary.currency_type = String(rawSummary.currency_type || rawSummary.currency || "SYP");
 
   const rawRecords = Array.isArray(payload?.records) ? payload.records : [];
-  const records = rawRecords.map((record, index) =>
-    normalizeFrozenTerminatedRecord(record, index)
-  );
+  const records = rawRecords.map((record, index) => normalizeFrozenTerminatedRecord(record, index));
 
   return {
     summary,
@@ -230,7 +220,7 @@ export function createPrintableFrozenTerminatedReport(rows, summary) {
       },
     ],
     columns: [
-      { key: "memberNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "memberName", label: "اللاعب" },
       { key: "memberPhone", label: "الهاتف" },
       { key: "planName", label: "خطة الاشتراك" },

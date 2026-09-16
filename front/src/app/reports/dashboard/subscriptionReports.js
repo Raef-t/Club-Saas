@@ -8,6 +8,7 @@ import {
   parseReportDate,
   resolveSubscriptionStatus,
 } from "./reportSharedUtils";
+import { getMemberAccountName } from "@/lib/memberIdentity";
 
 /**
  * Creates the expired subscription report.
@@ -28,7 +29,7 @@ export function createExpiredSubscriptionsReport(subscriptions, now) {
         : 0;
 
       return {
-        membershipNumber: subscription?.member?.member_number || subscription?.member_number || "-",
+        accountName: getMemberAccountName(subscription?.member, subscription) || "-",
         member: getPersonName(subscription),
         plan: getDisplayName(
           subscription?.plan?.name ||
@@ -58,7 +59,7 @@ export function createExpiredSubscriptionsReport(subscriptions, now) {
       { label: "برصيد متبقٍ", value: withBalance },
     ],
     columns: [
-      { key: "membershipNumber", label: "رقم العضوية" },
+      { key: "accountName", label: "اسم الحساب" },
       { key: "member", label: "المشترك" },
       { key: "plan", label: "الخطة" },
       { key: "endDate", label: "تاريخ الانتهاء" },

@@ -362,11 +362,13 @@ export function createLockerQueryParams(branchFilter, statusFilter) {
 
 /**
  * Builds the four page counters from the same classifier used by the filters.
+ * The API's `unavailable_lockers_count` also includes occupied lockers, so it
+ * must not be used for the maintenance-only card shown on this page.
  */
 export function getLockerPageSummary(lockers) {
   const summary = {
     available_lockers_count: 0,
-    unavailable_lockers_count: 0,
+    maintenance_lockers_count: 0,
     assigned_to_member_count: 0,
     assigned_to_staff_or_coach_count: 0,
   };
@@ -375,7 +377,7 @@ export function getLockerPageSummary(lockers) {
     const state = getLockerPageState(locker);
 
     if (state === "available") summary.available_lockers_count += 1;
-    if (state === "maintenance") summary.unavailable_lockers_count += 1;
+    if (state === "maintenance") summary.maintenance_lockers_count += 1;
     if (state === "with_member") summary.assigned_to_member_count += 1;
     if (state === "with_staff_or_coach") summary.assigned_to_staff_or_coach_count += 1;
   });

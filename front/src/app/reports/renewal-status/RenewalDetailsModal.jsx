@@ -17,7 +17,7 @@ export default function RenewalDetailsModal({ record, onClose }) {
       open={Boolean(record)}
       onClose={onClose}
       title={`تفاصيل اشتراك اللاعب: ${record.memberName}`}
-      subtitle={`رقم العضوية: ${record.memberNumber} • الفرع: ${record.branchName}`}
+      subtitle={`اسم الحساب: ${record.accountName} • الفرع: ${record.branchName}`}
       className="max-w-3xl"
     >
       <div className="space-y-6 text-right">
@@ -38,8 +38,8 @@ export default function RenewalDetailsModal({ record, onClose }) {
             <div className="min-w-0">
               <h4 className="text-sm font-semibold">الاشتراك منتهي ولم يتم تجديده</h4>
               <p className="mt-0.5 text-xs text-app-red/80">
-                مضى على الانتهاء {record.daysSinceExpiration.toLocaleString("ar")} يوم. قيمة الفرصة الضائعة:{" "}
-                {formatMoney(record.totalAmount, currency)}.
+                مضى على الانتهاء {record.daysSinceExpiration.toLocaleString("ar")} يوم. قيمة الفرصة
+                الضائعة: {formatMoney(record.totalAmount, currency)}.
               </p>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function RenewalDetailsModal({ record, onClose }) {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <DetailItem label="اسم اللاعب" value={record.memberName} />
-            <DetailItem label="رقم العضوية" value={record.memberNumber} />
+            <DetailItem label="اسم الحساب" value={record.accountName} />
             <DetailItem
               label="رقم الهاتف الأساسي"
               value={
@@ -107,13 +107,15 @@ export default function RenewalDetailsModal({ record, onClose }) {
             <h3 className="text-sm font-semibold text-app-text">سجل الحضور والغياب</h3>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <DetailItem label="فترة الغياب / الانقطاع" value={record.absenceFormatted} tone="yellow" />
+            <DetailItem
+              label="فترة الغياب / الانقطاع"
+              value={record.absenceFormatted}
+              tone="yellow"
+            />
             <DetailItem
               label="تاريخ آخر حضور"
               value={
-                record.lastAttendanceDate
-                  ? formatDate(record.lastAttendanceDate)
-                  : "لم يحضر أبدًا"
+                record.lastAttendanceDate ? formatDate(record.lastAttendanceDate) : "لم يحضر أبدًا"
               }
             />
             <DetailItem
@@ -174,7 +176,9 @@ export default function RenewalDetailsModal({ record, onClose }) {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <DetailItem
                 label="رقم الاشتراك الجديد"
-                value={renewal.renewed_subscription_id ? `#${renewal.renewed_subscription_id}` : "-"}
+                value={
+                  renewal.renewed_subscription_id ? `#${renewal.renewed_subscription_id}` : "-"
+                }
               />
               <DetailItem label="الخطة الجديدة" value={renewal.new_plan_name || "-"} tone="green" />
               <DetailItem
@@ -191,7 +195,7 @@ export default function RenewalDetailsModal({ record, onClose }) {
                   renewal.new_total_amount
                     ? formatMoney(
                         renewal.new_total_amount,
-                        renewal.new_currency_type === "SYP" ? "ل.س" : renewal.new_currency_type
+                        renewal.new_currency_type === "SYP" ? "ل.س" : renewal.new_currency_type,
                       )
                     : "-"
                 }

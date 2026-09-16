@@ -172,6 +172,7 @@ export default function DataTable({
   totalItems,
   emptyMessage = "لا توجد بيانات",
   headerClassName = "",
+  desktopRowsClassName = "space-y-3 pt-3",
   rowClassName = "",
   cellClassName = "",
   sortable = true,
@@ -264,8 +265,7 @@ export default function DataTable({
       }
 
       const raw =
-        row[colDef.key] ??
-        (typeof colDef.sortKey === "string" ? row[colDef.sortKey] : undefined);
+        row[colDef.key] ?? (typeof colDef.sortKey === "string" ? row[colDef.sortKey] : undefined);
 
       if (raw && typeof raw === "object" && !(raw instanceof Date)) {
         if (typeof raw.ar === "string" || typeof raw.en === "string") {
@@ -459,7 +459,7 @@ export default function DataTable({
                 {emptyMessage}
               </div>
             ) : (
-              <div className="space-y-3 pt-3">
+              <div className={desktopRowsClassName}>
                 {displayedRows.map((row, index) => {
                   const key = getRowKey?.(row, index) ?? `${row.id || index}-${index}`;
 

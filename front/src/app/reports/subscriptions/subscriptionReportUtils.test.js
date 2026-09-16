@@ -64,6 +64,7 @@ describe("subscriptionReportUtils", () => {
         id: 9,
         member: {
           member_number: "M-12",
+          generated_username: "tec-ply-12",
           person: { full_name: "أحمد محمد", phone: "0999000000" },
         },
         plan: { name: { ar: "الخطة الذهبية" } },
@@ -76,7 +77,7 @@ describe("subscriptionReportUtils", () => {
       }),
     ).toMatchObject({
       id: 9,
-      membershipNumber: "M-12",
+      accountName: "tec-ply-12",
       memberName: "أحمد محمد",
       phone: "0999000000",
       planName: "الخطة الذهبية",

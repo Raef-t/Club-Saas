@@ -34,7 +34,7 @@ describe("attendance utilities", () => {
     ).toMatchObject({
       id: 7,
       name: "أحمد علي",
-      number: "M-7",
+      number: "-",
       avatar: "أ",
     });
   });

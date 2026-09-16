@@ -81,7 +81,7 @@ export default function LockersClient({ initialData }) {
     if (!lockerState.lockerSummary) return null;
     const {
       available_lockers_count = 0,
-      unavailable_lockers_count = 0,
+      maintenance_lockers_count = 0,
       assigned_to_member_count = 0,
       assigned_to_coach_count = 0,
       assigned_to_staff_count = 0,
@@ -126,7 +126,7 @@ export default function LockersClient({ initialData }) {
       },
       {
         title: "معطلة أو صيانة",
-        value: unavailable_lockers_count,
+        value: maintenance_lockers_count,
         tone: "orange",
         onClick: () =>
           lockerState.setStatusFilter(

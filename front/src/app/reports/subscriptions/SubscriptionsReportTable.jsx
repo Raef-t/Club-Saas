@@ -34,7 +34,7 @@ function StatusBadge({ value, status, classes }) {
 export default function SubscriptionsReportTable({ rows, summary, isLoading }) {
   const currency = summary.currency_type === "SYP" ? "ل.س" : summary.currency_type;
   const columns = [
-    { key: "membershipNumber", label: "رقم العضوية", width: "110px" },
+    { key: "accountName", label: "اسم الحساب", width: "130px" },
     { key: "memberName", label: "اللاعب", width: "minmax(160px,1.35fr)" },
     { key: "phone", label: "رقم الهاتف", width: "130px" },
     { key: "planName", label: "خطة الاشتراك", width: "minmax(160px,1.2fr)" },
