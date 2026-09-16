@@ -56,6 +56,31 @@ describe("subscription create validation", () => {
     expect(result.success).toBe(false);
     expect(result.error.issues[0].path).toEqual(["branch_receipt_number"]);
   });
+
+  it("accepts discount fields and rejects percentages outside 0-100", () => {
+    expect(
+      subscriptionSchema.parse({
+        ...validSubscription,
+        is_discount: true,
+        discount_percentage: "50",
+        discount_amount: "150",
+        discount_reason: " حسم خاص ",
+      }),
+    ).toMatchObject({
+      is_discount: true,
+      discount_percentage: 50,
+      discount_amount: 150,
+      discount_reason: "حسم خاص",
+    });
+
+    const invalid = subscriptionSchema.safeParse({
+      ...validSubscription,
+      is_discount: true,
+      discount_percentage: 101,
+    });
+    expect(invalid.success).toBe(false);
+    expect(invalid.error.issues[0].path).toEqual(["discount_percentage"]);
+  });
 });
 
 describe("subscription edit validation", () => {

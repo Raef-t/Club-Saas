@@ -159,7 +159,7 @@ describe("subscription create validation", () => {
     expect(screen.getByText("(150 ل.س)")).toBeInTheDocument();
   });
 
-  it("shows only the general receipt for a non-private type even when its plan has split prices", () => {
+  it("treats complete coach and branch prices as a private plan", () => {
     render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
@@ -181,9 +181,9 @@ describe("subscription create validation", () => {
       />,
     );
 
-    expect(screen.getByLabelText(/^رقم الإيصال/)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/رقم إيصال الكوتش/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText(/رقم إيصال النادي/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/رقم إيصال النادي/)).toBeInTheDocument();
   });
 
   it("shows private receipt fields when the API marks a base-price-only equipment plan", () => {
@@ -212,6 +212,101 @@ describe("subscription create validation", () => {
     expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toBeInTheDocument();
     expect(screen.getByLabelText(/رقم إيصال النادي/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/^رقم الإيصال/)).not.toBeInTheDocument();
+  });
+});
+
+describe("subscription discount calculations", () => {
+  it("calculates the percentage, final price, and proposed payment in both directions", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "دخول يومي", base_price: 300000, is_daily_entry: true }]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
+    fireEvent.change(screen.getByLabelText(/السعر النهائي بعد الحسم/), {
+      target: { value: "150000" },
+    });
+
+    expect(screen.getByLabelText(/^نسبة الحسم/)).toHaveValue(50);
+    expect(screen.getByLabelText(/المبلغ المدفوع للاشتراك/)).toHaveValue(150000);
+
+    fireEvent.change(screen.getByLabelText(/^نسبة الحسم/), {
+      target: { value: "25" },
+    });
+
+    expect(screen.getByLabelText(/السعر النهائي بعد الحسم/)).toHaveValue(225000);
+    expect(screen.getByLabelText(/المبلغ المدفوع للاشتراك/)).toHaveValue(225000);
+  });
+
+  it("submits the normalized general discount payload", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "دخول يومي", base_price: 300000, is_daily_entry: true }]}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
+    fireEvent.change(screen.getByLabelText(/السعر النهائي بعد الحسم/), {
+      target: { value: "150000" },
+    });
+    fireEvent.change(screen.getByLabelText(/^رقم الإيصال/), {
+      target: { value: "REC-DISCOUNT-1" },
+    });
+    fireEvent.change(screen.getByLabelText(/سبب الحسم/), {
+      target: { value: "حسم خاص" },
+    });
+
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        is_discount: true,
+        discount_percentage: 50,
+        discount_amount: 150000,
+        discount_reason: "حسم خاص",
+        paid_amount: 150000,
+        currency: "SYP",
+      }),
+      "normal",
+    );
+  });
+
+  it("supports a coach-only discount for a private subscription", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          {
+            id: 9,
+            name: "تدريب خاص",
+            base_price: 300000,
+            coach_price: 200000,
+            branch_price: 100000,
+          },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
+    fireEvent.click(screen.getByRole("button", { name: "حسم منفصل" }));
+    fireEvent.change(screen.getByLabelText(/حصة الكوتش بعد الحسم/), {
+      target: { value: "100000" },
+    });
+
+    expect(screen.getByLabelText(/نسبة حسم الكوتش/)).toHaveValue(50);
+    expect(screen.getByLabelText(/نسبة حسم النادي/)).toHaveValue(0);
+    expect(screen.getByLabelText(/دفعة الكوتش/)).toHaveValue(100000);
+    expect(screen.getByLabelText(/دفعة النادي/)).toHaveValue(100000);
   });
 });
 
@@ -493,7 +588,7 @@ describe("subscription edit receipts", () => {
     fireEvent.click(screen.getByRole("button", { name: "خطة الاشتراك *" }));
     fireEvent.click(screen.getByRole("option", { name: newPlan.name }));
 
-    expect(screen.getByLabelText(/المبلغ المدفوع/)).toHaveValue(650);
+    expect(screen.getByLabelText(/^المبلغ المدفوع/)).toHaveValue(1300);
     expect(screen.getByDisplayValue("09/10/2026")).toBeInTheDocument();
     expect(screen.getByLabelText(/رقم إيصال الكوتش/)).toHaveValue("");
     expect(screen.getByLabelText(/رقم إيصال النادي/)).toHaveValue("");
@@ -512,10 +607,10 @@ describe("subscription edit receipts", () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
         plan_id: newPlan.id,
-        paid_amount: 650,
+        paid_amount: 1300,
         end_date: "2026-10-09",
-        coach_paid_amount: 400,
-        branch_paid_amount: 250,
+        coach_paid_amount: 800,
+        branch_paid_amount: 500,
       }),
     );
   });

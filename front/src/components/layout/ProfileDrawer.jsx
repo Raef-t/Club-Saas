@@ -15,6 +15,7 @@ import { clearAuthStorage } from "@/lib/authStorage";
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage, getApiFieldErrors } from "@/lib/apiError";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
+import { hashPassword } from "@/lib/passwordHash";
 import {
   getPersonPhoneNumber,
   resolveStaffPhotoUrl,
@@ -142,10 +143,14 @@ export default function ProfileDrawer({ open, onClose }) {
     const userId = Number(user.user_id || user.id);
 
     try {
+      const [newPasswordHash, confirmationHash] = await Promise.all([
+        hashPassword(form.new_password),
+        hashPassword(form.new_password_confirmation),
+      ]);
       await changePassword({
         user_id: userId,
-        new_password: form.new_password,
-        new_password_confirmation: form.new_password_confirmation,
+        new_password: newPasswordHash,
+        new_password_confirmation: confirmationHash,
         custom_username: form.custom_username,
       }).unwrap();
 

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { EyeIcon, EyeOffIcon } from "@/components/icons/Icons";
 import BrandLogo from "@/components/common/BrandLogo";
+import { hashPassword } from "@/lib/passwordHash";
 
 const DEFAULT_FCM_TOKEN = "fcm_token_string_here";
 
@@ -37,6 +38,7 @@ export default function LoginForm() {
 
     setIsLoading(true);
     try {
+      const passwordHash = await hashPassword(form.password);
       const response = await fetch("/api/backend/auth/login", {
         method: "POST",
         credentials: "same-origin",
@@ -48,7 +50,7 @@ export default function LoginForm() {
         },
         body: JSON.stringify({
           username: form.username,
-          password: form.password,
+          password: passwordHash,
           fcm_token: DEFAULT_FCM_TOKEN,
         }),
       });
