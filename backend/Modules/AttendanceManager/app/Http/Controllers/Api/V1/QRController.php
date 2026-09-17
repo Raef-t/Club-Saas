@@ -104,8 +104,19 @@ class QRController extends BaseController
                     $activeShift = \Illuminate\Support\Facades\DB::table('staff_shifts')
                         ->join('branch_shifts', 'staff_shifts.branch_shift_id', '=', 'branch_shifts.id')
                         ->where('staff_shifts.staff_id', $scannerStaff->id)
-                        ->where('branch_shifts.start_time', '<=', $time)
-                        ->where('branch_shifts.end_time', '>=', $time)
+                        ->where(function ($q) use ($time) {
+                            $q->where(function ($sub) use ($time) {
+                                $sub->whereRaw('branch_shifts.start_time <= branch_shifts.end_time')
+                                    ->where('branch_shifts.start_time', '<=', $time)
+                                    ->where('branch_shifts.end_time', '>=', $time);
+                            })->orWhere(function ($sub) use ($time) {
+                                $sub->whereRaw('branch_shifts.start_time > branch_shifts.end_time')
+                                    ->where(function ($t) use ($time) {
+                                        $t->where('branch_shifts.start_time', '<=', $time)
+                                          ->orWhere('branch_shifts.end_time', '>=', $time);
+                                    });
+                            });
+                        })
                         ->select('branch_shifts.branch_id')
                         ->first();
 
