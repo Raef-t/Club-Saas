@@ -1,6 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { authApi, createProfileUpdateBody } from "./authApi";
+import { authApi, createProfileUpdateBody, getProfileUser } from "./authApi";
+
+describe("profile response normalization", () => {
+  it("supports login and auth/me response shapes", () => {
+    const loginUser = { id: 1, roles: ["admin"] };
+    const profileUser = { id: 2, roles: ["coach"], permissions: ["coach.view"] };
+
+    expect(getProfileUser({ data: { user: loginUser } })).toBe(loginUser);
+    expect(getProfileUser({ status: "success", data: profileUser })).toBe(profileUser);
+    expect(getProfileUser(null, loginUser)).toBe(loginUser);
+  });
+});
 
 describe("profile update body", () => {
   it("keeps only fields supported by the profile endpoint", () => {

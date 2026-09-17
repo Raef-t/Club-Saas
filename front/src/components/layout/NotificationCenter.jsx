@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { BellIcon, HandCoinsIcon, XIcon } from "@/components/icons/Icons";
 import { useGetNotificationsQuery } from "@/lib/api/notificationsApi";
@@ -16,6 +17,7 @@ export default function NotificationCenter() {
   const branchContext = useOptionalManagementBranch();
   const containerRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState(null);
   const [minimizedNotificationId, setMinimizedNotificationId] = useState(null);
   const [handledNotificationId, setHandledNotificationId] = useState(null);
   const { data, isLoading, isFetching, error, refetch } = useGetNotificationsQuery(undefined, {
@@ -37,6 +39,10 @@ export default function NotificationCenter() {
   const showFloatingNotification =
     floatingNotification && floatingNotificationId !== handledNotificationId;
   const isFloatingMinimized = floatingNotificationId === minimizedNotificationId;
+
+  useEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -172,14 +178,17 @@ export default function NotificationCenter() {
         )}
       </div>
 
-      {showFloatingNotification && (
-        <FloatingPayrollNotification
-          notification={floatingNotification}
-          minimized={isFloatingMinimized}
-          onMinimize={() => setMinimizedNotificationId(floatingNotificationId)}
-          onAction={() => handleNotificationClick(floatingNotification)}
-        />
-      )}
+      {showFloatingNotification &&
+        portalTarget &&
+        createPortal(
+          <FloatingPayrollNotification
+            notification={floatingNotification}
+            minimized={isFloatingMinimized}
+            onMinimize={() => setMinimizedNotificationId(floatingNotificationId)}
+            onAction={() => handleNotificationClick(floatingNotification)}
+          />,
+          portalTarget,
+        )}
     </>
   );
 }

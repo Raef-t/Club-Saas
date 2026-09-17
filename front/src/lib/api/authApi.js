@@ -2,6 +2,20 @@ import { createBackendApi } from "@/lib/api/baseQuery";
 
 const OPTIONAL_PROFILE_FIELDS = ["dob", "address", "how_did_you_hear"];
 
+/**
+ * Accepts both documented auth response shapes:
+ * - login:  { data: { user: ... } }
+ * - me:     { data: { id, roles, permissions, ... } }
+ */
+export function getProfileUser(response, fallback = null) {
+  const candidates = [response?.data?.user, response?.data, response?.user, response];
+  const user = candidates.find(
+    (candidate) => candidate && typeof candidate === "object" && !Array.isArray(candidate),
+  );
+
+  return user || fallback;
+}
+
 export function createProfileUpdateBody(person = {}, values = {}) {
   const body = {
     first_name: values.first_name.trim(),

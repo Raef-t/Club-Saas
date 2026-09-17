@@ -4,13 +4,22 @@ import { useMemo, useState } from "react";
 import Drawer from "@/components/ui/Drawer";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { ChevronDownIcon, CheckCircleIcon, SealCheckIcon } from "@/components/icons/Icons";
-import { useGetUserRolesQuery, useAssignUserRoleMutation } from "@/lib/api/usersApi";
+import { ChevronDownIcon, CheckCircleIcon, SealCheckIcon, XIcon } from "@/components/icons/Icons";
+import {
+  useGetUserRolesQuery,
+  useAssignUserRoleMutation,
+  useRevokeUserRoleMutation,
+} from "@/lib/api/usersApi";
 import { useGetRolesQuery, useGetPermissionsQuery } from "@/lib/api/rolesApi";
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { getUserRoleLabel } from "./usersUtils";
-import { groupPermissions, getPermissionLabel, getPermissionCollection } from "../roles/roleUtils";
+import {
+  groupPermissions,
+  getPermissionLabel,
+  getPermissionCollection,
+  getRoleCollection,
+} from "../roles/roleUtils";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +36,9 @@ function extractPermissions(data) {
 /** استخراج أسماء الأدوار المعينة للمستخدم */
 function extractRoles(data) {
   const d = data?.data ?? data;
-  if (Array.isArray(d?.roles)) return d.roles;
+  if (Array.isArray(d?.roles)) {
+    return d.roles.map((role) => (typeof role === "string" ? role : role?.name)).filter(Boolean);
+  }
   return [];
 }
 
@@ -100,7 +111,10 @@ function PermissionGroup({ group, activeNames }) {
                     </bdi>
                   </div>
                   {active && (
-                    <CheckCircleIcon className="size-4 shrink-0 text-app-green" aria-label="مُفعَّل" />
+                    <CheckCircleIcon
+                      className="size-4 shrink-0 text-app-green"
+                      aria-label="مُفعَّل"
+                    />
                   )}
                 </div>
               );
@@ -115,17 +129,30 @@ function PermissionGroup({ group, activeNames }) {
 // ─── Role Selector ────────────────────────────────────────────────────────────
 
 function RoleSelector({ userId, currentRoles, availableRoles, onSuccess, canAssign }) {
-  const [assignRole, { isLoading }] = useAssignUserRoleMutation();
+  const [assignRole, { isLoading: isAssigning }] = useAssignUserRoleMutation();
+  const [revokeRole, { isLoading: isRevoking }] = useRevokeUserRoleMutation();
   const toast = useToast();
+  const isLoading = isAssigning || isRevoking;
 
   async function handleAssign(roleName) {
     if (currentRoles.includes(roleName) || !canAssign) return;
     try {
-      await assignRole({ userId, roles: [roleName] }).unwrap();
+      await assignRole({ userId, role: roleName }).unwrap();
       toast.success(`تم تعيين دور "${getUserRoleLabel(roleName)}" بنجاح`);
       onSuccess?.();
     } catch (error) {
       toast.error(getApiErrorMessage(error, "تعذر تعيين الدور. حاول مرة أخرى."));
+    }
+  }
+
+  async function handleRevoke(roleName) {
+    if (!currentRoles.includes(roleName) || !canAssign) return;
+    try {
+      await revokeRole({ userId, role: roleName }).unwrap();
+      toast.success(`تم سحب دور "${getUserRoleLabel(roleName)}" بنجاح`);
+      onSuccess?.();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "تعذر سحب الدور. حاول مرة أخرى."));
     }
   }
 
@@ -143,6 +170,18 @@ function RoleSelector({ userId, currentRoles, availableRoles, onSuccess, canAssi
             >
               <SealCheckIcon className="size-3.5" />
               {getUserRoleLabel(r)}
+              {canAssign && (
+                <button
+                  type="button"
+                  onClick={() => handleRevoke(r)}
+                  disabled={isLoading}
+                  className="ms-1 rounded-full p-0.5 transition hover:bg-app-red/15 hover:text-app-red disabled:opacity-50"
+                  aria-label={`سحب دور ${getUserRoleLabel(r)}`}
+                  title="سحب الدور"
+                >
+                  <XIcon className="size-3" />
+                </button>
+              )}
             </span>
           ))
         ) : (
@@ -214,8 +253,7 @@ export default function UserPermissionsDrawer({ open, user, onClose, canAssignRo
   const groups = useMemo(() => groupPermissions(allPermissions), [allPermissions]);
 
   const availableRoles = useMemo(() => {
-    const d = rolesData?.data ?? rolesData;
-    return Array.isArray(d?.roles) ? d.roles : [];
+    return getRoleCollection(rolesData);
   }, [rolesData]);
 
   const permissionStats = useMemo(() => {
@@ -290,12 +328,10 @@ export default function UserPermissionsDrawer({ open, user, onClose, canAssignRo
 
           {/* قائمة الصلاحيات مجمعة حسب الموديول */}
           <section className="space-y-2">
-            <h3 className="text-sm font-semibold text-app-text">
-              الصلاحيات المُشتقّة من الدور
-            </h3>
+            <h3 className="text-sm font-semibold text-app-text">الصلاحيات المُشتقّة من الدور</h3>
             <p className="text-xs text-app-muted-light">
-              هذه الصلاحيات مُعيَّنة انطلاقاً من الدور الحالي للمستخدم. لتعديلها، غيّر
-              صلاحيات الدور من صفحة الأدوار.
+              هذه الصلاحيات مُعيَّنة انطلاقاً من الدور الحالي للمستخدم. لتعديلها، غيّر صلاحيات الدور
+              من صفحة الأدوار.
             </p>
             {groups.length > 0 ? (
               <div className="mt-3 space-y-2">

@@ -2,33 +2,45 @@
 
 import { createContext, useContext, useMemo } from "react";
 import {
-  canAccessPath,
   getFirstAccessiblePath,
+  getRouteAccessRule,
   getUserPermissionNames,
   getUserRoleNames,
-  hasAllPermissions,
-  hasAnyPermission,
-  hasPermission,
   isSuperAdmin,
 } from "@/lib/permissions";
 
 const PermissionContext = createContext(null);
 
 export function PermissionProvider({ user, children }) {
-  const value = useMemo(
-    () => ({
+  const value = useMemo(() => {
+    const roles = getUserRoleNames(user);
+    const permissions = getUserPermissionNames(user);
+    const permissionSet = new Set(permissions);
+    const superAdmin = isSuperAdmin(user);
+    const can = (permission) => !permission || superAdmin || permissionSet.has(permission);
+    const canAny = (permissionNames = []) =>
+      superAdmin || permissionNames.some((permission) => permissionSet.has(permission));
+    const canAll = (permissionNames = []) =>
+      superAdmin || permissionNames.every((permission) => permissionSet.has(permission));
+    const canAccess = (pathname) => {
+      const rule = getRouteAccessRule(pathname);
+      if (!rule || superAdmin) return true;
+
+      return (!rule.all || canAll(rule.all)) && (!rule.any || canAny(rule.any));
+    };
+
+    return {
       user,
-      roles: getUserRoleNames(user),
-      permissions: getUserPermissionNames(user),
-      isSuperAdmin: isSuperAdmin(user),
+      roles,
+      permissions,
+      isSuperAdmin: superAdmin,
       firstAccessiblePath: getFirstAccessiblePath(user),
-      can: (permission) => hasPermission(user, permission),
-      canAny: (permissionNames) => hasAnyPermission(user, permissionNames),
-      canAll: (permissionNames) => hasAllPermissions(user, permissionNames),
-      canAccess: (pathname) => canAccessPath(user, pathname),
-    }),
-    [user],
-  );
+      can,
+      canAny,
+      canAll,
+      canAccess,
+    };
+  }, [user]);
 
   return <PermissionContext.Provider value={value}>{children}</PermissionContext.Provider>;
 }

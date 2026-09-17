@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useGetProfileQuery } from "@/lib/api/authApi";
+import { getProfileUser, useGetProfileQuery } from "@/lib/api/authApi";
 import { clearAuthStorage } from "@/lib/authStorage";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
@@ -13,14 +13,10 @@ function SessionLoading() {
   );
 }
 
-export default function SessionGuard({ children }) {
+export default function SessionGuard({ children, initialUser = null }) {
   const [isRestoring, setIsRestoring] = useState(false);
-  const {
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useGetProfileQuery();
+  const { isLoading, isError, error, refetch, data: profileResponse } = useGetProfileQuery();
+  const user = getProfileUser(profileResponse, initialUser);
 
   const redirectToLogin = useCallback(() => {
     clearAuthStorage();
@@ -55,7 +51,7 @@ export default function SessionGuard({ children }) {
     return () => window.removeEventListener("pageshow", validateRestoredPage);
   }, [redirectToLogin, refetch]);
 
-  if (isLoading || isRestoring || (isError && error?.status === 401)) {
+  if ((isLoading && !user) || isRestoring || (isError && error?.status === 401)) {
     return <SessionLoading />;
   }
 
@@ -63,12 +59,8 @@ export default function SessionGuard({ children }) {
     return (
       <main className="dashboard-bg grid min-h-screen place-items-center px-4">
         <section className="card-shell max-w-md rounded-3xl p-8 text-center">
-          <h1 className="text-xl font-semibold text-white">
-            تعذر التحقق من الجلسة
-          </h1>
-          <p className="mt-3 text-sm text-app-muted-light">
-            تحقق من اتصال الخادم ثم أعد المحاولة.
-          </p>
+          <h1 className="text-xl font-semibold text-white">تعذر التحقق من الجلسة</h1>
+          <p className="mt-3 text-sm text-app-muted-light">تحقق من اتصال الخادم ثم أعد المحاولة.</p>
           <button
             type="button"
             onClick={() => refetch()}
@@ -81,5 +73,5 @@ export default function SessionGuard({ children }) {
     );
   }
 
-  return children;
+  return typeof children === "function" ? children(user) : children;
 }
