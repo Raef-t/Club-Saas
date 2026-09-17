@@ -177,6 +177,17 @@ class AuthController extends BaseController
             }
         }
 
+        // دعم مطابقة كلمة المرور الافتراضية لحسابات التصفير سواء أُرسلت كـ Hash من الويب أو كنص صريح 12345678
+        if (!$passwordMatches && $user->must_change_password) {
+            $defaultHash = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+            if (
+                ($password === '12345678' && Hash::check($defaultHash, $user->password)) ||
+                ($password === $defaultHash && Hash::check('12345678', $user->password))
+            ) {
+                $passwordMatches = true;
+            }
+        }
+
         if (!$passwordMatches) {
             return $this->errorResponse(__('Invalid credentials'), 401);
         }
@@ -520,13 +531,17 @@ class AuthController extends BaseController
     public function resetPassword(Request $request)
     {
         $validated = $request->validate([
-            'user_id' => 'required|integer|exists:authentication_users,id',
+            'user_id'  => 'required|integer|exists:authentication_users,id',
+            'password' => 'nullable|string',
         ]);
 
         $user = User::findOrFail($validated['user_id']);
 
+        $defaultHash = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+        $newPassword = !empty($validated['password']) ? $validated['password'] : $defaultHash;
+
         $user->update([
-            'password' => Hash::make('12345678'),
+            'password' => Hash::make($newPassword),
             'must_change_password' => true,
         ]);
 
@@ -552,8 +567,8 @@ class AuthController extends BaseController
             required: ['new_password', 'new_password_confirmation'],
             properties: [
                 new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
-                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة', example: '12345678'),
-                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: '12345678'),
+                new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة (يجب ألا تكون كلمة المرور الافتراضية 12345678)', example: 'NewSecret@2026'),
+                new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: 'NewSecret@2026'),
                 new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد (اختياري)', example: 'ahmed_player99', nullable: true),
             ]
         )
