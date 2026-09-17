@@ -89,6 +89,10 @@ const ROUTE_ACCESS_RULES = [
     path: "/management/lockers/create",
     any: ["locker.create", "locker.update"],
   },
+  {
+    path: "/management/offers/create",
+    any: ["offer.create", "offer.update"],
+  },
   { path: "/management/roles", any: ["role.view-any", "role.view"] },
   { path: "/management/app-versions", any: ["app-version.view-any"] },
   { path: "/management/users", any: ["user.view-any"] },

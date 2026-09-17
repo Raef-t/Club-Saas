@@ -426,8 +426,8 @@ export default function SubscriptionsClient({ initialData }) {
         onPageChange={pagination.setPage}
         onPageSizeChange={pagination.setPerPage}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <label className="relative block w-full sm:w-80 md:w-96">
+          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_10rem] sm:items-center">
+            <label className="relative col-span-2 block min-w-0 sm:col-span-1">
               <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
@@ -439,29 +439,32 @@ export default function SubscriptionsClient({ initialData }) {
             </label>
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft text-white"
+              className="w-full min-w-0 bg-app-card-soft text-white"
               icon={FilterIcon}
               value={status}
               options={SUBSCRIPTION_STATUS_OPTIONS}
               onChange={setStatus}
+              compact
             />
 
             <Dropdown
-              className="min-w-44 bg-app-card-soft text-white"
+              className="w-full min-w-0 bg-app-card-soft text-white"
               icon={FilterIcon}
               value={period}
               options={SUBSCRIPTION_PERIOD_OPTIONS}
               onChange={setPeriod}
+              compact
             />
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft text-white"
+              className="col-span-2 w-full min-w-0 bg-app-card-soft text-white sm:col-span-1"
               icon={FilterIcon}
               value={activityTypeId}
               options={activityTypeOptions}
               onChange={setActivityTypeId}
               disabled={isActivityTypesLoading}
               ariaLabel="تصفية حسب نوع النشاط"
+              compact
             />
           </div>
         }

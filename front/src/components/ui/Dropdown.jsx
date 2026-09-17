@@ -19,6 +19,7 @@ export default function Dropdown({
   searchable = false,
   searchPlaceholder = "ابحث...",
   ariaLabel,
+  compact = false,
 }) {
   const [open, setOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState(null);
@@ -144,16 +145,28 @@ export default function Dropdown({
           }
         }}
       >
-        <span className="flex items-center gap-2 px-3 h-full">
-          {Icon && <Icon className="size-5 text-app-muted-light" />}
+        <span
+          className={`flex h-full min-w-0 items-center ${compact ? "gap-1.5 px-2" : "gap-2 px-3"}`}
+        >
+          {Icon && (
+            <Icon
+              className={`${compact ? "size-4" : "size-5"} shrink-0 text-app-muted-light`}
+            />
+          )}
           {selectedOption ? (
-            <span className="text-app-text text-sm">{selectedOption.label}</span>
+            <span className={`truncate text-app-text ${compact ? "text-xs" : "text-sm"}`}>
+              {selectedOption.label}
+            </span>
           ) : (
-            <span className="text-app-muted-light text-sm">{placeholder}</span>
+            <span
+              className={`truncate text-app-muted-light ${compact ? "text-xs" : "text-sm"}`}
+            >
+              {placeholder}
+            </span>
           )}
         </span>
         <ChevronDownIcon
-          className={`me-3 size-4 shrink-0 text-app-muted-light transition ${
+          className={`${compact ? "me-2 size-3.5" : "me-3 size-4"} shrink-0 text-app-muted-light transition ${
             open ? "rotate-180 text-app-yellow" : ""
           }`}
         />

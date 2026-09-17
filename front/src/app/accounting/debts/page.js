@@ -1,8 +1,11 @@
 import StatsGrid from "@/components/ui/StatsGrid";
 import DataTable from "@/components/ui/DataTable";
 import { debtColumns, debts, debtStats } from "@/data/mockData";
+import { verifyPageAccess } from "@/lib/server/auth";
 
-export default function DebtsPage() {
+export default async function DebtsPage() {
+  await verifyPageAccess("/accounting/debts");
+
   return (
     <div className="space-y-6">
       <StatsGrid items={debtStats} />

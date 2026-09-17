@@ -25,15 +25,14 @@ describe("subscription create validation", () => {
     expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اشتراك شهري");
     expect(screen.getByRole("button", { name: "نوع النشاط" })).toHaveTextContent("تدريب عام");
     fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
-    expect(screen.getByRole("option", { name: "الكل" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "الكل" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("option", { name: "أنشطة لياقة" }));
 
     expect(onActivityTypeChange).toHaveBeenCalledWith("7");
     expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اختر الخطة");
   });
 
-  it("allows selecting 'الكل' to clear the activity type filter and resets the selected plan", () => {
-    const onActivityTypeChange = vi.fn();
+  it("does not offer an 'all' activity type on the create form", () => {
     render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
@@ -43,17 +42,13 @@ describe("subscription create validation", () => {
           { id: 7, name: "أنشطة لياقة" },
         ]}
         selectedActivityTypeId="7"
-        onActivityTypeChange={onActivityTypeChange}
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
-    fireEvent.click(screen.getByRole("option", { name: "الكل" }));
-
-    expect(onActivityTypeChange).toHaveBeenCalledWith("");
-    expect(screen.getByRole("button", { name: "خطة الاشتراك" })).toHaveTextContent("اختر الخطة");
+    expect(screen.queryByRole("option", { name: "الكل" })).not.toBeInTheDocument();
   });
 
   it("shows a dedicated empty state when an activity type has no available plans", () => {
@@ -114,8 +109,29 @@ describe("subscription create validation", () => {
     expect(screen.queryByText(/501|762|رقم العضوية/)).not.toBeInTheDocument();
   });
 
-  it("renders each date validation message only once", () => {
-    const { container } = render(
+  it("searches subscription plans by name", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          { id: 2, name: "اشتراك شهري", base_price: 300 },
+          { id: 3, name: "اشتراك سباحة", base_price: 450 },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "خطة الاشتراك" }));
+    const searchInput = screen.getByRole("textbox", { name: "ابحث عن خطة الاشتراك..." });
+    fireEvent.change(searchInput, { target: { value: "سباحة" } });
+
+    expect(screen.getByRole("option", { name: "اشتراك سباحة" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "اشتراك شهري" })).not.toBeInTheDocument();
+  });
+
+  it("defaults the start date to today and keeps it editable", () => {
+    render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
@@ -124,10 +140,22 @@ describe("subscription create validation", () => {
       />,
     );
 
-    fireEvent.submit(container.querySelector("form"));
+    const today = new Date();
+    const todayDisplay = [
+      String(today.getDate()).padStart(2, "0"),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      today.getFullYear(),
+    ].join("/");
+    const [startDateInput] = screen.getAllByPlaceholderText("dd/mm/yyyy");
 
-    expect(screen.getAllByText("تاريخ بداية الاشتراك مطلوب")).toHaveLength(1);
-    expect(screen.getAllByText("تاريخ نهاية الاشتراك مطلوب")).toHaveLength(1);
+    expect(startDateInput).toHaveValue(todayDisplay);
+    expect(startDateInput).toBeEnabled();
+
+    fireEvent.focus(startDateInput);
+    fireEvent.change(startDateInput, { target: { value: "20/10/2026" } });
+    fireEvent.blur(startDateInput);
+
+    expect(startDateInput).toHaveValue("20/10/2026");
   });
 
   it("shows two priced receipt fields for a private plan", () => {
@@ -433,6 +461,37 @@ describe("subscription edit receipts", () => {
     expect(screen.queryByText(/MEM-1|MEM-2/)).not.toBeInTheDocument();
   });
 
+  it("searches subscription plans by name while editing", () => {
+    render(
+      <SubscriptionEditForm
+        subscription={{
+          member_id: 1,
+          plan_id: 2,
+          months_count: 1,
+          start_date: "2026-08-01",
+          end_date: "2026-08-31",
+          status: "active",
+          paid_amount: "300.00",
+          receipt_number: "REC-001",
+        }}
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[
+          { id: 2, name: "اشتراك شهري", base_price: 300 },
+          { id: 3, name: "اشتراك سباحة", base_price: 450 },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "خطة الاشتراك *" }));
+    const searchInput = screen.getByRole("textbox", { name: "ابحث عن خطة الاشتراك..." });
+    fireEvent.change(searchInput, { target: { value: "سباحة" } });
+
+    expect(screen.getByRole("option", { name: "اشتراك سباحة" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "اشتراك شهري" })).not.toBeInTheDocument();
+  });
+
   it("filters available plans by activity type while editing and clears the old plan", () => {
     const onActivityTypeChange = vi.fn();
     render(
@@ -463,6 +522,7 @@ describe("subscription edit receipts", () => {
 
     expect(screen.getByRole("button", { name: "خطة الاشتراك *" })).toHaveTextContent("اشتراك قديم");
     fireEvent.click(screen.getByRole("button", { name: "نوع النشاط" }));
+    expect(screen.queryByRole("option", { name: "الكل" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("option", { name: "أنشطة جماعية" }));
 
     expect(onActivityTypeChange).toHaveBeenCalledWith("7");

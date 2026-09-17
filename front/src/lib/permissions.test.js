@@ -98,6 +98,21 @@ describe("permission helpers", () => {
     expect(canAccessPath(dashboardUser, "/management")).toBe(true);
   });
 
+  it("requires an offer write permission for the direct create route", () => {
+    expect(
+      canAccessPath(
+        { roles: ["marketing"], permissions: ["offer.view-any"] },
+        "/management/offers/create",
+      ),
+    ).toBe(false);
+    expect(
+      canAccessPath(
+        { roles: ["marketing"], permissions: ["offer.create"] },
+        "/management/offers/create",
+      ),
+    ).toBe(true);
+  });
+
   it("allows reception user with auth/me permissions to access operational pages while blocking administrative routes", () => {
     const receptionUser = {
       roles: ["reception"],

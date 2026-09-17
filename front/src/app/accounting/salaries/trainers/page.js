@@ -1,8 +1,11 @@
 import StatsGrid from "@/components/ui/StatsGrid";
 import DataTable from "@/components/ui/DataTable";
 import { trainersSalaries, trainersSalaryColumns, trainersSalaryStats } from "@/data/mockData";
+import { verifyPageAccess } from "@/lib/server/auth";
 
-export default function TrainersSalaryPage() {
+export default async function TrainersSalaryPage() {
+  await verifyPageAccess("/accounting/salaries/trainers");
+
   return (
     <div className="space-y-6">
       <StatsGrid items={trainersSalaryStats} />

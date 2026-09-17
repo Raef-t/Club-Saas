@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import Button from "@/components/ui/Button";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import PageHeader from "@/components/common/PageHeader";
@@ -23,7 +23,7 @@ import {
   getRoleRecord,
   groupPermissions,
   mergePermissionCatalog,
-  normalizePermission,
+  isProtectedRole,
 } from "../roleUtils";
 import RolePermissionsAccordion from "./RolePermissionsAccordion";
 import { usePermissions } from "@/lib/PermissionContext";
@@ -45,31 +45,18 @@ export default function RoleDetailsClient({
   const role = getRoleRecord(roleQuery.currentData || initialRole);
   const roles = getRoleCollection(rolesQuery.currentData || initialRoles);
 
-  const seenPermissionsRef = useRef(new Map());
-
-  useEffect(() => {
-    if (Array.isArray(role?.permissions)) {
-      role.permissions.forEach((permission) => {
-        const normalized = normalizePermission(permission);
-        if (normalized) {
-          seenPermissionsRef.current.set(normalized.name, normalized);
-        }
-      });
-    }
-  }, [role?.permissions]);
-
   const catalog = useMemo(() => {
     const endpointPermissions = getPermissionCollection(
       permissionsQuery.currentData || initialPermissions,
     );
-    const seen = Array.from(seenPermissionsRef.current.values());
-    return mergePermissionCatalog([...endpointPermissions, ...seen], {
+    return mergePermissionCatalog(endpointPermissions, {
       permissions: getPermissionsFromRoles([...roles, role].filter(Boolean)),
     });
   }, [initialPermissions, permissionsQuery.currentData, role, roles]);
 
   const rolePermissionNames = getRolePermissionNames(role);
   const presentation = getRolePresentation(role);
+  const isProtected = isProtectedRole(role);
 
   async function handleSave(selectedNames) {
     try {
@@ -147,7 +134,7 @@ export default function RoleDetailsClient({
           {role.name}
         </bdi>
         <span className="text-app-muted-light">رقم الدور: #{role.id}</span>
-        {role.is_protected && (
+        {isProtected && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-app-blue/10 px-2.5 py-1 text-app-blue">
             <SealCheckIcon className="size-3.5" />
             دور محمي

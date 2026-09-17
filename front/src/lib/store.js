@@ -21,6 +21,7 @@ import { notificationsApi } from "@/lib/api/notificationsApi";
 import { appVersionsApi } from "@/lib/api/appVersionsApi";
 import { offersApi } from "@/lib/api/offersApi";
 import { clearAuthStorage } from "@/lib/authStorage";
+import { publishAuthorizationDenied } from "@/lib/authorizationEvents";
 
 const authErrorMiddleware = () => (next) => (action) => {
   if (action?.type && action.type.endsWith("/rejected")) {
@@ -38,6 +39,10 @@ const authErrorMiddleware = () => (next) => (action) => {
       ) {
         window.location.replace("/login");
       }
+    }
+
+    if (status === 403) {
+      publishAuthorizationDenied(action.payload);
     }
   }
   return next(action);

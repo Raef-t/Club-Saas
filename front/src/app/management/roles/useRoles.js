@@ -15,6 +15,7 @@ import {
   getPermissionsFromRoles,
   getRoleCollection,
   mergePermissionCatalog,
+  isProtectedRole,
 } from "./roleUtils";
 
 export function useRoles({ initialRoles, initialPermissions } = {}) {
@@ -57,9 +58,9 @@ export function useRoles({ initialRoles, initialPermissions } = {}) {
   const roles = useMemo(() => filterRoles(allRoles, search), [allRoles, search]);
   const stats = useMemo(() => createRoleStats(allRoles, permissions), [allRoles, permissions]);
 
-  async function handleCreate(name) {
+  async function handleCreate(role) {
     try {
-      await createRole({ name }).unwrap();
+      await createRole(role).unwrap();
       toast.success("تم إنشاء الدور بنجاح");
       setCreateOpen(false);
       return true;
@@ -82,7 +83,7 @@ export function useRoles({ initialRoles, initialPermissions } = {}) {
   }
 
   async function handleDelete() {
-    if (!deleteTarget || deleteTarget.is_protected) return;
+    if (!deleteTarget || isProtectedRole(deleteTarget)) return;
     try {
       await deleteRole(deleteTarget.id).unwrap();
       toast.success("تم حذف الدور بنجاح");
