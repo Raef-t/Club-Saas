@@ -554,6 +554,15 @@ export function SubscriptionCreateForm({
       is_private_plan: isOfferSelected ? false : isPrivatePlan,
       start_date: dailyEntryDate || form.start_date || "",
       end_date: dailyEntryDate || form.end_date || "",
+      // Discount fields
+      is_discount: form.is_discount,
+      discount_percentage: form.discount_percentage,
+      discount_amount: form.discount_amount,
+      discount_reason: form.discount_reason,
+      coach_discount_percentage: form.coach_discount_percentage,
+      branch_discount_percentage: form.branch_discount_percentage,
+      coach_paid_amount: form.coach_paid_amount,
+      branch_paid_amount: form.branch_paid_amount,
     };
 
     const result = subscriptionSchema.safeParse(validationData);
