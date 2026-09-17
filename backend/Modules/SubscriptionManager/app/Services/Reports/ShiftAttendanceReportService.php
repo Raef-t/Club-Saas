@@ -80,9 +80,17 @@ class ShiftAttendanceReportService
                       ->orWhere('a.attendable_type', 'member');
                 })
                 ->whereBetween('a.check_in_at', [$startDate, $endDate])
-                ->where('a.branch_id', $shift->branch_id)
-                ->whereRaw('TIME(a.check_in_at) >= ?', [$shift->start_time])
-                ->whereRaw('TIME(a.check_in_at) <= ?', [$shift->end_time]);
+                ->where('a.branch_id', $shift->branch_id);
+
+            if (substr($shift->start_time, 0, 5) <= substr($shift->end_time, 0, 5)) {
+                $attendanceQuery->whereRaw('TIME(a.check_in_at) >= ?', [$shift->start_time])
+                    ->whereRaw('TIME(a.check_in_at) <= ?', [$shift->end_time]);
+            } else {
+                $attendanceQuery->where(function ($q) use ($shift) {
+                    $q->whereRaw('TIME(a.check_in_at) >= ?', [$shift->start_time])
+                      ->orWhereRaw('TIME(a.check_in_at) <= ?', [$shift->end_time]);
+                });
+            }
 
             if ($matchingPlanIds !== null) {
                 $attendanceQuery->whereIn('a.id', function ($sub) use ($matchingPlanIds) {

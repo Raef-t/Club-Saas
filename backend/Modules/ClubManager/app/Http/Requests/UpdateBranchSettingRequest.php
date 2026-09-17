@@ -15,7 +15,7 @@ class UpdateBranchSettingRequest extends FormRequest
     {
         return [
             'working_hours_start' => 'nullable|date_format:H:i',
-            'working_hours_end' => 'nullable|date_format:H:i|after:working_hours_start',
+            'working_hours_end' => 'nullable|date_format:H:i|different:working_hours_start',
             'default_club_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'default_coach_commission_percentage' => 'nullable|numeric|min:0|max:100',
             'private_subscription_commission' => 'nullable|numeric|min:0|max:100',

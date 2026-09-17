@@ -27519,6 +27519,14 @@
                                                         "example": "اشتراك سباحة + لياقة بدنية بسعر مخفض",
                                                         "nullable": true
                                                     },
+                                                    "offer_type": {
+                                                        "type": "string",
+                                                        "example": "bundle",
+                                                        "enum": [
+                                                            "bundle",
+                                                            "single_choice"
+                                                        ]
+                                                    },
                                                     "price": {
                                                         "type": "number",
                                                         "format": "float",
@@ -27632,8 +27640,17 @@
                                         "example": "خصومات حصرية لمشتركي النادي",
                                         "nullable": true
                                     },
+                                    "offer_type": {
+                                        "description": "نوع العرض (bundle للباقة المجمعة، single_choice لاختيار فعالية واحدة)",
+                                        "type": "string",
+                                        "example": "bundle",
+                                        "enum": [
+                                            "bundle",
+                                            "single_choice"
+                                        ]
+                                    },
                                     "price": {
-                                        "description": "(مطلوب) السعر الإجمالي",
+                                        "description": "(مطلوب) السعر الإجمالي أو سعر الفعالية الواحدة المشمولة",
                                         "type": "number",
                                         "format": "float",
                                         "example": 1200
@@ -27935,6 +27952,14 @@
                                     "description": {
                                         "type": "string",
                                         "example": "وصف العرض بعد التعديل"
+                                    },
+                                    "offer_type": {
+                                        "type": "string",
+                                        "example": "single_choice",
+                                        "enum": [
+                                            "bundle",
+                                            "single_choice"
+                                        ]
                                     },
                                     "price": {
                                         "type": "number",
@@ -28421,6 +28446,12 @@
                                         "description": "(مطلوب) معرف اللاعب",
                                         "type": "integer",
                                         "example": 5
+                                    },
+                                    "plan_id": {
+                                        "description": "(اختياري/مطلوب في حال كان العرض single_choice) معرف الخطة المختارة",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     },
                                     "paid_amount": {
                                         "description": "(مطلوب) المبلغ المدفوع",
