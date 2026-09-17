@@ -313,5 +313,82 @@ class UsernameValidationAndSuggestionTest extends TestCase
 
         $this->assertNotEmpty($response->json('data.suggestions'));
     }
+
+    public function test_change_password_fails_when_new_password_is_default_12345678()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10011',
+            'custom_username' => null,
+            'password' => bcrypt('12345678'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        // Plain text default password
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => '12345678',
+            'new_password_confirmation' => '12345678',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['new_password']);
+
+        $this->assertStringContainsString('12345678', $response->json('errors.new_password.0'));
+
+        // Frontend hashed default password
+        $hashedDefault = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+        $responseHashed = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => $hashedDefault,
+            'new_password_confirmation' => $hashedDefault,
+        ]);
+
+        $responseHashed->assertStatus(422)
+            ->assertJsonValidationErrors(['new_password']);
+
+        $this->assertStringContainsString('12345678', $responseHashed->json('errors.new_password.0'));
+    }
+
+    public function test_reset_password_stores_hash_and_allows_login()
+    {
+        $admin = $this->createUser([
+            'username' => 'admin_tester',
+            'role' => 'admin',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $user = $this->createUser([
+            'username' => 'tec-ply-10012',
+            'password' => bcrypt('oldpassword123'),
+            'must_change_password' => false,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $hashedDefault = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+
+        $response = $this->postJson('/api/v1/auth/reset-password', [
+            'user_id' => $user->id,
+            'password' => $hashedDefault,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue((bool) $user->fresh()->must_change_password);
+
+        // Login with hashed password (from web frontend)
+        $loginResponse = $this->postJson('/api/v1/auth/login', [
+            'username' => 'tec-ply-10012',
+            'password' => $hashedDefault,
+        ]);
+        $loginResponse->assertStatus(200);
+
+        // Also login with plain '12345678' (from mobile / direct API)
+        $loginPlainResponse = $this->postJson('/api/v1/auth/login', [
+            'username' => 'tec-ply-10012',
+            'password' => '12345678',
+        ]);
+        $loginPlainResponse->assertStatus(200);
+    }
 }
+
+
 

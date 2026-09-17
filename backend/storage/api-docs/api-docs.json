@@ -5407,14 +5407,14 @@
                                         "nullable": true
                                     },
                                     "new_password": {
-                                        "description": "كلمة المرور الجديدة",
+                                        "description": "كلمة المرور الجديدة (يجب ألا تكون كلمة المرور الافتراضية 12345678)",
                                         "type": "string",
-                                        "example": "12345678"
+                                        "example": "NewSecret@2026"
                                     },
                                     "new_password_confirmation": {
                                         "description": "تأكيد كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "12345678"
+                                        "example": "NewSecret@2026"
                                     },
                                     "custom_username": {
                                         "description": "اسم المستخدم المخصص الفريد (اختياري)",
