@@ -30,6 +30,16 @@ class UpdateCoachRequest extends FormRequest
             }
         }
 
+        if ($this->input('photo') === 'null' || $this->input('photo') === '' || $this->input('photo') === 'undefined') {
+            $this->merge(['photo' => null]);
+        }
+
+        if ($this->has('delete_photo')) {
+            $this->merge([
+                'delete_photo' => filter_var($this->delete_photo, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
+            ]);
+        }
+
         if ($this->has('work_types')) {
             $workTypes = $this->input('work_types', []);
         } else {
@@ -68,6 +78,8 @@ class UpdateCoachRequest extends FormRequest
             'phone_number'            => ['nullable', 'string', 'max:20'],
             'country_code'            => ['nullable', 'string', 'max:10'],
             'address'                 => ['nullable', 'string', 'max:500'],
+            'photo'                   => ['nullable'],
+            'delete_photo'            => ['nullable', 'boolean'],
 
             // Basic Info
             'base_salary'             => ['nullable', 'numeric', 'min:0'],
