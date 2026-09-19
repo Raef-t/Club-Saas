@@ -4,7 +4,6 @@ namespace Modules\Authentication\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Hash;
-use Modules\Authentication\Models\User;
 
 class ChangePasswordRequest extends FormRequest
 {
@@ -22,7 +21,6 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'user_id' => 'nullable|integer|exists:authentication_users,id',
             'new_password' => [
                 'required',
                 'string',
@@ -34,8 +32,7 @@ class ChangePasswordRequest extends FormRequest
                         return;
                     }
 
-                    $userId = $this->input('user_id');
-                    $user = $userId ? User::find($userId) : $this->user();
+                    $user = $this->user();
 
                     if ($user && $user->password) {
                         $isCurrentDefault = false;

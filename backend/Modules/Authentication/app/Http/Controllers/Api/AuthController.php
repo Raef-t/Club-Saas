@@ -556,7 +556,7 @@ class AuthController extends BaseController
     #[OA\Post(
         path: '/v1/auth/change-password',
         summary: '🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)',
-        description: 'تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.',
+        description: 'تغيير كلمة المرور الخاصة بالمستخدم الحالي، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]]
     )]
@@ -566,7 +566,6 @@ class AuthController extends BaseController
         content: new OA\JsonContent(
             required: ['new_password', 'new_password_confirmation'],
             properties: [
-                new OA\Property(property: 'user_id', type: 'integer', description: 'معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)', example: 15, nullable: true),
                 new OA\Property(property: 'new_password', type: 'string', description: 'كلمة المرور الجديدة (يجب ألا تكون كلمة المرور الافتراضية 12345678)', example: 'NewSecret@2026'),
                 new OA\Property(property: 'new_password_confirmation', type: 'string', description: 'تأكيد كلمة المرور الجديدة', example: 'NewSecret@2026'),
                 new OA\Property(property: 'custom_username', type: 'string', description: 'اسم المستخدم المخصص الفريد (اختياري)', example: 'ahmed_player99', nullable: true),
@@ -618,11 +617,7 @@ class AuthController extends BaseController
     {
         $validated = $request->validated();
 
-        if (!empty($validated['user_id'])) {
-            $user = User::findOrFail($validated['user_id']);
-        } else {
-            $user = $request->user();
-        }
+        $user = $request->user();
 
         // فحص وتحديث custom_username في حال إرساله في نفس الطلب
         if (!empty($validated['custom_username'])) {

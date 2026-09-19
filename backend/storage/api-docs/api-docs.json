@@ -5387,7 +5387,7 @@
                     "Authentication"
                 ],
                 "summary": "🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)",
-                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
+                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
                 "operationId": "adee7bb230546c3fae464b3ec1f457b6",
                 "requestBody": {
                     "description": "بيانات تغيير كلمة المرور وتحديث اسم المستخدم المخصص",
@@ -5400,12 +5400,6 @@
                                     "new_password_confirmation"
                                 ],
                                 "properties": {
-                                    "user_id": {
-                                        "description": "معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)",
-                                        "type": "integer",
-                                        "example": 15,
-                                        "nullable": true
-                                    },
                                     "new_password": {
                                         "description": "كلمة المرور الجديدة (يجب ألا تكون كلمة المرور الافتراضية 12345678)",
                                         "type": "string",

@@ -388,7 +388,43 @@ class UsernameValidationAndSuggestionTest extends TestCase
         ]);
         $loginPlainResponse->assertStatus(200);
     }
+
+    public function test_change_password_uses_authenticated_user_and_ignores_user_id()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10020',
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        $victimUser = $this->createUser([
+            'username' => 'tec-ply-10021',
+            'password' => bcrypt('victim_secret'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        // Sending user_id pointing to victimUser should NOT affect victimUser
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'user_id' => $victimUser->id,
+            'new_password' => 'newpassword123',
+            'new_password_confirmation' => 'newpassword123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Password changed successfully',
+            ]);
+
+        // Current user password was changed
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newpassword123', $currentUser->fresh()->password));
+
+        // Victim user password was NOT touched
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('victim_secret', $victimUser->fresh()->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('newpassword123', $victimUser->fresh()->password));
+    }
 }
+
 
 
 
