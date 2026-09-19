@@ -639,23 +639,20 @@ class SubscriptionService
                     $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
                 } else {
                     $branchSetting = $branchId ? \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first() : null;
-                    if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
-                        $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
-                        $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
-                    } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                    if ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
                         $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
                         $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
                     } else {
-                        $coachCommissionRate = 100.00;
-                        $clubCommissionRate  = 0.00;
+                        $coachCommissionRate = 0.00;
+                        $clubCommissionRate  = 100.00;
                     }
                 }
             }
         }
 
         if ($hasExplicitSplit) {
-            $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-            $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+            $totalCoachPrice  = round((float) ($subscription->plan?->coach_price ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+            $totalBranchPrice = round((float) ($subscription->plan?->branch_price ?? $plan->branch_price ?? 0) * $monthsCount, 2);
             $coachAmount = round($totalCoachPrice * ($coachCommissionRate / 100), 2);
             $clubCutFromCoach = round($totalCoachPrice - $coachAmount, 2);
             $clubAmount  = round($totalBranchPrice + $clubCutFromCoach, 2);
@@ -739,7 +736,7 @@ class SubscriptionService
         $totalAmount = (float) $splitData['total_amount'];
         $clubAmount  = (float) $splitData['club_amount'];
         if ($totalAmount <= 0) {
-            return 0.0;
+            return ($payment->safe_id !== null && !$isCoachPayment) ? $amount : 0.0;
         }
 
         $clubRatio = max(0.0, min(1.0, $clubAmount / $totalAmount));
@@ -846,8 +843,8 @@ class SubscriptionService
 
             $hasExplicitSplit = isset($options['coach_price']) || isset($options['branch_price']) || (!is_null($plan->coach_price) && !is_null($plan->branch_price));
             if ($hasExplicitSplit) {
-                $coachBasePrice = (float) ($options['coach_price'] ?? $plan->coach_price ?? 0);
-                $branchBasePrice = (float) ($options['branch_price'] ?? $plan->branch_price ?? 0);
+                $coachBasePrice = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                $branchBasePrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
                 $coachDiscountData = self::calculateDiscountData($coachBasePrice, $coachDiscountPercentage, $discountReason);
                 $branchDiscountData = self::calculateDiscountData($branchBasePrice, $branchDiscountPercentage, $discountReason);
                 $totalAmount = round($coachDiscountData['discounted_total'] + $branchDiscountData['discounted_total'], 2);
@@ -978,22 +975,19 @@ class SubscriptionService
                         $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
                     } else {
                         $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
-                        if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
-                            $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
-                            $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
-                        } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                        if ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
                             $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
                             $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
                         } else {
-                            $coachCommissionRate = 100.00;
-                            $clubCommissionRate  = 0.00;
+                            $coachCommissionRate = 0.00;
+                            $clubCommissionRate  = 100.00;
                         }
                     }
                 }
 
                 if ($hasExplicitSplit) {
-                    $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                    $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                    $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                    $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
 
                     $coachDiscountValue = isset($options['coach_discount_percentage']) ? (float) $options['coach_discount_percentage'] : ($discountPercentage > 0 ? (float) $discountPercentage : 0.0);
                     $branchDiscountValue = isset($options['branch_discount_percentage']) ? (float) $options['branch_discount_percentage'] : ($discountPercentage > 0 ? (float) $discountPercentage : 0.0);
@@ -1081,8 +1075,8 @@ class SubscriptionService
                         $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
                         $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
                     } elseif ($hasExplicitSplit) {
-                        $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                        $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                        $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                        $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
                         if ($paidAmount >= ($totalCoachPrice + $totalBranchPrice)) {
                             $coachPaid = $totalCoachPrice;
                             $branchPaid = $paidAmount - $coachPaid;
@@ -1142,12 +1136,12 @@ class SubscriptionService
                     $isDualPayment = !empty($coachReceiptNumber) || (isset($options['coach_paid_amount']) && isset($options['branch_paid_amount'])) || (isset($options['coach_price']) && isset($options['branch_price']));
 
                     if ($isDualPayment) {
-                        if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount']) || isset($options['coach_price']) || isset($options['branch_price'])) {
-                            $coachPaid = (float) ($options['coach_paid_amount'] ?? $options['coach_price'] ?? 0);
-                            $branchPaid = (float) ($options['branch_paid_amount'] ?? $options['branch_price'] ?? 0);
+                        if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount'])) {
+                            $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
+                            $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
                         } elseif ($hasExplicitSplit) {
-                            $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                            $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                            $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                            $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
                             if ($paidAmount >= ($totalCoachPrice + $totalBranchPrice)) {
                                 $coachPaid = $totalCoachPrice;
                                 $branchPaid = $paidAmount - $coachPaid;
@@ -2037,6 +2031,17 @@ class SubscriptionService
             } elseif (!empty($data['offer_id']) && $data['offer_id'] != $subscription->offer_id) {
                 $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($data['offer_id']);
                 $totalAmount = (float) $offer->price;
+                $data['total_amount'] = $totalAmount;
+            } elseif (isset($data['months_count']) && (int) $data['months_count'] !== (int) $subscription->months_count) {
+                $monthsCount = max(1, (int) $data['months_count']);
+                $activePlan = $subscription->plan;
+                if ($activePlan && $activePlan->coach_price !== null && $activePlan->branch_price !== null) {
+                    $totalAmount = round(((float) $activePlan->coach_price + (float) $activePlan->branch_price) * $monthsCount, 2);
+                } elseif ($activePlan) {
+                    $totalAmount = round((float) $activePlan->base_price * $monthsCount, 2);
+                } else {
+                    $totalAmount = $oldTotalAmount;
+                }
                 $data['total_amount'] = $totalAmount;
             } else {
                 $totalAmount = $oldTotalAmount;
