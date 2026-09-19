@@ -37,10 +37,7 @@ export default async function MyProfilePage() {
   if (!member?.id) notFound();
 
   const allBranches = getBranchesArray(branchesResponse);
-  const playerBranchId = member.branch_id || user?.branch_id;
-  const initialBranches = playerBranchId
-    ? allBranches.filter((b) => String(b.id) === String(playerBranchId))
-    : allBranches;
+  const initialBranches = allBranches;
 
   return (
     <PlayerProfileClient
