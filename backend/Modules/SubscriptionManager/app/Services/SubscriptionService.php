@@ -2137,6 +2137,14 @@ class SubscriptionService
 
             // 3. Status determination based on dates and sessions
             $today = now()->toDateString();
+
+            // If start_date or months_count is provided without an explicit end_date, calculate end_date automatically
+            if (!array_key_exists('end_date', $data) && (array_key_exists('start_date', $data) || array_key_exists('months_count', $data))) {
+                $effectiveStartDate = Carbon::parse($data['start_date'] ?? $subscription->start_date);
+                $effectiveMonths = max(1, (int) ($data['months_count'] ?? $subscription->months_count ?? 1));
+                $data['end_date'] = $effectiveStartDate->copy()->addMonths($effectiveMonths)->toDateString();
+            }
+
             $effectiveEndDate = array_key_exists('end_date', $data)
                 ? ($data['end_date'] ? Carbon::parse($data['end_date'])->toDateString() : null)
                 : ($subscription->end_date ? Carbon::parse($subscription->end_date)->toDateString() : null);
@@ -2154,9 +2162,22 @@ class SubscriptionService
                 }
             }
 
-            if (!isset($data['status'])) {
-                if ($isDateExpired || $isSessionsExhausted) {
+            $requestedStatus = $data['status'] ?? $oldStatus;
+
+            if ($isDateExpired || $isSessionsExhausted) {
+                // If date has passed or sessions are exhausted, the subscription cannot remain active.
+                // Preserve administrative statuses ('terminated' or 'frozen') if explicitly set, otherwise enforce FINISHED.
+                if ($requestedStatus !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value
+                    && $requestedStatus !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
                     $data['status'] = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value;
+                }
+            } elseif (!$isDateExpired && !$isSessionsExhausted) {
+                // If date is valid and sessions are not exhausted:
+                // Reactivate to ACTIVE if requested as active or if extending a previously finished subscription
+                if ($requestedStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value
+                    || (!isset($data['status']) && $oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value)
+                    || (isset($data['status']) && $data['status'] === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value && $oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value && (array_key_exists('end_date', $data) || array_key_exists('start_date', $data) || array_key_exists('months_count', $data)))) {
+                    $data['status'] = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value;
                 }
             }
 

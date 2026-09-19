@@ -285,6 +285,20 @@ class PlayerSubscription extends Model
      */
     protected static function booted(): void
     {
+        static::saving(function ($subscription) {
+            if (!empty($subscription->end_date)) {
+                $today = now()->toDateString();
+                $endDateStr = \Carbon\Carbon::parse($subscription->end_date)->toDateString();
+                $currentStatus = $subscription->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
+                    ? $subscription->status->value
+                    : (string) $subscription->status;
+
+                if ($endDateStr < $today && $currentStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value) {
+                    $subscription->status = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED;
+                }
+            }
+        });
+
         static::saved(function ($subscription) {
             if (class_exists(\Modules\AttendanceManager\Services\DashboardNotificationService::class)) {
                 $branchId = $subscription->branch_id ?? $subscription->member?->branch_id;
