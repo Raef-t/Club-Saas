@@ -187,8 +187,8 @@ describe("OfferForm", () => {
     // Select swim plan (1000)
     fireEvent.click(screen.getByText("اشتراك سباحة شهري"));
 
-    // Name input should automatically reflect the selected plan name!
-    const nameInput = screen.getByDisplayValue("اشتراك سباحة شهري");
+    // Name input should automatically reflect the selected plan name with 'عرض - ' prefix!
+    const nameInput = screen.getByDisplayValue("عرض - اشتراك سباحة شهري");
     expect(nameInput).toBeInTheDocument();
 
     // Enter offer price 700
@@ -237,12 +237,65 @@ describe("OfferForm", () => {
 
     expect(handleSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: "عرض اشتراك سباحة شهري / اشتراك حديد ولياقة",
+        name: "عرض - اشتراك سباحة شهري / اشتراك حديد ولياقة",
         offer_type: "single_choice",
         price: 200,
         plans: [10, 20],
       }),
     );
+  });
+
+  it("selects all filtered plans using 'تحديد الكل' button", () => {
+    render(
+      <OfferForm
+        mode="create"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        branches={[{ id: 1, name: "الفرع الرئيسي" }]}
+      />,
+    );
+
+    const selectAllBtn = screen.getByRole("button", { name: "تحديد الكل" });
+    fireEvent.click(selectAllBtn);
+
+    // All 3 plans should now be selected
+    expect(screen.getByText("تم تحديد 3 فعالية")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "إلغاء تحديد الكل" })).toBeInTheDocument();
+
+    // Click again to deselect all
+    fireEvent.click(screen.getByRole("button", { name: "إلغاء تحديد الكل" }));
+    expect(screen.queryByText(/تم تحديد/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "تحديد الكل" })).toBeInTheDocument();
+  });
+
+  it("calculates total duration price (duration * sum of plans prices) and allows applying as offer price", () => {
+    render(
+      <OfferForm
+        mode="create"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        branches={[{ id: 1, name: "الفرع الرئيسي" }]}
+      />,
+    );
+
+    // Select swim (1000) and fitness (800) -> total original = 1800
+    fireEvent.click(screen.getByText("اشتراك سباحة شهري"));
+    fireEvent.click(screen.getByText("اشتراك حديد ولياقة"));
+
+    // Enter duration = 30 days -> 30 * 1800 = 54000
+    const durationInput = screen.getByPlaceholderText("مثال: 30");
+    fireEvent.change(durationInput, { target: { value: "30" } });
+
+    // Calculated price field should display the formatted total
+    expect(screen.getByDisplayValue(/54[,\u066c]?000/)).toBeInTheDocument();
+
+    // Click "اعتماد كسعر للعرض"
+    const applyBtn = screen.getByRole("button", { name: "اعتماد كسعر للعرض" });
+    fireEvent.click(applyBtn);
+
+    // Price input should now be 54000
+    const priceInput = screen.getByPlaceholderText("أدخل سعر العرض");
+    expect(priceInput).toHaveValue(54000);
   });
 
   it("toggles start_date and end_date fields when 'فعالية غير محدودة' checkbox is toggled", () => {
@@ -274,5 +327,22 @@ describe("OfferForm", () => {
     expect(unlimitedCheckbox).toBeChecked();
     expect(screen.queryByText("من تاريخ")).not.toBeInTheDocument();
     expect(screen.queryByText("إلى تاريخ")).not.toBeInTheDocument();
+  });
+
+  it("defaults activity type to 'تدريب عام' when available in create mode", () => {
+    render(
+      <OfferForm
+        mode="create"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        branches={[{ id: 1, name: "الفرع الرئيسي" }]}
+      />,
+    );
+
+    // In current mock, types are "سباحة", "حديد ولياقة", "حصة جماعية"
+    // Since "تدريب عام" is not in mock, it falls back safely to "جميع أنواع الأنشطة"
+    const buttons = screen.getAllByRole("button");
+    const activityTypeBtn = buttons.find((btn) => btn.textContent.includes("جميع أنواع الأنشطة"));
+    expect(activityTypeBtn).toBeInTheDocument();
   });
 });

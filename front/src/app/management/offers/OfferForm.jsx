@@ -31,6 +31,30 @@ function normalizeArabicText(str) {
     .toLowerCase();
 }
 
+function findGeneralTrainingActivityTypeId(activityTypes = []) {
+  const match = activityTypes.find((type) => {
+    if (!type) return false;
+    const names =
+      type.name && typeof type.name === "object"
+        ? Object.values(type.name)
+        : [formatLocalizedName(type.name) || type.name];
+    const searchableText = [type.code, type.slug, type.type, ...names]
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+      .toLowerCase()
+      .replace(/[_-]+/g, " ");
+
+    const normalized = normalizeArabicText(searchableText);
+    return (
+      searchableText.includes("general training") ||
+      normalized.includes(normalizeArabicText("تدريب عام"))
+    );
+  });
+
+  return match?.id ? String(match.id) : null;
+}
+
 export default function OfferForm({
   mode = "create",
   initialValues = null,
@@ -84,6 +108,7 @@ export default function OfferForm({
 
   const [errors, setErrors] = useState({});
   const [selectedActivityTypeId, setSelectedActivityTypeId] = useState("all");
+  const [hasAppliedDefaultActivityType, setHasAppliedDefaultActivityType] = useState(false);
   const [planSearchTerm, setPlanSearchTerm] = useState("");
   const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(
     () => mode === "edit" || Boolean(initialValues?.name?.trim()),
@@ -136,6 +161,18 @@ export default function OfferForm({
 
     return [{ value: "all", label: "جميع أنواع الأنشطة" }, ...uniqueOptions];
   }, [rawActivityTypes]);
+
+  // Default activity type to "تدريب عام" in create mode
+  useEffect(() => {
+    if (mode !== "create" || hasAppliedDefaultActivityType || rawActivityTypes.length === 0) {
+      return;
+    }
+    const generalTrainingId = findGeneralTrainingActivityTypeId(rawActivityTypes);
+    if (generalTrainingId) {
+      setSelectedActivityTypeId(generalTrainingId);
+      setHasAppliedDefaultActivityType(true);
+    }
+  }, [mode, rawActivityTypes, hasAppliedDefaultActivityType]);
 
   // Load plans for branch
   const branchParams = useMemo(() => {
@@ -257,7 +294,32 @@ export default function OfferForm({
     }));
   }
 
-  // Auto-generate offer name based on selected activities
+  const areAllFilteredSelected = useMemo(() => {
+    if (!filteredPlans.length) return false;
+    return filteredPlans.every((plan) => form.plans.includes(Number(plan.id)));
+  }, [filteredPlans, form.plans]);
+
+  function toggleSelectAllFiltered() {
+    if (areAllFilteredSelected) {
+      const filteredIds = new Set(filteredPlans.map((p) => Number(p.id)));
+      setForm((prev) => ({
+        ...prev,
+        plans: prev.plans.filter((id) => !filteredIds.has(id)),
+      }));
+    } else {
+      const newPlansSet = new Set(form.plans);
+      filteredPlans.forEach((p) => newPlansSet.add(Number(p.id)));
+      setForm((prev) => ({
+        ...prev,
+        plans: Array.from(newPlansSet),
+      }));
+      if (errors.plans) {
+        setErrors((prev) => ({ ...prev, plans: null }));
+      }
+    }
+  }
+
+  // Auto-generate offer name based on selected activities: عرض - اسم الفعالية
   const suggestedName = useMemo(() => {
     if (!form.plans || form.plans.length === 0) return "";
     const selectedPlanObjects = form.plans
@@ -267,18 +329,11 @@ export default function OfferForm({
     const planNames = selectedPlanObjects.map((p) => formatLocalizedName(p.name) || p.name);
     if (planNames.length === 0) return "";
 
-    if (form.offer_type === "bundle") {
-      return planNames.join(" + ");
-    } else {
-      const selectedTypeOpt = activityTypeOptions.find(
-        (t) => String(t.value) === String(selectedActivityTypeId),
-      );
-      if (selectedTypeOpt && selectedActivityTypeId !== "all") {
-        return `عرض ${selectedTypeOpt.label}`;
-      }
-      return `عرض ${planNames.join(" / ")}`;
-    }
-  }, [form.plans, form.offer_type, allPlans, activityTypeOptions, selectedActivityTypeId]);
+    const combinedPlanNames =
+      form.offer_type === "bundle" ? planNames.join(" + ") : planNames.join(" / ");
+
+    return `عرض - ${combinedPlanNames}`;
+  }, [form.plans, form.offer_type, allPlans]);
 
   // Sync suggested name to form if name hasn't been manually edited
   useEffect(() => {
@@ -419,6 +474,14 @@ export default function OfferForm({
   }, [totalRegularPrice, planCount]);
 
   const offerPriceNum = Number(form.price) || 0;
+  const durationDaysNum = Number(form.duration_days) || 0;
+
+  // New calculated price: duration_days (in days) * sum of original prices
+  const calculatedDurationPrice =
+    durationDaysNum > 0 && totalRegularPrice > 0 ? durationDaysNum * totalRegularPrice : 0;
+
+  const effectiveOriginalPrice =
+    calculatedDurationPrice > 0 ? calculatedDurationPrice : totalRegularPrice;
 
   // Single choice savings (per activity)
   const singleChoiceSavingsMin =
@@ -432,12 +495,12 @@ export default function OfferForm({
 
   // Bundle savings (total package savings & per-activity savings)
   const bundleTotalSavings =
-    totalRegularPrice > offerPriceNum ? totalRegularPrice - offerPriceNum : 0;
+    effectiveOriginalPrice > offerPriceNum ? effectiveOriginalPrice - offerPriceNum : 0;
   const bundleSavingsPerPlan =
     planCount > 0 && bundleTotalSavings > 0 ? Math.round(bundleTotalSavings / planCount) : 0;
   const bundleDiscountPercent =
-    totalRegularPrice > 0 && bundleTotalSavings > 0
-      ? Math.round((bundleTotalSavings / totalRegularPrice) * 100)
+    effectiveOriginalPrice > 0 && bundleTotalSavings > 0
+      ? Math.round((bundleTotalSavings / effectiveOriginalPrice) * 100)
       : 0;
 
   function handleSubmit(e) {
@@ -519,11 +582,22 @@ export default function OfferForm({
           <div className="space-y-2 pt-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-sm text-app-muted-light">الفعاليات المشمولة في العرض *</span>
-              {form.plans.length > 0 && (
-                <span className="text-xs text-app-yellow font-medium">
-                  تم تحديد {form.plans.length} فعالية
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {form.plans.length > 0 && (
+                  <span className="text-xs text-app-yellow font-medium">
+                    تم تحديد {form.plans.length} فعالية
+                  </span>
+                )}
+                {filteredPlans.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={toggleSelectAllFiltered}
+                    className="rounded-lg border border-app-yellow/40 bg-app-yellow/10 px-2.5 py-1 text-xs font-medium text-app-yellow transition-colors hover:bg-app-yellow hover:text-black cursor-pointer"
+                  >
+                    {areAllFilteredSelected ? "إلغاء تحديد الكل" : "تحديد الكل"}
+                  </button>
+                )}
+              </div>
             </div>
 
             <SearchInput
@@ -656,7 +730,7 @@ export default function OfferForm({
           title="تفاصيل العرض والتسعير"
           description="اكتب اسمًا واضحًا وحدد السعر النهائي الذي سيظهر للمشترك."
         >
-          {/* 4. اسم العرض هو اسم الفعاليات يلي اخترتن */}
+          {/* 1. اسم العرض */}
           <Field
             label="اسم العرض"
             value={form.name}
@@ -664,20 +738,54 @@ export default function OfferForm({
               setIsNameManuallyEdited(true);
               updateField("name", e.target.value);
             }}
-            placeholder={suggestedName || "اسم الفعاليات المختارة"}
+            placeholder={suggestedName || "عرض - اسم الفعالية"}
             required
             error={errors.name}
           />
 
-          <TextAreaField
-            label="وصف العرض"
-            value={form.description}
-            onChange={(event) => updateField("description", event.target.value)}
-            placeholder="اكتب وصفًا مختصرًا يوضح مزايا العرض وشروطه"
-            error={errors.description}
-          />
+          {/* 2. مدة الاشتراك (بالأيام) */}
+          <div>
+            <Field
+              label="مدة الاشتراك (بالأيام)"
+              type="number"
+              min="1"
+              step="1"
+              value={form.duration_days}
+              onChange={(e) => updateField("duration_days", e.target.value)}
+              placeholder="مثال: 30"
+              error={errors.duration_days}
+            />
 
-          {/* 5. سعر العرض */}
+            {/* أزرار سريعة */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {DURATION_PRESETS.map((preset) => (
+                <button
+                  key={preset.days}
+                  type="button"
+                  onClick={() => updateField("duration_days", String(preset.days))}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    String(form.duration_days) === String(preset.days)
+                      ? "border-app-yellow bg-app-yellow/20 text-app-yellow"
+                      : "border-app-line bg-app-card-soft text-app-muted-light hover:border-app-yellow/50 hover:text-white cursor-pointer"
+                  }`}
+                >
+                  {preset.label} ({preset.days})
+                </button>
+              ))}
+            </div>
+
+            {/* تلميح المدة التلقائي */}
+            {form.duration_days && Number(form.duration_days) > 0 && (
+              <p className="mt-1.5 text-[11px] text-cyan-400 flex items-center gap-1">
+                <span>⏱</span>
+                <span>
+                  يعادل <strong>{formatDurationDays(form.duration_days)}</strong>
+                </span>
+              </p>
+            )}
+          </div>
+
+          {/* 3. سعر العرض */}
           <div>
             <Field
               label="سعر العرض"
@@ -723,8 +831,12 @@ export default function OfferForm({
                   // Bundle savings display (shows both total savings & per-activity savings)
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-app-muted-light">
-                      <span>مجموع السعر الأصلي للفعاليات:</span>
-                      <strong className="text-white">{formatMoney(totalRegularPrice)}</strong>
+                      <span>
+                        {durationDaysNum > 0
+                          ? `مجموع السعر الأصلي للفعاليات (${durationDaysNum} يوم):`
+                          : "مجموع السعر الأصلي للفعاليات:"}
+                      </span>
+                      <strong className="text-white">{formatMoney(effectiveOriginalPrice)}</strong>
                     </div>
 
                     {bundleTotalSavings > 0 ? (
@@ -756,47 +868,41 @@ export default function OfferForm({
             )}
           </div>
 
-          {/* 5.1 مدة الاشتراك بالأيام */}
+          {/* 4. حقل سعر جديد حاصل ناتجه: مدة الاشتراك (بالأيام) * مجموع السعر الأصلي للفعاليات */}
           <div>
             <Field
-              label="مدة الاشتراك (بالأيام)"
-              type="number"
-              min="1"
-              step="1"
-              value={form.duration_days}
-              onChange={(e) => updateField("duration_days", e.target.value)}
-              placeholder="مثال: 30"
-              error={errors.duration_days}
+              label="إجمالي السعر الأصلي للفعاليات حسب المدة"
+              required={false}
+              readOnly
+              value={calculatedDurationPrice > 0 ? formatMoney(calculatedDurationPrice) : ""}
+              placeholder="يُحسب تلقائياً: مدة الاشتراك (بالأيام) × مجموع السعر الأصلي للفعاليات"
+              className="bg-app-card-soft/40"
             />
-
-            {/* أزرار سريعة */}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {DURATION_PRESETS.map((preset) => (
-                <button
-                  key={preset.days}
-                  type="button"
-                  onClick={() => updateField("duration_days", String(preset.days))}
-                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    String(form.duration_days) === String(preset.days)
-                      ? "border-app-yellow bg-app-yellow/20 text-app-yellow"
-                      : "border-app-line bg-app-card-soft text-app-muted-light hover:border-app-yellow/50 hover:text-white"
-                  }`}
-                >
-                  {preset.label} ({preset.days})
-                </button>
-              ))}
-            </div>
-
-            {/* تلميح المدة التلقائي */}
-            {form.duration_days && Number(form.duration_days) > 0 && (
-              <p className="mt-1.5 text-[11px] text-cyan-400 flex items-center gap-1">
-                <span>⏱</span>
+            {durationDaysNum > 0 && totalRegularPrice > 0 && (
+              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-app-muted-light">
                 <span>
-                  يعادل <strong>{formatDurationDays(form.duration_days)}</strong>
+                  {durationDaysNum} يوم × {formatMoney(totalRegularPrice)} ={" "}
+                  <strong className="text-app-yellow">{formatMoney(calculatedDurationPrice)}</strong>
                 </span>
-              </p>
+                <button
+                  type="button"
+                  onClick={() => updateField("price", String(calculatedDurationPrice))}
+                  className="text-xs text-app-yellow hover:underline font-medium cursor-pointer"
+                >
+                  اعتماد كسعر للعرض
+                </button>
+              </div>
             )}
           </div>
+
+          {/* 5. وصف العرض (تم نقله للأسفل) */}
+          <TextAreaField
+            label="وصف العرض"
+            value={form.description}
+            onChange={(event) => updateField("description", event.target.value)}
+            placeholder="اكتب وصفًا مختصرًا يوضح مزايا العرض وشروطه"
+            error={errors.description}
+          />
 
           {/* عدد المشتركين المتاح تسجيلهم لهذا العرض */}
           <div className="rounded-xl border border-app-line bg-app-card-soft/80 p-3.5 text-xs space-y-2">
