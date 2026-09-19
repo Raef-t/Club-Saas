@@ -15,7 +15,7 @@ import { offerSchema } from "@/lib/validations/offersSchema";
 import { withAllItems } from "@/lib/pagination";
 import { getEntityBranchIds, getPreferredBranchId } from "@/lib/managementBranchUtils";
 import OfferFormSection from "./_components/OfferFormSection";
-import { formatDurationDays, DURATION_PRESETS } from "./_lib/durationHelpers";
+import { formatDurationDays, DURATION_PRESETS, getDurationInMonths } from "./_lib/durationHelpers";
 
 const OFFER_TYPE_OPTIONS = [
   { value: "bundle", label: "باقة" },
@@ -475,10 +475,13 @@ export default function OfferForm({
 
   const offerPriceNum = Number(form.price) || 0;
   const durationDaysNum = Number(form.duration_days) || 0;
+  const durationMonths = getDurationInMonths(form.duration_days);
 
-  // New calculated price: duration_days (in days) * sum of original prices
+  // New calculated price: duration in months * sum of original prices
   const calculatedDurationPrice =
-    durationDaysNum > 0 && totalRegularPrice > 0 ? durationDaysNum * totalRegularPrice : 0;
+    durationMonths > 0 && totalRegularPrice > 0
+      ? Math.round(durationMonths * totalRegularPrice)
+      : 0;
 
   const effectiveOriginalPrice =
     calculatedDurationPrice > 0 ? calculatedDurationPrice : totalRegularPrice;
@@ -833,7 +836,7 @@ export default function OfferForm({
                     <div className="flex items-center justify-between text-app-muted-light">
                       <span>
                         {durationDaysNum > 0
-                          ? `مجموع السعر الأصلي للفعاليات (${durationDaysNum} يوم):`
+                          ? `مجموع السعر الأصلي للفعاليات (${formatDurationDays(durationDaysNum)}):`
                           : "مجموع السعر الأصلي للفعاليات:"}
                       </span>
                       <strong className="text-white">{formatMoney(effectiveOriginalPrice)}</strong>
@@ -868,20 +871,20 @@ export default function OfferForm({
             )}
           </div>
 
-          {/* 4. حقل سعر جديد حاصل ناتجه: مدة الاشتراك (بالأيام) * مجموع السعر الأصلي للفعاليات */}
+          {/* 4. حقل سعر جديد حاصل ناتجه: مدة الاشتراك (بالأشهر) * مجموع السعر الأصلي للفعاليات */}
           <div>
             <Field
               label="إجمالي السعر الأصلي للفعاليات حسب المدة"
               required={false}
               readOnly
               value={calculatedDurationPrice > 0 ? formatMoney(calculatedDurationPrice) : ""}
-              placeholder="يُحسب تلقائياً: مدة الاشتراك (بالأيام) × مجموع السعر الأصلي للفعاليات"
+              placeholder="يُحسب تلقائياً: مدة الاشتراك (بالأشهر) × مجموع السعر الأصلي للفعاليات"
               className="bg-app-card-soft/40"
             />
-            {durationDaysNum > 0 && totalRegularPrice > 0 && (
+            {durationMonths > 0 && totalRegularPrice > 0 && (
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-app-muted-light">
                 <span>
-                  {durationDaysNum} يوم × {formatMoney(totalRegularPrice)} ={" "}
+                  {formatDurationDays(durationDaysNum)} ({durationMonths} {durationMonths === 1 ? "شهر" : "أشهر"}) × {formatMoney(totalRegularPrice)} ={" "}
                   <strong className="text-app-yellow">{formatMoney(calculatedDurationPrice)}</strong>
                 </span>
                 <button
