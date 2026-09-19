@@ -282,20 +282,20 @@ describe("OfferForm", () => {
     fireEvent.click(screen.getByText("اشتراك سباحة شهري"));
     fireEvent.click(screen.getByText("اشتراك حديد ولياقة"));
 
-    // Enter duration = 30 days -> 30 * 1800 = 54000
+    // Enter duration = 60 days (2 months) -> 2 * 1800 = 3600
     const durationInput = screen.getByPlaceholderText("مثال: 30");
-    fireEvent.change(durationInput, { target: { value: "30" } });
+    fireEvent.change(durationInput, { target: { value: "60" } });
 
-    // Calculated price field should display the formatted total
-    expect(screen.getByDisplayValue(/54[,\u066c]?000/)).toBeInTheDocument();
+    // Calculated price field should display the formatted total (3,600 ل.س)
+    expect(screen.getByDisplayValue(/3,600/)).toBeInTheDocument();
 
     // Click "اعتماد كسعر للعرض"
     const applyBtn = screen.getByRole("button", { name: "اعتماد كسعر للعرض" });
     fireEvent.click(applyBtn);
 
-    // Price input should now be 54000
+    // Price input should now be 3600
     const priceInput = screen.getByPlaceholderText("أدخل سعر العرض");
-    expect(priceInput).toHaveValue(54000);
+    expect(priceInput).toHaveValue(3600);
   });
 
   it("toggles start_date and end_date fields when 'فعالية غير محدودة' checkbox is toggled", () => {

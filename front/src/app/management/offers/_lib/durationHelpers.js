@@ -74,3 +74,19 @@ export const DURATION_PRESETS = [
   { label: "3 أشهر", days: 90 },
   { label: "سنة", days: 365 },
 ];
+
+/**
+ * Converts a duration in days into months (e.g. 30 days -> 1, 45 -> 1.5, 60 -> 2, 365 -> 12).
+ *
+ * @param {number|string} days
+ * @returns {number} Duration in months
+ */
+export function getDurationInMonths(days) {
+  const d = Number(days);
+  if (!d || d <= 0 || !Number.isFinite(d)) return 0;
+  if (d === 365) return 12;
+  if (d === 730) return 24;
+
+  const months = d / 30;
+  return Math.round(months * 100) / 100;
+}

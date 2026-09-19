@@ -33,6 +33,7 @@ export default function SubscriptionDiscountFields({
   coachOriginal,
   branchOriginal,
   isPrivatePlan,
+  isOfferSelected = false,
   errors = {},
   onToggle,
   onModeChange,
@@ -47,7 +48,13 @@ export default function SubscriptionDiscountFields({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-right">
           <p className="text-xs text-app-muted-light">
-            {form.is_discount ? "السعر الأصلي قبل الحسم" : "السعر الأساسي"}
+            {isOfferSelected
+              ? form.is_discount
+                ? "سعر العرض قبل الحسم"
+                : "سعر العرض الأساسي"
+              : form.is_discount
+                ? "السعر الأصلي قبل الحسم"
+                : "السعر الأساسي"}
           </p>
           <p className="mt-1 text-lg font-semibold text-app-text">{formatMoney(originalTotal)}</p>
         </div>
