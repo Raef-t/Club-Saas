@@ -184,6 +184,8 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
         $landline = $contacts->first(fn($c) => $c->name === 'Landline');
         $emergency = $contacts->first(fn($c) => $c->relation === 'emergency');
 
+        $user = $person->relationLoaded('user') ? $person->user : $person->user;
+
         return new PersonDTO(
             id: $person->id,
             fullName: $person->full_name,
@@ -206,7 +208,9 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
             childrenCount: $person->children_count,
             howDidYouHear: $person->how_did_you_hear,
             notes: $person->notes,
-            dob: $person->dob
+            dob: $person->dob,
+            username: $user?->username,
+            customUsername: $user?->custom_username
         );
     }
 }

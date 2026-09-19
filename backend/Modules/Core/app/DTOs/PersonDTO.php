@@ -28,6 +28,8 @@ readonly class PersonDTO
         public ?string $howDidYouHear = null,
         public ?string $notes = null,
         public ?int $age = null,
-        public ?string $dob = null
+        public ?string $dob = null,
+        public ?string $username = null,
+        public ?string $customUsername = null
     ) {}
 }
