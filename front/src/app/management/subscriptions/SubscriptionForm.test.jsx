@@ -930,4 +930,75 @@ describe("subscription edit receipts", () => {
     // No redundant secondary plan dropdown
     expect(screen.queryByText(/الفعالية المحددة للاشتراك بسعر العرض/)).not.toBeInTheDocument();
   });
+
+  it("takes the offer price instead of the activity base price and displays the offer duration in months", () => {
+    const { container } = render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "سارة أحمد" } }]}
+        plans={[
+          {
+            id: 101,
+            name: "أجهزة عام - يومي",
+            base_price: 350,
+            activity_types: [{ id: 1, name: "أجهزة" }],
+          },
+        ]}
+        activityTypes={[{ id: 1, name: "أجهزة" }]}
+        selectedActivityTypeId="1"
+        offers={[
+          {
+            id: 50,
+            name: "عرض السنة يومي اجهزة",
+            offer_type: "single_choice",
+            price: 1300,
+            duration_days: 365,
+            is_available: true,
+            plans: [
+              {
+                id: 101,
+                name: "أجهزة عام - يومي",
+                base_price: 350,
+                activity_types: [{ id: 1, name: "أجهزة" }],
+              },
+            ],
+          },
+        ]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    // Select the offer
+    const offerDropdown = screen.getByRole("button", { name: /باقة العروض الترويجية/ });
+    fireEvent.click(offerDropdown);
+
+    // Option should contain duration label and price
+    const offerOption = screen.getByRole("option", {
+      name: /عرض السنة يومي اجهزة.*سنة كاملة.*1,300/,
+    });
+    expect(offerOption).toBeInTheDocument();
+    fireEvent.click(offerOption);
+
+    // 1. Paid amount must be the offer price (1300), NOT activity base price (350)
+    const paidAmount = container.querySelector('input[name="paid_amount"]');
+    expect(paidAmount).toHaveValue("1300");
+
+    // 2. Base price in discount section must display the offer price and label
+    expect(screen.getByText("سعر العرض الأساسي")).toBeInTheDocument();
+    // 1,300 should be displayed in the discount fields
+    expect(screen.getAllByText(/1,300/).length).toBeGreaterThanOrEqual(2);
+
+    // 3. Duration info must be shown prominently in months & days
+    expect(screen.getAllByText(/سنة كاملة \(12 شهر\)/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("مدة الاشتراك بالعرض (عدد الأشهر)")).toBeInTheDocument();
+    expect(screen.getByText("365 يوم")).toBeInTheDocument();
+
+    // 4. Toggling discount should use offer price (1300) as base, not activity price (350)
+    const discountCheckbox = screen.getByRole("checkbox", { name: /تطبيق حسم/ });
+    fireEvent.click(discountCheckbox);
+
+    expect(screen.getByText("سعر العرض قبل الحسم")).toBeInTheDocument();
+    const finalPriceInput = screen.getByLabelText(/السعر النهائي بعد الحسم/);
+    expect(finalPriceInput).toHaveValue(1300);
+  });
 });

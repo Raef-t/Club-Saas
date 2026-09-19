@@ -22,13 +22,61 @@ import {
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { getMemberAccountName } from "@/lib/memberIdentity";
 import SubscriptionDiscountFields from "./SubscriptionDiscountFields";
-import { getEndDateFromDuration } from "@/app/management/offers/_lib/durationHelpers";
+import {
+  getEndDateFromDuration,
+  formatDurationDays,
+  getDurationInMonths,
+} from "@/app/management/offers/_lib/durationHelpers";
 
-function getResetDiscountFields(plan, monthsCount = 1) {
-  const { originalTotal, coachOriginal, branchOriginal } = getSubscriptionOriginalAmounts(
-    plan,
-    monthsCount,
-  );
+export function getOfferDurationInfo(offer, fallbackStartDate = null, fallbackEndDate = null) {
+  if (!offer) return null;
+
+  let days = Number(offer.duration_days) || 0;
+  if (!days && offer.start_date && offer.end_date) {
+    const s = new Date(offer.start_date);
+    const e = new Date(offer.end_date);
+    if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && e > s) {
+      days = Math.round((e - s) / (1000 * 60 * 60 * 24));
+    }
+  }
+  if (!days && fallbackStartDate && fallbackEndDate) {
+    const s = new Date(fallbackStartDate);
+    const e = new Date(fallbackEndDate);
+    if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && e > s) {
+      days = Math.round((e - s) / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  const months = days > 0 ? getDurationInMonths(days) : 0;
+  const rawFormatted = offer.duration_formatted || (days > 0 ? formatDurationDays(days) : "");
+
+  let monthsText = "";
+  if (months > 0) {
+    if (months === 1) monthsText = "شهر واحد";
+    else if (months === 2) monthsText = "شهرين";
+    else if (months <= 10 && Number.isInteger(months)) monthsText = `${months} أشهر`;
+    else if (Number.isInteger(months)) monthsText = `${months} شهر`;
+    else monthsText = `${months} شهر تقريباً`;
+  }
+
+  let formattedText = rawFormatted || (monthsText ? monthsText : "غير محددة");
+  if (rawFormatted && monthsText && !rawFormatted.includes(monthsText)) {
+    formattedText = `${rawFormatted} (${monthsText})`;
+  }
+
+  return {
+    days,
+    months: months || 1,
+    integerMonths: Math.max(1, Math.round(months) || 1),
+    monthsText: monthsText || "شهر واحد",
+    formattedText,
+    shortText: rawFormatted || monthsText || "",
+  };
+}
+
+function getResetDiscountFields(plan, monthsCount = 1, overrideAmounts = null) {
+  const { originalTotal, coachOriginal, branchOriginal } =
+    overrideAmounts || getSubscriptionOriginalAmounts(plan, monthsCount);
 
   return {
     is_discount: false,
@@ -212,6 +260,9 @@ export function SubscriptionCreateForm({
     const options = [{ value: "", label: "بدون عرض (اشتراك فردي اعتيادي)" }];
 
     availableOffers.forEach((offer) => {
+      const dur = getOfferDurationInfo(offer);
+      const durLabel = dur?.shortText ? ` (${dur.shortText})` : "";
+
       if (offer.offer_type === "single_choice") {
         const eligiblePlans = (offer.plans || []).filter(isPlanMatchingActivityType);
         eligiblePlans.forEach((plan) => {
@@ -229,7 +280,7 @@ export function SubscriptionCreateForm({
             offerId: String(offer.id),
             planId: String(plan.id),
             isBundle: false,
-            label: `${displayName} - ${formatMoney(offer.price)}${isFull ? " (⚠️ مكتملة السعة)" : ""}`,
+            label: `${displayName}${durLabel} - ${formatMoney(offer.price)}${isFull ? " (⚠️ مكتملة السعة)" : ""}`,
             disabled: isFull,
           });
         });
@@ -240,7 +291,7 @@ export function SubscriptionCreateForm({
           offerId: String(offer.id),
           planId: null,
           isBundle: true,
-          label: `${offer.name} - ${formatMoney(offer.price)} (باقة مجمعة)`,
+          label: `${offer.name}${durLabel} - ${formatMoney(offer.price)} (باقة مجمعة)`,
         });
       }
     });
@@ -280,6 +331,11 @@ export function SubscriptionCreateForm({
 
   const isSelectedOfferSingleChoice = selectedOfferObj?.offer_type === "single_choice";
 
+  const selectedOfferDuration = useMemo(() => {
+    if (!selectedOfferObj) return null;
+    return getOfferDurationInfo(selectedOfferObj, form.start_date, form.end_date);
+  }, [selectedOfferObj, form.start_date, form.end_date]);
+
   const matchingSingleChoiceOffer = useMemo(() => {
     if (form.offer_id || !form.plan_id) return null;
     return availableOffers.find((offer) => {
@@ -304,15 +360,32 @@ export function SubscriptionCreateForm({
   const isDailyEntryPlan = !form.offer_id && isDailyEntrySubscriptionPlan(selectedPlanObj);
   const isPrivatePlan =
     !form.offer_id && isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
-  const originalAmounts = getSubscriptionOriginalAmounts(selectedPlanObj, form.months_count);
+
+  const originalAmounts = useMemo(() => {
+    if (form.offer_id && selectedOfferObj) {
+      const offerPrice = Number(selectedOfferObj.price) || 0;
+      return {
+        originalTotal: offerPrice,
+        coachOriginal: 0,
+        branchOriginal: offerPrice,
+      };
+    }
+    return getSubscriptionOriginalAmounts(selectedPlanObj, form.months_count);
+  }, [form.offer_id, selectedOfferObj, selectedPlanObj, form.months_count]);
 
   function updateField(field, value) {
     setForm((current) => {
       const nextState = { ...current, [field]: value };
-      if (!isDailyEntryPlan && (field === "start_date" || field === "months_count")) {
-        const startDate = field === "start_date" ? value : current.start_date;
-        const months = field === "months_count" ? value : current.months_count;
-        if (startDate) nextState.end_date = getSubscriptionEndDate(startDate, months);
+      if (field === "start_date") {
+        if (form.offer_id && selectedOfferObj?.duration_days) {
+          nextState.end_date = getEndDateFromDuration(value, selectedOfferObj.duration_days);
+        } else if (!isDailyEntryPlan && value) {
+          nextState.end_date = getSubscriptionEndDate(value, current.months_count);
+        }
+      } else if (field === "months_count" && !isDailyEntryPlan && !form.offer_id) {
+        if (current.start_date) {
+          nextState.end_date = getSubscriptionEndDate(current.start_date, value);
+        }
       }
       return nextState;
     });
@@ -339,15 +412,23 @@ export function SubscriptionCreateForm({
       const defaultPlan =
         plans.find((p) => String(p.id) === String(form.plan_id)) || plans[0] || null;
       const today = isDailyEntrySubscriptionPlan(defaultPlan) ? getLocalDateValue() : "";
+      const planReset = getResetDiscountFields(defaultPlan, 1);
       setForm((current) => ({
         ...current,
         offer_id: "",
         plan_id: defaultPlan?.id ? String(defaultPlan.id) : "",
-        paid_amount: defaultPlan?.base_price ? String(defaultPlan.base_price) : "0",
+        months_count: "1",
         start_date: today || current.start_date,
-        end_date: today || current.end_date,
+        end_date: today || getSubscriptionEndDate(today || current.start_date, 1),
+        ...planReset,
       }));
-      setErrors((current) => ({ ...current, offer_id: null, plan_id: null, paid_amount: null }));
+      setErrors((current) => ({
+        ...current,
+        offer_id: null,
+        plan_id: null,
+        paid_amount: null,
+        months_count: null,
+      }));
       return;
     }
 
@@ -361,19 +442,28 @@ export function SubscriptionCreateForm({
     if (!selectedOffer) return;
 
     const offerPrice = String(selectedOffer.price ?? "0");
+    const offerPriceNum = Number(selectedOffer.price) || 0;
     const today = getLocalDateValue();
+    const durInfo = getOfferDurationInfo(selectedOffer);
+    const monthsCount = String(durInfo?.integerMonths || 1);
 
     // Calculate end_date: prefer duration_days over offer's own dates
-    function resolveEndDate(startDate, currentEndDate, currentMonths) {
+    function resolveEndDate(startDate, currentEndDate) {
       if (selectedOffer.duration_days) {
         return getEndDateFromDuration(startDate, selectedOffer.duration_days);
       }
       return (
         selectedOffer.end_date ||
         currentEndDate ||
-        getSubscriptionEndDate(startDate, currentMonths || 1)
+        getSubscriptionEndDate(startDate, monthsCount)
       );
     }
+
+    const offerDiscountReset = getResetDiscountFields(null, monthsCount, {
+      originalTotal: offerPriceNum,
+      coachOriginal: 0,
+      branchOriginal: offerPriceNum,
+    });
 
     if (selectedOffer.offer_type === "single_choice") {
       setForm((current) => {
@@ -383,8 +473,10 @@ export function SubscriptionCreateForm({
           offer_id: String(selectedOffer.id),
           plan_id: String(opt.planId),
           paid_amount: offerPrice,
+          months_count: monthsCount,
           start_date: startDate,
-          end_date: resolveEndDate(startDate, current.end_date, current.months_count),
+          end_date: resolveEndDate(startDate, current.end_date),
+          ...offerDiscountReset,
         };
       });
     } else {
@@ -398,8 +490,10 @@ export function SubscriptionCreateForm({
           offer_id: String(selectedOffer.id),
           plan_id: firstPlan?.id ? String(firstPlan.id) : current.plan_id || "1",
           paid_amount: offerPrice,
+          months_count: monthsCount,
           start_date: startDate,
-          end_date: resolveEndDate(startDate, current.end_date, current.months_count),
+          end_date: resolveEndDate(startDate, current.end_date),
+          ...offerDiscountReset,
         };
       });
     }
@@ -409,6 +503,7 @@ export function SubscriptionCreateForm({
       offer_id: null,
       plan_id: null,
       paid_amount: null,
+      months_count: null,
     }));
   }
 
@@ -501,7 +596,11 @@ export function SubscriptionCreateForm({
   function toggleDiscount(checked) {
     setForm((current) => ({
       ...current,
-      ...getResetDiscountFields(selectedPlanObj, current.months_count),
+      ...getResetDiscountFields(
+        selectedPlanObj,
+        current.months_count,
+        form.offer_id ? originalAmounts : null,
+      ),
       is_discount: checked,
     }));
   }
@@ -727,6 +826,26 @@ export function SubscriptionCreateForm({
                 </p>
               )}
 
+              {/* مدة العرض بالأشهر والأيام */}
+              {selectedOfferDuration && (
+                <div className="flex items-center justify-between rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs">
+                  <span className="text-amber-200 flex items-center gap-1.5 font-medium">
+                    <span>⏱️</span>
+                    <span>مدة صلاحية واشتراك العرض:</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-white font-bold text-sm">
+                      {selectedOfferDuration.formattedText}
+                    </strong>
+                    {selectedOfferDuration.days > 0 && (
+                      <span className="text-amber-300/80 text-[11px]">
+                        ({selectedOfferDuration.days} يوم)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {isSelectedOfferSingleChoice ? (
                 <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 p-2.5 text-xs text-purple-200">
                   💡 تم تطبيق سعر العرض المخفض ({formatMoney(selectedOfferObj.price)}) على فعالية{" "}
@@ -774,7 +893,7 @@ export function SubscriptionCreateForm({
           </p>
         </div>
       ) : form.offer_id && isSelectedOfferSingleChoice ? (
-        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 text-right text-xs space-y-1">
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 text-right text-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-white font-medium flex items-center gap-1.5">
               <span>🏷️</span>
@@ -785,22 +904,35 @@ export function SubscriptionCreateForm({
                 </strong>
               </span>
             </span>
-            <span className="text-app-yellow font-bold">
+            <span className="text-app-yellow font-bold text-sm">
               {formatMoney(selectedOfferObj?.price)}
             </span>
           </div>
-          {selectedPlanObj?.base_price && (
-            <p className="text-app-muted-light text-[11px]">
-              السعر الأساسي للفعالية: {formatMoney(selectedPlanObj.base_price)}
-              {Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
-                <span className="text-emerald-400 font-semibold ms-1">
-                  (توفير{" "}
-                  {formatMoney(Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price))}
-                  )
-                </span>
-              )}
-            </p>
-          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-purple-500/20 pt-2 text-[11px]">
+            {selectedOfferDuration && (
+              <span className="text-purple-200 flex items-center gap-1">
+                <span>⏱️ مدة الاشتراك:</span>
+                <strong className="text-white font-bold">
+                  {selectedOfferDuration.formattedText}
+                </strong>
+              </span>
+            )}
+            {selectedPlanObj?.base_price && (
+              <span className="text-app-muted-light">
+                السعر الأساسي للفعالية الفردية: {formatMoney(selectedPlanObj.base_price)}
+                {Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
+                  <span className="text-emerald-400 font-semibold ms-1">
+                    (توفير{" "}
+                    {formatMoney(
+                      Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price),
+                    )}
+                    )
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-2">
@@ -886,7 +1018,25 @@ export function SubscriptionCreateForm({
         </span>
       )}
 
-      {!form.offer_id && (
+      {form.offer_id ? (
+        <div className="block text-right text-sm text-app-muted-light">
+          <div className="flex items-center justify-between">
+            <span>مدة الاشتراك بالعرض (عدد الأشهر)</span>
+            <span className="text-xs text-app-yellow">محددة مسبقاً بموجب شروط العرض</span>
+          </div>
+          <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-app-line bg-app-card-soft px-3 text-white">
+            <span className="font-semibold text-app-yellow flex items-center gap-1.5">
+              <span>⏱️</span>
+              <span>{selectedOfferDuration?.formattedText || `${form.months_count} شهر`}</span>
+            </span>
+            <span className="text-xs text-app-muted-light">
+              {selectedOfferDuration?.days
+                ? `${selectedOfferDuration.days} يوم`
+                : `${form.months_count} شهر`}
+            </span>
+          </div>
+        </div>
+      ) : (
         <label className="block text-right text-sm text-app-muted-light">
           عدد الأشهر *
           <input
@@ -918,6 +1068,7 @@ export function SubscriptionCreateForm({
         coachOriginal={originalAmounts.coachOriginal}
         branchOriginal={originalAmounts.branchOriginal}
         isPrivatePlan={isPrivatePlan}
+        isOfferSelected={Boolean(form.offer_id)}
         errors={errors}
         onToggle={toggleDiscount}
         onModeChange={changeDiscountMode}
