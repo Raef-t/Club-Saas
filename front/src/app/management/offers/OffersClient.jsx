@@ -4,14 +4,10 @@ import { useMemo, useState } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
-import Drawer from "@/components/ui/Drawer";
 import RowActions from "@/components/ui/RowActions";
-import SearchInput from "@/components/ui/SearchInput";
-import Dropdown from "@/components/ui/Dropdown";
 import StatsGrid from "@/components/ui/StatsGrid";
-import DetailItem from "@/components/ui/DetailItem";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { PlusIcon, FilterIcon } from "@/components/icons/Icons";
+import { PlusIcon } from "@/components/icons/Icons";
 import { useGetOffersQuery, useDeleteOfferMutation } from "@/lib/api/offersApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { formatMoney, formatLocalizedName } from "@/lib/utils";
@@ -19,83 +15,12 @@ import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { useToast } from "@/components/ui/Toast";
 import { getApiErrorMessage } from "@/lib/apiError";
+import { OfferStatusBadge, OfferTypeBadge } from "./_components/OfferBadges";
+import OfferDetailsDrawer from "./_components/OfferDetailsDrawer";
+import OffersToolbar from "./_components/OffersToolbar";
+import { filterOffers, getOffersCollection, getPlanCapacity } from "./_lib/offerPresentation";
 
-const TABLE_GRID_COLUMNS =
-  "minmax(180px,1.2fr) minmax(260px,2fr) 110px 120px 105px 110px";
-
-const STATUS_FILTER_OPTIONS = [
-  { value: "all", label: "جميع الحالات" },
-  { value: "available", label: "المتاحة للاشتراك فقط" },
-  { value: "inactive", label: "المعطلة أو المكتملة" },
-];
-
-function getPlanCapacity(plan) {
-  const isUnlimited = Boolean(
-    plan.is_unlimited_subscribers ||
-    plan.max_subscribers === 0 ||
-    plan.max_subscribers === null ||
-    plan.max_subscribers === undefined
-  );
-
-  if (isUnlimited) {
-    return { isUnlimited: true, isFull: false, availableSeats: Infinity, label: "غير محدود" };
-  }
-
-  let slots = 0;
-  if (plan.available_slots !== undefined && plan.available_slots !== null) {
-    slots = Math.max(0, Number(plan.available_slots));
-  } else {
-    const max = Number(plan.max_subscribers) || 0;
-    const cur = Number(plan.current_subscribers) || 0;
-    slots = Math.max(0, max - cur);
-  }
-
-  const isFull = slots <= 0;
-  return {
-    isUnlimited: false,
-    isFull,
-    availableSeats: slots,
-    label: isFull ? "مكتمل" : `${slots} مقعد`,
-  };
-}
-
-function OfferStatusBadge({ offer }) {
-  if (!offer.is_active) {
-    return (
-      <span className="inline-flex min-w-20 justify-center rounded-md border border-rose-500/30 bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-400">
-        معطل
-      </span>
-    );
-  }
-
-  if (offer.end_date && new Date(offer.end_date) < new Date().setHours(0, 0, 0, 0)) {
-    return (
-      <span className="inline-flex min-w-20 justify-center rounded-md border border-rose-500/30 bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-400">
-        منتهي الصلاحية
-      </span>
-    );
-  }
-
-  if (offer.is_available) {
-    const slotsText =
-      offer.offer_type !== "single_choice" &&
-      offer.available_slots !== null &&
-      offer.available_slots !== undefined
-        ? ` (${offer.available_slots} مقعد)`
-        : "";
-    return (
-      <span className="inline-flex min-w-20 justify-center rounded-md border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-400">
-        متاح{slotsText}
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex min-w-20 justify-center rounded-md border border-amber-500/30 bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-400">
-      مكتمل السعة
-    </span>
-  );
-}
+const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) minmax(260px,2fr) 110px 120px 105px 110px";
 
 export default function OffersClient() {
   const toast = useToast();
@@ -126,34 +51,13 @@ export default function OffersClient() {
 
   const { data, isLoading, isFetching, isError, refetch } = useGetOffersQuery(queryParams);
 
-  const offers = useMemo(() => {
-    let list = [];
-    if (Array.isArray(data?.data?.data)) list = data.data.data;
-    else if (Array.isArray(data?.data)) list = data.data;
-    else if (Array.isArray(data)) list = data;
-    return list;
-  }, [data]);
+  const offers = useMemo(() => getOffersCollection(data), [data]);
 
   // Client-side filtering
-  const filteredOffers = useMemo(() => {
-    return offers.filter((offer) => {
-      if (searchTerm.trim()) {
-        const query = searchTerm.toLowerCase();
-        const matchesName = offer.name?.toLowerCase().includes(query);
-        const matchesDesc = offer.description?.toLowerCase().includes(query);
-        const matchesPlan = offer.plans?.some((p) => p.name?.toLowerCase().includes(query));
-        if (!matchesName && !matchesDesc && !matchesPlan) return false;
-      }
-
-      if (statusFilter === "available") {
-        if (!offer.is_available) return false;
-      } else if (statusFilter === "inactive") {
-        if (offer.is_active && offer.is_available) return false;
-      }
-
-      return true;
-    });
-  }, [offers, searchTerm, statusFilter]);
+  const filteredOffers = useMemo(
+    () => filterOffers(offers, { searchTerm, statusFilter }),
+    [offers, searchTerm, statusFilter],
+  );
 
   // Statistics for StatsGrid
   const stats = useMemo(() => {
@@ -162,7 +66,7 @@ export default function OffersClient() {
     const inactive = offers.filter((o) => !o.is_active || !o.is_available).length;
     const totalActiveSubscribers = offers.reduce(
       (sum, o) => sum + (Number(o.active_subscribers_count) || 0),
-      0
+      0,
     );
 
     return [
@@ -227,16 +131,8 @@ export default function OffersClient() {
         render: (_, offer) => (
           <div className="min-w-0 text-center space-y-1">
             <p className="truncate text-sm font-medium text-app-text">{offer.name}</p>
-            <div className="flex items-center justify-center gap-1.5 flex-wrap">
-              {offer.offer_type === "single_choice" ? (
-                <span className="inline-block rounded-md bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] text-purple-300 font-medium">
-                  🏷️ يختار المشترك فعالية واحدة
-                </span>
-              ) : (
-                <span className="inline-block rounded-md bg-blue-500/15 border border-blue-500/30 px-2 py-0.5 text-[10px] text-blue-300 font-medium">
-                  📦 باقة مجمعة
-                </span>
-              )}
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <OfferTypeBadge type={offer.offer_type} compact />
             </div>
             {offer.description ? (
               <p className="truncate text-[11px] text-app-muted-light">{offer.description}</p>
@@ -297,19 +193,14 @@ export default function OffersClient() {
             const plansList = offer.plans || [];
             if (plansList.length === 0) {
               return (
-                <span className="font-medium text-app-yellow text-xs">
-                  {formatMoney(value)}
-                </span>
+                <span className="font-medium text-app-yellow text-xs">{formatMoney(value)}</span>
               );
             }
 
             return (
               <div className="w-full flex flex-col justify-center divide-y divide-app-line/40">
                 {plansList.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="h-10 flex items-center justify-center"
-                  >
+                  <div key={plan.id} className="h-10 flex items-center justify-center">
                     <span className="font-medium text-app-yellow text-xs">
                       {formatMoney(offer.price)}
                     </span>
@@ -347,10 +238,7 @@ export default function OffersClient() {
                   const savings = regularPrice > offerPrice ? regularPrice - offerPrice : 0;
 
                   return (
-                    <div
-                      key={plan.id}
-                      className="h-10 flex items-center justify-center"
-                    >
+                    <div key={plan.id} className="h-10 flex items-center justify-center">
                       {savings > 0 ? (
                         <span className="font-semibold text-emerald-400 text-xs">
                           {formatMoney(savings)}
@@ -401,19 +289,16 @@ export default function OffersClient() {
                   const capacity = getPlanCapacity(plan);
 
                   return (
-                    <div
-                      key={plan.id}
-                      className="h-10 flex items-center justify-center"
-                    >
+                    <div key={plan.id} className="h-10 flex items-center justify-center">
                       <span
                         className={`inline-flex min-w-[70px] justify-center rounded-md px-2 py-0.5 text-[11px] font-medium border ${
                           !offer.is_active
                             ? "border-rose-500/30 bg-rose-500/15 text-rose-400"
                             : capacity.isFull
-                            ? "border-amber-500/30 bg-amber-500/15 text-amber-400"
-                            : capacity.isUnlimited
-                            ? "border-app-line bg-white/10 text-app-muted-light"
-                            : "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
+                              ? "border-amber-500/30 bg-amber-500/15 text-amber-400"
+                              : capacity.isUnlimited
+                                ? "border-app-line bg-white/10 text-app-muted-light"
+                                : "border-emerald-500/30 bg-emerald-500/15 text-emerald-400"
                         }`}
                       >
                         {capacity.label}
@@ -445,9 +330,7 @@ export default function OffersClient() {
                   <RowActions
                     disabled={isDeleting}
                     editHref={
-                      canUpdate
-                        ? `/management/offers/create?mode=edit&id=${offer.id}`
-                        : undefined
+                      canUpdate ? `/management/offers/create?mode=edit&id=${offer.id}` : undefined
                     }
                     onDelete={canDelete ? () => setDeletingOffer(offer) : undefined}
                     className="gap-2"
@@ -462,16 +345,11 @@ export default function OffersClient() {
                 onClick={(event) => event.stopPropagation()}
               >
                 {plansList.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="h-10 flex items-center justify-center gap-2"
-                  >
+                  <div key={plan.id} className="h-10 flex items-center justify-center gap-2">
                     <RowActions
                       disabled={isDeleting}
                       editHref={
-                        canUpdate
-                          ? `/management/offers/create?mode=edit&id=${offer.id}`
-                          : undefined
+                        canUpdate ? `/management/offers/create?mode=edit&id=${offer.id}` : undefined
                       }
                       onDelete={canDelete ? () => setDeletingOffer(offer) : undefined}
                       className="gap-2"
@@ -490,9 +368,7 @@ export default function OffersClient() {
               <RowActions
                 disabled={isDeleting}
                 editHref={
-                  canUpdate
-                    ? `/management/offers/create?mode=edit&id=${offer.id}`
-                    : undefined
+                  canUpdate ? `/management/offers/create?mode=edit&id=${offer.id}` : undefined
                 }
                 onDelete={canDelete ? () => setDeletingOffer(offer) : undefined}
                 className="gap-2"
@@ -502,7 +378,7 @@ export default function OffersClient() {
         },
       },
     ],
-    [canDelete, canUpdate, isDeleting]
+    [canDelete, canUpdate, isDeleting],
   );
 
   return (
@@ -511,11 +387,13 @@ export default function OffersClient() {
       <PageHeader
         eyebrow="إدارة النادي"
         title="العروض الترويجية"
+        subtitle="أنشئ عروضًا مرنة، راقب الإتاحة، وأدر أسعار الباقات من مكان واحد."
         action={
           canCreate ? (
             <Button
               href="/management/offers/create"
               icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
+              className="h-12 min-w-52 rounded-xl px-5 font-semibold"
               style={{ color: "#000000" }}
             >
               إنشاء عرض ترويجي
@@ -525,7 +403,7 @@ export default function OffersClient() {
       />
 
       {/* Stats Grid */}
-      <StatsGrid items={stats} />
+      <StatsGrid items={stats} variant="compact" />
 
       {/* DataTable بتصميم مطابق لصفحة الفعاليات */}
       <DataTable
@@ -559,24 +437,12 @@ export default function OffersClient() {
         pageSize={15}
         pageSizeOptions={PAGE_SIZE_OPTIONS}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <div className="w-full sm:w-80 md:w-96">
-              <SearchInput
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="بحث باسم العرض أو الفعالية..."
-                className="w-full"
-              />
-            </div>
-
-            <Dropdown
-              className="min-w-52 bg-app-card-soft text-white"
-              icon={FilterIcon}
-              value={statusFilter}
-              options={STATUS_FILTER_OPTIONS}
-              onChange={setStatusFilter}
-            />
-          </div>
+          <OffersToolbar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+          />
         }
         toolbarMeta={
           <p className="text-sm text-app-muted-light">
@@ -588,121 +454,7 @@ export default function OffersClient() {
         }
       />
 
-      {/* Details Drawer بدون زر تعديل وبدون تواريخ */}
-      <Drawer
-        open={Boolean(selectedOffer)}
-        onClose={() => setSelectedOffer(null)}
-        title="تفاصيل العرض الترويجي"
-        subtitle={selectedOffer?.name}
-      >
-        {selectedOffer && (
-          <div className="space-y-6">
-            {/* Top Banner */}
-            <div className="rounded-xl border border-app-line bg-app-card-soft/70 p-4 text-right">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="truncate text-lg font-bold text-app-text">
-                    {selectedOffer.name}
-                  </h3>
-                  {selectedOffer.description && (
-                    <p className="mt-1 text-xs text-app-muted-light leading-relaxed">
-                      {selectedOffer.description}
-                    </p>
-                  )}
-                </div>
-                <OfferStatusBadge offer={selectedOffer} />
-              </div>
-            </div>
-
-            {/* Details Grid */}
-            <section className="grid gap-3 sm:grid-cols-2">
-              <DetailItem
-                label={selectedOffer.offer_type === "single_choice" ? "سعر الفعالية المخفض" : "سعر الباقة الإجمالي"}
-                value={formatMoney(selectedOffer.price)}
-                tone="yellow"
-              />
-              <DetailItem
-                label="نوع وهيكل العرض"
-                value={selectedOffer.offer_type === "single_choice" ? "🏷️ يختار المشترك فعالية واحدة (Single Choice)" : "📦 باقة فعاليات مجمعة (Bundle)"}
-              />
-              <DetailItem
-                label="صلاحية التواريخ"
-                value={
-                  selectedOffer.end_date
-                    ? `من ${selectedOffer.start_date || "الآن"} إلى ${selectedOffer.end_date}`
-                    : "غير محدد بتاريخ"
-                }
-              />
-              <DetailItem
-                label="المشتركون النشطون"
-                value={`${selectedOffer.active_subscribers_count || 0} مشترك`}
-              />
-              <DetailItem
-                label="حالة التفعيل"
-                value={selectedOffer.is_active ? "مفعل" : "معطل"}
-                tone={selectedOffer.is_active ? "green" : "red"}
-              />
-            </section>
-
-            {/* Plans included in the offer */}
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-white">
-                {selectedOffer.offer_type === "single_choice"
-                  ? "الفعاليات المؤهلة للعرض (تختار المشتركة فعالية واحدة منها):"
-                  : "الفعاليات المشمولة في الباقة (تُسجل المشتركة فيها جميعاً):"}
-              </h4>
-              <div className="space-y-2">
-                {(selectedOffer.plans || []).map((plan) => {
-                  const capacity = getPlanCapacity(plan);
-                  const regularPrice = Number(plan.base_price ?? plan.price) || 0;
-                  const offerPrice = Number(selectedOffer.price) || 0;
-                  const savings = regularPrice > offerPrice ? regularPrice - offerPrice : 0;
-                  const displayName = formatLocalizedName(plan.name) || plan.name;
-
-                  return (
-                    <div
-                      key={plan.id}
-                      className="flex items-center justify-between rounded-xl border border-app-line bg-app-card-soft/50 p-3"
-                    >
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-app-text">{displayName}</p>
-                          <span
-                            className={`rounded px-2 py-0.5 text-[10px] font-medium ${
-                              capacity.isFull
-                                ? "rounded bg-amber-500/20 border border-amber-500/40 text-amber-300"
-                                : capacity.isUnlimited
-                                ? "rounded bg-white/10 text-app-muted-light"
-                                : "rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300"
-                            }`}
-                          >
-                            {capacity.label}
-                          </span>
-                        </div>
-                        {plan.session_count ? (
-                          <p className="text-[11px] text-app-muted-light mt-0.5">
-                            {plan.session_count} حصة تدريبية
-                          </p>
-                        ) : null}
-                      </div>
-                      <div className="text-left">
-                        <span className="font-semibold text-app-yellow text-sm block">
-                          {formatMoney(regularPrice)}
-                        </span>
-                        {selectedOffer.offer_type === "single_choice" && savings > 0 && (
-                          <span className="text-[11px] text-emerald-400 font-medium block">
-                            توفير {formatMoney(savings)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-      </Drawer>
+      <OfferDetailsDrawer offer={selectedOffer} onClose={() => setSelectedOffer(null)} />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

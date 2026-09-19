@@ -2,7 +2,7 @@ import { formatLocalizedName, getBranchesArray } from "./utils";
 
 export const ALL_BRANCHES_VALUE = "all";
 export const MANAGEMENT_BRANCH_COOKIE = "management_branch_id";
-export const REPORTS_BRANCH_COOKIE = "reports_branch_id";
+export const LEGACY_REPORTS_BRANCH_COOKIE = "reports_branch_id";
 
 /**
  * Returns every branch identifier attached to an entity.
@@ -99,17 +99,13 @@ export function normalizeSelectedBranchId(
 ) {
   const branchList = getBranchesArray(branches);
   if (!selectedBranchId || selectedBranchId === ALL_BRANCHES_VALUE) {
-    return fallbackToFirst && branchList.length > 0
-      ? String(branchList[0].id)
-      : ALL_BRANCHES_VALUE;
+    return fallbackToFirst && branchList.length > 0 ? String(branchList[0].id) : ALL_BRANCHES_VALUE;
   }
 
   const exists = branchList.some((branch) => String(branch.id) === String(selectedBranchId));
   if (exists) return String(selectedBranchId);
 
-  return fallbackToFirst && branchList.length > 0
-    ? String(branchList[0].id)
-    : ALL_BRANCHES_VALUE;
+  return fallbackToFirst && branchList.length > 0 ? String(branchList[0].id) : ALL_BRANCHES_VALUE;
 }
 
 /**
@@ -130,9 +126,7 @@ export function getDefaultGenderForBranch(selectedBranch, fallback = "male") {
  * Resolves the gender imposed by a branch id from a branch collection.
  */
 export function getGenderForBranchId(branches, branchId, fallback) {
-  const branch = getBranchesArray(branches).find(
-    (item) => String(item.id) === String(branchId),
-  );
+  const branch = getBranchesArray(branches).find((item) => String(item.id) === String(branchId));
 
   return getDefaultGenderForBranch(branch, fallback);
 }

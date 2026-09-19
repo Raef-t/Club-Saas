@@ -78,7 +78,7 @@ describe("OfferForm", () => {
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     expect(screen.getByText("نوع العرض *")).toBeInTheDocument();
@@ -94,9 +94,11 @@ describe("OfferForm", () => {
     fireEvent.click(activityTypeBtn);
 
     // "حصه جماعيه" should only appear ONCE in the options
-    const groupOptions = screen.getAllByRole("option").filter((opt) =>
-      opt.textContent.includes("حصه جماعيه") || opt.textContent.includes("حصة جماعية")
-    );
+    const groupOptions = screen
+      .getAllByRole("option")
+      .filter(
+        (opt) => opt.textContent.includes("حصه جماعيه") || opt.textContent.includes("حصة جماعية"),
+      );
     expect(groupOptions).toHaveLength(1);
   });
 
@@ -107,7 +109,7 @@ describe("OfferForm", () => {
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     // Open activity type dropdown button
@@ -124,6 +126,31 @@ describe("OfferForm", () => {
     expect(screen.queryByText("اشتراك حديد ولياقة")).not.toBeInTheDocument();
   });
 
+  it("searches available plans and selects them through the shared checkbox", () => {
+    render(
+      <OfferForm
+        mode="create"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        branches={[{ id: 1, name: "الفرع الرئيسي" }]}
+      />,
+    );
+
+    const searchInput = screen.getByPlaceholderText("ابحث باسم الفعالية أو نوع النشاط...");
+    fireEvent.change(searchInput, { target: { value: "سباحه" } });
+
+    expect(screen.getByText("اشتراك سباحة شهري")).toBeInTheDocument();
+    expect(screen.queryByText("اشتراك حديد ولياقة")).not.toBeInTheDocument();
+
+    const planCheckbox = screen.getByRole("checkbox", {
+      name: "تحديد اشتراك سباحة شهري",
+    });
+    fireEvent.click(planCheckbox);
+
+    expect(planCheckbox).toBeChecked();
+    expect(screen.getByText("تم تحديد 1 فعالية")).toBeInTheDocument();
+  });
+
   it("calculates available subscriber capacity: limited count when unlimited+limited, and min when both limited", () => {
     render(
       <OfferForm
@@ -131,7 +158,7 @@ describe("OfferForm", () => {
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     // 1. Select unlimited plan alone
@@ -154,7 +181,7 @@ describe("OfferForm", () => {
         onSubmit={vi.fn()}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     // Select swim plan (1000)
@@ -181,7 +208,7 @@ describe("OfferForm", () => {
         onSubmit={handleSubmit}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     // Open offer type dropdown
@@ -214,7 +241,7 @@ describe("OfferForm", () => {
         offer_type: "single_choice",
         price: 200,
         plans: [10, 20],
-      })
+      }),
     );
   });
 
@@ -226,7 +253,7 @@ describe("OfferForm", () => {
         onSubmit={handleSubmit}
         onCancel={vi.fn()}
         branches={[{ id: 1, name: "الفرع الرئيسي" }]}
-      />
+      />,
     );
 
     // By default, "فعالية غير محدودة" is checked and dates are hidden

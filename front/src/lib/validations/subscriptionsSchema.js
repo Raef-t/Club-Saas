@@ -114,6 +114,14 @@ export const subscriptionSchema = z
         }
       });
     }
+
+    if (data.is_discount && (!data.discount_reason || !data.discount_reason.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "سبب الحسم مطلوب عند تطبيق حسم",
+        path: ["discount_reason"],
+      });
+    }
   })
   .transform(({ is_private_plan, ...data }) => {
     const normalizedData = { ...data };
@@ -158,7 +166,20 @@ export const subscriptionEditSchema = z
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
     reason: modificationReasonSchema,
   })
-  .refine((data) => data.end_date >= data.start_date, {
-    message: "تاريخ النهاية يجب ألا يسبق تاريخ البداية",
-    path: ["end_date"],
+  .superRefine((data, ctx) => {
+    if (data.end_date < data.start_date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "تاريخ النهاية يجب ألا يسبق تاريخ البداية",
+        path: ["end_date"],
+      });
+    }
+
+    if (data.is_discount && (!data.discount_reason || !data.discount_reason.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "سبب الحسم مطلوب عند تطبيق حسم",
+        path: ["discount_reason"],
+      });
+    }
   });

@@ -79,11 +79,13 @@ export const shiftSchema = z
     }),
   })
   .superRefine((data, context) => {
-    if (data.shiftStartTime && data.shiftEndTime && data.shiftEndTime <= data.shiftStartTime) {
+    // An earlier end time means the shift ends on the following day
+    // (for example, 18:00 to 01:00). Only a zero-length shift is invalid.
+    if (data.shiftStartTime && data.shiftEndTime && data.shiftEndTime === data.shiftStartTime) {
       context.addIssue({
         code: "custom",
         path: ["shiftEndTime"],
-        message: "يجب أن يكون وقت الانتهاء بعد وقت البدء",
+        message: "يجب أن يختلف وقت النهاية عن وقت البداية",
       });
     }
   });

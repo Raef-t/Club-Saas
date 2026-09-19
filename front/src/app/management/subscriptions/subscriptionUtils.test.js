@@ -13,6 +13,7 @@ import {
   getSubscriptionActivityTypeId,
   getSubscriptionReceiptNumber,
   getSubscriptionReceiptNumbers,
+  getSubscriptionRevenueMonthLabel,
   getSubscriptionOriginalAmounts,
   getSubscriptionSplitPaymentAmounts,
   getSubscriptionRows,
@@ -79,6 +80,10 @@ describe("subscription utilities", () => {
     expect(getDefaultSubscriptionActivityTypeId(activityTypes)).toBe("1");
     expect(getDefaultSubscriptionActivityTypeId([{ id: 9, name: "نوع أول" }])).toBe("9");
     expect(getDefaultSubscriptionActivityTypeId([])).toBe("");
+  });
+
+  it("includes the numeric month in the monthly revenue label", () => {
+    expect(getSubscriptionRevenueMonthLabel(new Date(2026, 8, 1))).toBe("إجمالي إيرادات الشهر ٩");
   });
 
   it("reads aggregate statistics from the player subscriptions response", () => {

@@ -92,13 +92,7 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
     [attendancesResponse, memberId],
   );
 
-  const {
-    data: lockersResponse,
-    error: lockersError,
-    isLoading: lockersLoading,
-    isFetching: lockersFetching,
-    refetch: refetchLockers,
-  } = useGetLockersQuery({
+  const { data: lockersResponse } = useGetLockersQuery({
     branch_id: initialMember?.branch_id || undefined,
     per_page: "all",
   });
@@ -168,14 +162,11 @@ export default function MemberProfileClient({ memberId, initialMember, initialBr
         currentSubscriptionLoading={currentSubscriptionLoading}
         subscriptionsLoading={subscriptionsListLoading}
         attendancesLoading={attendancesLoading || attendancesFetching}
-        lockersLoading={lockersLoading || lockersFetching}
         subscriptionsError={subscriptionsError}
         currentSubscriptionError={subscriptionsError || subscriptionDetailError}
         attendancesError={attendancesError}
-        lockersError={lockersError}
         onRetrySubscriptions={retrySubscription}
         onRetryAttendances={refetchAttendances}
-        onRetryLockers={refetchLockers}
       />
 
       <Modal

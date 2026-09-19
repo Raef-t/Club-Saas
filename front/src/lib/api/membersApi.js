@@ -37,6 +37,14 @@ export const membersApi = createBackendApi({
       }),
       invalidatesTags: ["Members"],
     }),
+    updateMemberPhoto: builder.mutation({
+      query: ({ id, body }) => ({
+        url: `members/${id}/photo`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_result, _error, { id }) => ["Members", { type: "Members", id }],
+    }),
     deleteMember: builder.mutation({
       query: ({ id, confirmation }) => ({
         url: `members/${id}`,
@@ -53,5 +61,6 @@ export const {
   useGetMemberQuery,
   useCreatePlayerMutation,
   useUpdatePlayerMutation,
+  useUpdateMemberPhotoMutation,
   useDeleteMemberMutation,
 } = membersApi;

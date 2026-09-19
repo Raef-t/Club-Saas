@@ -8,6 +8,7 @@ import { getBrandClubs, resolveClubLogoUrl, selectBrandClub } from "@/lib/clubBr
 import { getBranchesArray } from "@/lib/utils";
 import {
   ALL_BRANCHES_VALUE,
+  LEGACY_REPORTS_BRANCH_COOKIE,
   MANAGEMENT_BRANCH_COOKIE,
   normalizeSelectedBranchId,
 } from "@/lib/managementBranchUtils";
@@ -15,7 +16,7 @@ import {
 const ManagementBranchContext = createContext(null);
 
 /**
- * Provides one persistent branch selection to the entire management section.
+ * Provides one persistent branch selection to the authenticated application systems.
  */
 export function ManagementBranchProvider({
   children,
@@ -23,10 +24,13 @@ export function ManagementBranchProvider({
   initialSelectedBranchId,
   canSelectAllBranches = true,
   cookieName = MANAGEMENT_BRANCH_COOKIE,
-  cookiePath = "/management",
+  cookiePath = "/",
 }) {
-  const { currentData: branchesResponse, isLoading, isFetching } =
-    useGetBranchesQuery(withAllItems(), { skip: !canSelectAllBranches });
+  const {
+    currentData: branchesResponse,
+    isLoading,
+    isFetching,
+  } = useGetBranchesQuery(withAllItems(), { skip: !canSelectAllBranches });
   const { currentData: clubsResponse, isFetching: isFetchingClubs } =
     useGetClubsQuery(withAllItems());
   const branches = useMemo(
@@ -53,6 +57,29 @@ export function ManagementBranchProvider({
   }, [branches, canSelectAllBranches, selectedBranchId]);
 
   /**
+   * Persists the current selection at the application root so every system
+   * receives the same branch on its next server render. The expired cookies
+   * remove the previous route-scoped selections created by older releases.
+   */
+  const persistSelectedBranchId = useCallback(
+    (branchId) => {
+      if (cookieName === MANAGEMENT_BRANCH_COOKIE && cookiePath === "/") {
+        document.cookie = `${MANAGEMENT_BRANCH_COOKIE}=; Path=/management; Max-Age=0; SameSite=Lax`;
+        document.cookie = `${LEGACY_REPORTS_BRANCH_COOKIE}=; Path=/reports; Max-Age=0; SameSite=Lax`;
+      }
+
+      document.cookie = `${cookieName}=${encodeURIComponent(
+        branchId,
+      )}; Path=${cookiePath}; Max-Age=31536000; SameSite=Lax`;
+    },
+    [cookieName, cookiePath],
+  );
+
+  useEffect(() => {
+    persistSelectedBranchId(selectedBranchId);
+  }, [persistSelectedBranchId, selectedBranchId]);
+
+  /**
    * Updates the global branch and persists it for subsequent requests.
    */
   const setSelectedBranchId = useCallback(
@@ -60,11 +87,9 @@ export function ManagementBranchProvider({
       if (!canSelectAllBranches) return;
       const normalizedSelection = normalizeSelectedBranchId(branchId, branches);
       setSelectedBranchIdState(normalizedSelection);
-      document.cookie = `${cookieName}=${encodeURIComponent(
-        normalizedSelection,
-      )}; Path=${cookiePath}; Max-Age=31536000; SameSite=Lax`;
+      persistSelectedBranchId(normalizedSelection);
     },
-    [branches, canSelectAllBranches, cookieName, cookiePath],
+    [branches, canSelectAllBranches, persistSelectedBranchId],
   );
 
   const selectedBranch = useMemo(

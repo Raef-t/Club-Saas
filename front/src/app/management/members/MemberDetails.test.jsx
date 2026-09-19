@@ -5,7 +5,7 @@ import MemberDetails from "./MemberDetails";
 describe("member comprehensive profile", () => {
   afterEach(() => cleanup());
 
-  it("shows identity, subscription, attendance, finances, locker, and emergency contact", () => {
+  it("shows identity, collapsible player data, subscription, attendance, and emergency contact", () => {
     const onShowSubscription = vi.fn();
     const subscription = {
       id: 10,
@@ -94,7 +94,8 @@ describe("member comprehensive profile", () => {
     expect(screen.getByText("اسم الحساب")).toBeInTheDocument();
     expect(screen.getAllByText("لياقة شهرية").length).toBeGreaterThan(0);
     expect(screen.getByText("أيروبيك")).toBeInTheDocument();
-    expect(screen.getByText("خزانة L-12")).toBeInTheDocument();
+    expect(screen.queryByText("خزانة L-12")).not.toBeInTheDocument();
+    expect(screen.queryByText("الخزائن المسندة حاليًا")).not.toBeInTheDocument();
     expect(screen.getByText("والدة دانية")).toBeInTheDocument();
     expect(screen.getByText("john.reception")).toBeInTheDocument();
     const paidAmountCard = screen.getByText("المبلغ المدفوع").closest("div.rounded-xl");
@@ -104,6 +105,17 @@ describe("member comprehensive profile", () => {
     expect(screen.getByText("الاشتراكات السابقة")).toBeInTheDocument();
     expect(screen.queryByText("سجل الاشتراكات")).not.toBeInTheDocument();
     expect(screen.getByText("لياقة سابقة")).toBeInTheDocument();
+
+    const playerDataSummary = screen.getByText("بيانات اللاعب").closest("summary");
+    const playerDataSection = playerDataSummary.closest("details");
+    expect(playerDataSection).toHaveAttribute("open");
+    expect(screen.getByRole("region", { name: "بيانات اللاعب التفصيلية" })).toHaveClass(
+      "lg:grid-cols-3",
+    );
+    fireEvent.click(playerDataSummary);
+    expect(playerDataSection).not.toHaveAttribute("open");
+    fireEvent.click(playerDataSummary);
+    expect(playerDataSection).toHaveAttribute("open");
 
     fireEvent.click(screen.getByRole("button", { name: "عرض كل تفاصيل الاشتراك الحالي" }));
     expect(onShowSubscription).toHaveBeenNthCalledWith(1, subscription);

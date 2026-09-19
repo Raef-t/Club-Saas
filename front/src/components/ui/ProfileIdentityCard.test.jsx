@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ProfileIdentityCard from "./ProfileIdentityCard";
 
@@ -52,11 +52,11 @@ describe("ProfileIdentityCard", () => {
     );
 
     const button = await screen.findByRole("button", { name: /تكبير رمز QR/ });
-    button.click();
+    fireEvent.click(button);
 
-    await waitFor(() => {
-      expect(screen.getByRole("dialog")).toBeInTheDocument();
-    });
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /تصغير رمز QR/ }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
 });
-

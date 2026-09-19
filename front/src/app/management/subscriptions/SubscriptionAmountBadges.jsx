@@ -1,10 +1,19 @@
-import { formatSubscriptionMoney, getSubscriptionDiscountSummary } from "./subscriptionUtils";
+import {
+  formatSubscriptionMoney,
+  getSubscriptionDiscountSummary,
+  getSubscriptionOriginalAmounts,
+  isPrivateSubscriptionPlan,
+} from "./subscriptionUtils";
 
 function AmountBadge({ label, value, tone }) {
   const toneClass =
     tone === "paid"
       ? "border-app-green/25 bg-app-green/10 text-app-green"
-      : "border-blue-400/25 bg-blue-400/10 text-blue-200";
+      : tone === "coach"
+        ? "border-blue-400/25 bg-blue-400/10 text-blue-200"
+        : tone === "branch"
+          ? "border-app-yellow/25 bg-app-yellow/10 text-app-yellow"
+          : "border-blue-400/25 bg-blue-400/10 text-blue-200";
 
   return (
     <span
@@ -22,6 +31,11 @@ function AmountBadge({ label, value, tone }) {
 /** Displays the subscription net price and paid amount as compact badges. */
 export default function SubscriptionAmountBadges({ subscription }) {
   const discount = getSubscriptionDiscountSummary(subscription);
+  const isPrivatePlan = isPrivateSubscriptionPlan(subscription?.plan || subscription);
+  const { coachOriginal, branchOriginal } = getSubscriptionOriginalAmounts(
+    subscription?.plan,
+    subscription?.months_count,
+  );
 
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5">
@@ -40,6 +54,15 @@ export default function SubscriptionAmountBadges({ subscription }) {
       )}
 
       <AmountBadge label="الصافي" value={discount.finalPrice} tone="net" />
+      {isPrivatePlan && (
+        <div
+          className="flex min-w-0 flex-col items-center gap-1"
+          aria-label="تفصيل سعر الكوتش والنادي"
+        >
+          <AmountBadge label="سعر الكوتش" value={coachOriginal} tone="coach" />
+          <AmountBadge label="سعر النادي" value={branchOriginal} tone="branch" />
+        </div>
+      )}
       <AmountBadge label="المدفوع" value={subscription?.paid_amount} tone="paid" />
     </div>
   );
