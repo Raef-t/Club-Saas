@@ -5,7 +5,7 @@ import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
 describe("SubscriptionReceiptBadges", () => {
   afterEach(() => cleanup());
 
-  it("renders a single receipt number without the label for regular subscriptions", () => {
+  it("renders a single receipt with label for regular subscriptions", () => {
     render(
       <SubscriptionReceiptBadges
         subscription={{
@@ -14,7 +14,7 @@ describe("SubscriptionReceiptBadges", () => {
       />,
     );
 
-    expect(screen.queryByText("الإيصال:")).not.toBeInTheDocument();
+    expect(screen.getByText("الإيصال:")).toBeInTheDocument();
     expect(screen.getByText("REC-9912")).toBeInTheDocument();
 
     const trigger = screen.getByTestId("app-tooltip-trigger");
@@ -26,7 +26,7 @@ describe("SubscriptionReceiptBadges", () => {
     expect(tooltip).toHaveTextContent("REC-9912");
   });
 
-  it("renders coach and branch receipt numbers compactly for private subscriptions", () => {
+  it("renders coach and branch receipt labels and numbers for private subscriptions", () => {
     render(
       <SubscriptionReceiptBadges
         subscription={{
@@ -37,8 +37,8 @@ describe("SubscriptionReceiptBadges", () => {
       />,
     );
 
-    expect(screen.queryByText("إيصال الكوتش:")).not.toBeInTheDocument();
-    expect(screen.queryByText("إيصال النادي:")).not.toBeInTheDocument();
+    expect(screen.getByText("إيصال الكوتش:")).toBeInTheDocument();
+    expect(screen.getByText("إيصال النادي:")).toBeInTheDocument();
     expect(screen.getByText("17")).toBeInTheDocument();
     expect(screen.getByText("219")).toBeInTheDocument();
 

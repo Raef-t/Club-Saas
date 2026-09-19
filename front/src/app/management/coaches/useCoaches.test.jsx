@@ -2,9 +2,10 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { normalizeCoachEmploymentFilter, useCoaches } from "./useCoaches";
 
-const { createCoach, updateCoach } = vi.hoisted(() => ({
+const { createCoach, updateCoach, updateCoachPhoto } = vi.hoisted(() => ({
   createCoach: vi.fn(),
   updateCoach: vi.fn(),
+  updateCoachPhoto: vi.fn(),
 }));
 
 vi.mock("@/lib/api/coachesApi", () => ({
@@ -12,7 +13,7 @@ vi.mock("@/lib/api/coachesApi", () => ({
   useGetCoachQuery: () => ({ data: undefined, isFetching: false }),
   useCreateCoachMutation: () => [createCoach, { isLoading: false }],
   useUpdateCoachMutation: () => [updateCoach, { isLoading: false }],
-  useUpdateCoachPhotoMutation: () => [vi.fn(), { isLoading: false }],
+  useUpdateCoachPhotoMutation: () => [updateCoachPhoto, { isLoading: false }],
   useDeleteCoachMutation: () => [vi.fn(), { isLoading: false }],
 }));
 
@@ -39,8 +40,10 @@ describe("coach creation", () => {
   beforeEach(() => {
     createCoach.mockReset();
     updateCoach.mockReset();
+    updateCoachPhoto.mockReset();
     createCoach.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ status: "success" }) });
     updateCoach.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ status: "success" }) });
+    updateCoachPhoto.mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ status: "success" }) });
   });
 
   it("creates a coach without requiring the edit-only modification reason", async () => {
@@ -109,6 +112,111 @@ describe("coach creation", () => {
     expect(submittedFormData.get("default_commission_rate")).toBe("15.5");
     expect(submittedFormData.get("private_commission_rate")).toBe("70");
     expect(submittedFormData.get("reason")).toBe("تحديث نسب المدرب");
+  });
+
+  it("deletes the coach photo when photoChanged is true and photo is null", async () => {
+    const { result } = renderHook(() => useCoaches({ selectedCoachId: 12 }));
+
+    await act(async () => {
+      await result.current.handleUpdate({
+        first_name: "أحمد",
+        last_name: "محمد",
+        gender: "male",
+        dob: "1990-01-01",
+        phone_number: "0999999999",
+        country_code: "+963",
+        address: "",
+        branch_ids: [5],
+        experience_years: 3,
+        start_date: "2026-08-18",
+        work_status: "active",
+        employment_type: "fixed_salary",
+        base_salary: 1000,
+        default_commission_rate: 0,
+        private_commission_rate: 0,
+        work_types: [],
+        activity_ids: [],
+        shifts: [],
+        photo: null,
+        photoChanged: true,
+      });
+    });
+
+    expect(updateCoach).toHaveBeenCalledOnce();
+    expect(updateCoachPhoto).toHaveBeenCalledOnce();
+    const photoCall = updateCoachPhoto.mock.calls[0][0];
+    expect(photoCall.id).toBe(12);
+    expect(photoCall.body.get("delete_photo")).toBe("1");
+    expect(photoCall.body.get("photo")).toBeNull();
+  });
+
+  it("updates the coach photo when photoChanged is true and photo is a File", async () => {
+    const { result } = renderHook(() => useCoaches({ selectedCoachId: 12 }));
+    const mockFile = new File(["dummy content"], "coach.png", { type: "image/png" });
+
+    await act(async () => {
+      await result.current.handleUpdate({
+        first_name: "أحمد",
+        last_name: "محمد",
+        gender: "male",
+        dob: "1990-01-01",
+        phone_number: "0999999999",
+        country_code: "+963",
+        address: "",
+        branch_ids: [5],
+        experience_years: 3,
+        start_date: "2026-08-18",
+        work_status: "active",
+        employment_type: "fixed_salary",
+        base_salary: 1000,
+        default_commission_rate: 0,
+        private_commission_rate: 0,
+        work_types: [],
+        activity_ids: [],
+        shifts: [],
+        photo: mockFile,
+        photoChanged: true,
+      });
+    });
+
+    expect(updateCoach).toHaveBeenCalledOnce();
+    expect(updateCoachPhoto).toHaveBeenCalledOnce();
+    const photoCall = updateCoachPhoto.mock.calls[0][0];
+    expect(photoCall.id).toBe(12);
+    expect(photoCall.body.get("photo")).toBe(mockFile);
+    expect(photoCall.body.get("delete_photo")).toBeNull();
+  });
+
+  it("does not call updateCoachPhoto when photoChanged is false", async () => {
+    const { result } = renderHook(() => useCoaches({ selectedCoachId: 12 }));
+
+    await act(async () => {
+      await result.current.handleUpdate({
+        first_name: "أحمد",
+        last_name: "محمد",
+        gender: "male",
+        dob: "1990-01-01",
+        phone_number: "0999999999",
+        country_code: "+963",
+        address: "",
+        branch_ids: [5],
+        experience_years: 3,
+        start_date: "2026-08-18",
+        work_status: "active",
+        employment_type: "fixed_salary",
+        base_salary: 1000,
+        default_commission_rate: 0,
+        private_commission_rate: 0,
+        work_types: [],
+        activity_ids: [],
+        shifts: [],
+        photo: "https://example.com/coach.jpg",
+        photoChanged: false,
+      });
+    });
+
+    expect(updateCoach).toHaveBeenCalledOnce();
+    expect(updateCoachPhoto).not.toHaveBeenCalled();
   });
 });
 

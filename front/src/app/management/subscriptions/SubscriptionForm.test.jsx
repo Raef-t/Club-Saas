@@ -282,8 +282,37 @@ describe("subscription discount calculations", () => {
     expect(screen.queryByText("السعر الأساسي")).not.toBeInTheDocument();
   });
 
+  it("hides the subscription paid amount input while maintaining value in the background", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 275 }]}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/المبلغ المدفوع للاشتراك/)).not.toBeInTheDocument();
+    expect(screen.getByText("السعر الأساسي")).toBeInTheDocument();
+    expect(container.querySelector('input[name="paid_amount"]')).toHaveValue("275");
+
+    fireEvent.change(screen.getByLabelText(/^رقم الإيصال/), {
+      target: { value: "REC-123" },
+    });
+
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paid_amount: 275,
+      }),
+      "normal",
+    );
+  });
+
   it("calculates the percentage, final price, and proposed payment in both directions", () => {
-    render(
+    const { container } = render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[{ id: 2, name: "دخول يومي", base_price: 300000, is_daily_entry: true }]}
@@ -292,20 +321,23 @@ describe("subscription discount calculations", () => {
       />,
     );
 
+    expect(screen.queryByLabelText(/المبلغ المدفوع للاشتراك/)).not.toBeInTheDocument();
+    expect(container.querySelector('input[name="paid_amount"]')).toHaveValue("300000");
+
     fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
     fireEvent.change(screen.getByLabelText(/السعر النهائي بعد الحسم/), {
       target: { value: "150000" },
     });
 
     expect(screen.getByLabelText(/^نسبة الحسم/)).toHaveValue(50);
-    expect(screen.getByLabelText(/المبلغ المدفوع للاشتراك/)).toHaveValue(150000);
+    expect(container.querySelector('input[name="paid_amount"]')).toHaveValue("150000");
 
     fireEvent.change(screen.getByLabelText(/^نسبة الحسم/), {
       target: { value: "25" },
     });
 
     expect(screen.getByLabelText(/السعر النهائي بعد الحسم/)).toHaveValue(225000);
-    expect(screen.getByLabelText(/المبلغ المدفوع للاشتراك/)).toHaveValue(225000);
+    expect(container.querySelector('input[name="paid_amount"]')).toHaveValue("225000");
   });
 
   it("submits the normalized general discount payload", () => {
@@ -786,10 +818,17 @@ describe("subscription edit receipts", () => {
   });
 
   it("displays offers dropdown when available offer matches activity type and sets price from offer", () => {
-    render(
+    const { container } = render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
-        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300 }]}
+        plans={[
+          {
+            id: 2,
+            name: "اشتراك شهري",
+            base_price: 500,
+            activity_types: [{ id: 5, name: "سباحة" }],
+          },
+        ]}
         activityTypes={[{ id: 5, name: "سباحة" }]}
         selectedActivityTypeId="5"
         offers={[
@@ -820,13 +859,13 @@ describe("subscription edit receipts", () => {
     fireEvent.click(screen.getByRole("option", { name: /عرض باقة الصيف/ }));
 
     // Paid amount should now be set from the offer
-    const paidAmount = screen.getByLabelText(/المبلغ المدفوع/);
-    expect(paidAmount).toHaveValue(750);
+    const paidAmount = container.querySelector('input[name="paid_amount"]');
+    expect(paidAmount).toHaveValue("750");
     expect(screen.getByText(/تم اختيار باقة عرض ترويجي/)).toBeInTheDocument();
   });
 
   it("displays each activity in single_choice offer directly as an offer option and sets discounted price immediately", () => {
-    render(
+    const { container } = render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[
@@ -881,8 +920,8 @@ describe("subscription edit receipts", () => {
     fireEvent.click(sarahOption);
 
     // Paid amount should be 200
-    const paidAmount = screen.getByLabelText(/المبلغ المدفوع/);
-    expect(paidAmount).toHaveValue(200);
+    const paidAmount = container.querySelector('input[name="paid_amount"]');
+    expect(paidAmount).toHaveValue("200");
 
     // Should indicate single_choice and show the confirmed plan directly
     expect(screen.getByText(/يختار المشترك فعالية واحدة/)).toBeInTheDocument();

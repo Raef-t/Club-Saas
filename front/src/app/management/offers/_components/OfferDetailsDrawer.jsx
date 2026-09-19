@@ -3,6 +3,7 @@ import DetailItem from "@/components/ui/DetailItem";
 import { formatLocalizedName, formatMoney } from "@/lib/utils";
 import { OfferStatusBadge, OfferTypeBadge } from "./OfferBadges";
 import { getPlanCapacity } from "../_lib/offerPresentation";
+import { formatDurationDays } from "../_lib/durationHelpers";
 
 export default function OfferDetailsDrawer({ offer, onClose }) {
   return (
@@ -39,6 +40,16 @@ export default function OfferDetailsDrawer({ offer, onClose }) {
               value={formatMoney(offer.price)}
               tone="yellow"
             />
+            {(offer.duration_days || offer.duration_formatted) && (
+              <DetailItem
+                label="مدة اشتراك اللاعب"
+                value={
+                  offer.duration_formatted ||
+                  `${formatDurationDays(offer.duration_days)} (${offer.duration_days} يوم)`
+                }
+                tone="cyan"
+              />
+            )}
             <DetailItem
               label="المشتركون النشطون"
               value={`${offer.active_subscribers_count || 0} مشترك`}
