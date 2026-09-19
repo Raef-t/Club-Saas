@@ -16,7 +16,9 @@ describe("subscription amount badges", () => {
       />,
     );
 
-    expect(screen.getByText("المبلغ:")).toBeInTheDocument();
+    const amountLabel = screen.getByText("المبلغ:");
+    expect(amountLabel).toBeInTheDocument();
+    expect(amountLabel.closest("span.rounded-full")).toHaveClass("text-app-green");
     expect(screen.getByText("المدفوع:")).toBeInTheDocument();
     expect(screen.getByText("750 ل.س")).toBeInTheDocument();
     expect(screen.getByText("500 ل.س")).toBeInTheDocument();

@@ -9,23 +9,13 @@ import {
   parseSubscriptionAmount,
 } from "./subscriptionUtils";
 
-function formatAmountNumber(value) {
-  const num = parseSubscriptionAmount(value);
-  return num.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
-}
-
 function AmountBadge({ label, value, tone }) {
   const toneClass =
-    tone === "paid"
-      ? "border-app-green/25 bg-app-green/10 text-app-green"
-      : tone === "coach"
-        ? "border-blue-400/25 bg-blue-400/10 text-blue-200"
-        : tone === "branch"
-          ? "border-app-yellow/25 bg-app-yellow/10 text-app-yellow"
-          : "border-blue-400/25 bg-blue-400/10 text-blue-200";
+    tone === "coach"
+      ? "border-blue-400/25 bg-blue-400/10 text-blue-200"
+      : tone === "branch"
+        ? "border-app-yellow/25 bg-app-yellow/10 text-app-yellow"
+        : "border-app-green/25 bg-app-green/10 text-app-green";
 
   return (
     <span
@@ -34,7 +24,7 @@ function AmountBadge({ label, value, tone }) {
     >
       {label && <span className="shrink-0 opacity-75">{label}:</span>}
       <span className="truncate font-medium">
-        <bdi dir="ltr">{formatAmountNumber(value)}</bdi> ل.س
+        <bdi dir="ltr">{formatSubscriptionMoney(value)}</bdi>
       </span>
     </span>
   );
@@ -52,19 +42,19 @@ export default function SubscriptionAmountBadges({ subscription }) {
   const tooltipContent = (
     <div className="min-w-[175px] space-y-1.5 text-xs" dir="rtl">
       <div className="flex items-center gap-1.5 border-b border-app-line/60 pb-1.5 text-[11px] font-semibold text-app-text">
-        <span className="size-1.5 rounded-full bg-blue-400" />
+        <span className="size-1.5 rounded-full bg-app-green" />
         <span>تفاصيل المبلغ</span>
       </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-app-muted-light">المبلغ:</span>
-        <span className="font-semibold text-blue-300">
-          <bdi dir="ltr">{formatAmountNumber(discount.finalPrice)}</bdi> ل.س
+        <span className="font-semibold text-app-green">
+          <bdi dir="ltr">{formatSubscriptionMoney(discount.finalPrice)}</bdi>
         </span>
       </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-app-muted-light">المدفوع:</span>
         <span className="font-semibold text-app-green">
-          <bdi dir="ltr">{formatAmountNumber(subscription?.paid_amount)}</bdi> ل.س
+          <bdi dir="ltr">{formatSubscriptionMoney(subscription?.paid_amount)}</bdi>
         </span>
       </div>
       {isPrivatePlan && (
@@ -72,13 +62,13 @@ export default function SubscriptionAmountBadges({ subscription }) {
           <div className="flex items-center justify-between gap-4 border-t border-app-line/40 pt-1.5">
             <span className="text-app-muted-light">الكوتش:</span>
             <span className="font-semibold text-blue-300">
-              <bdi dir="ltr">{formatAmountNumber(coachOriginal)}</bdi> ل.س
+              <bdi dir="ltr">{formatSubscriptionMoney(coachOriginal)}</bdi>
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span className="text-app-muted-light">النادي:</span>
             <span className="font-semibold text-app-yellow">
-              <bdi dir="ltr">{formatAmountNumber(branchOriginal)}</bdi> ل.س
+              <bdi dir="ltr">{formatSubscriptionMoney(branchOriginal)}</bdi>
             </span>
           </div>
         </>
@@ -104,7 +94,7 @@ export default function SubscriptionAmountBadges({ subscription }) {
       {discount.isDiscount && (
         <div className="flex items-center gap-1.5 text-[10px]">
           <span className="text-app-muted line-through">
-            <bdi dir="ltr">{formatAmountNumber(discount.originalTotal)}</bdi> ل.س
+            <bdi dir="ltr">{formatSubscriptionMoney(discount.originalTotal)}</bdi>
           </span>
           <span
             className="rounded-full border border-app-yellow/25 bg-app-yellow/10 px-2 py-0.5 font-medium text-app-yellow"
