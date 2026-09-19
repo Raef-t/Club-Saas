@@ -1788,14 +1788,30 @@ class SubscriptionService
 
             $createdSubscriptions = collect();
 
-            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+            // Calculate effective duration and months count from offer or options
+            $durationDays = !empty($options['duration_days'])
+                ? (int) $options['duration_days']
+                : ($offer->duration_days ? (int) $offer->duration_days : null);
+
+            $endDate = isset($options['end_date']) && !empty($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+            if (!$endDate) {
+                if (!empty($durationDays)) {
+                    $endDate = $startDate->copy()->addDays($durationDays);
+                } elseif (isset($options['months_count'])) {
+                    $endDate = $startDate->copy()->addMonths((int) $options['months_count']);
+                }
+            }
+
+            if (isset($options['months_count'])) {
+                $monthsCount = max(1, (int) $options['months_count']);
+            } elseif (!empty($durationDays)) {
+                $monthsCount = max(1, (int) round($durationDays / 30));
+            } else {
+                $monthsCount = 1;
+            }
 
             // Create individual PlayerSubscriptions for each plan in the enrollment list
             foreach ($plansToEnroll as $plan) {
-                $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
-                if (!$endDate && !empty($options['duration_days'])) {
-                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
-                }
 
                 $subTotal = $isSingleChoice ? $totalAmount : 0;
                 $subPaid = $isSingleChoice ? $paidAmount : 0;

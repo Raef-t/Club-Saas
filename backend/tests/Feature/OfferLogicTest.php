@@ -33,6 +33,11 @@ class OfferLogicTest extends TestCase
             'password' => 'password123',
             'is_active' => true,
         ]);
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => 'super_admin',
+            'guard_name' => 'sanctum',
+        ]);
+        $user->assignRole($role);
         $this->actingAs($user, 'sanctum');
 
         $club = Club::create([
@@ -207,5 +212,135 @@ class OfferLogicTest extends TestCase
         // Offer automatically and dynamically re-activates!
         $availableOffersReactivated = $offerService->getAllOffers(['available_only' => true]);
         $this->assertTrue($availableOffersReactivated->contains('id', $offer->id));
+    }
+
+    public function test_can_create_offer_with_duration_days_and_subscribe_auto_calculates_end_date()
+    {
+        $plan = SubscriptionPlan::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'باقة فتنس شهرية',
+            'base_price' => 300,
+            'status' => 'active',
+        ]);
+
+        $offerService = app(OfferService::class);
+        $subscriptionService = app(SubscriptionService::class);
+
+        // 1. Create an offer with 45 days duration
+        $offer = $offerService->createOffer([
+            'branch_id' => $this->branch->id,
+            'name' => 'عرض الصيف 45 يوم',
+            'offer_type' => Offer::TYPE_BUNDLE,
+            'price' => 400,
+            'duration_days' => 45,
+            'plans' => [$plan->id],
+        ]);
+
+        $this->assertEquals(45, $offer->duration_days);
+        $this->assertEquals(1.5, $offer->duration_months);
+        $this->assertEquals('شهر ونصف (45 يوم)', $offer->duration_formatted);
+
+        // 2. Test OfferResource output
+        $resource = (new \Modules\SubscriptionManager\Http\Resources\OfferResource($offer))->resolve();
+        $this->assertEquals(45, $resource['duration_days']);
+        $this->assertEquals(1.5, $resource['duration_months']);
+        $this->assertEquals('شهر ونصف (45 يوم)', $resource['duration_formatted']);
+
+        // 3. Subscribe player to the 45-day offer with a specific start date
+        $startDate = '2026-10-01';
+        $result = $subscriptionService->subscribeMemberToOffer(
+            $this->member->id,
+            $offer->id,
+            [
+                'start_date' => $startDate,
+                'paid_amount' => 400,
+            ]
+        );
+
+        $subscription = $result['subscriptions']->first();
+        $this->assertEquals('2026-10-01', $subscription->start_date->format('Y-m-d'));
+        // 2026-10-01 + 45 days = 2026-11-15
+        $this->assertEquals('2026-11-15', $subscription->end_date->format('Y-m-d'));
+
+        // 4. Test PlayerSubscriptionResource output
+        $subResource = (new \Modules\SubscriptionManager\Http\Resources\PlayerSubscriptionResource($subscription->load(['plan', 'offer'])))->resolve();
+        $this->assertEquals(45, $subResource['duration_days']);
+        $this->assertEquals($offer->id, $subResource['offer_id']);
+        $this->assertNotNull($subResource['offer']);
+        $this->assertEquals(45, $subResource['offer']['duration_days']);
+    }
+
+    public function test_yearly_offer_365_days_auto_calculates_end_date()
+    {
+        $plan = SubscriptionPlan::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'باقة اللياقة السنوية',
+            'base_price' => 3000,
+            'status' => 'active',
+        ]);
+
+        $offer = Offer::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'عرض الاشتراك السنوي',
+            'offer_type' => Offer::TYPE_BUNDLE,
+            'price' => 2500,
+            'duration_days' => 365,
+            'is_active' => true,
+        ]);
+        $offer->plans()->sync([$plan->id]);
+
+        $subscriptionService = app(SubscriptionService::class);
+
+        $startDate = '2026-01-01';
+        $result = $subscriptionService->subscribeMemberToOffer(
+            $this->member->id,
+            $offer->id,
+            [
+                'start_date' => $startDate,
+                'paid_amount' => 2500,
+            ]
+        );
+
+        $subscription = $result['subscriptions']->first();
+        $this->assertEquals('2026-01-01', $subscription->start_date->format('Y-m-d'));
+        // 2026-01-01 + 365 days = 2027-01-01
+        $this->assertEquals('2027-01-01', $subscription->end_date->format('Y-m-d'));
+    }
+
+    public function test_api_store_and_update_offer_with_duration_days()
+    {
+        $plan = SubscriptionPlan::create([
+            'branch_id' => $this->branch->id,
+            'name' => 'باقة كاراتيه',
+            'base_price' => 500,
+            'status' => 'active',
+        ]);
+
+        // POST /v1/offers
+        $response = $this->postJson('/api/v1/offers', [
+            'branch_id' => $this->branch->id,
+            'name' => 'عرض الكاراتيه 90 يوم',
+            'offer_type' => 'bundle',
+            'price' => 1200,
+            'duration_days' => 90,
+            'plans' => [$plan->id],
+        ]);
+
+        $response->assertStatus(201);
+        $response->assertJsonPath('data.duration_days', 90);
+        $response->assertJsonPath('data.duration_months', 3);
+        $response->assertJsonPath('data.duration_formatted', '3 أشهر (90 يوم)');
+
+        $offerId = $response->json('data.id');
+
+        // PUT /v1/offers/{id}
+        $updateResponse = $this->putJson("/api/v1/offers/{$offerId}", [
+            'duration_days' => 45,
+        ]);
+
+        $updateResponse->assertStatus(200);
+        $updateResponse->assertJsonPath('data.duration_days', 45);
+        $updateResponse->assertJsonPath('data.duration_months', 1.5);
+        $updateResponse->assertJsonPath('data.duration_formatted', 'شهر ونصف (45 يوم)');
     }
 }
