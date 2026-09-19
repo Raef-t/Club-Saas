@@ -15,6 +15,7 @@ import { offerSchema } from "@/lib/validations/offersSchema";
 import { withAllItems } from "@/lib/pagination";
 import { getEntityBranchIds, getPreferredBranchId } from "@/lib/managementBranchUtils";
 import OfferFormSection from "./_components/OfferFormSection";
+import { formatDurationDays, DURATION_PRESETS } from "./_lib/durationHelpers";
 
 const OFFER_TYPE_OPTIONS = [
   { value: "bundle", label: "باقة" },
@@ -67,6 +68,10 @@ export default function OfferForm({
       price:
         initialValues?.price !== undefined && initialValues?.price !== null
           ? String(initialValues.price)
+          : "",
+      duration_days:
+        initialValues?.duration_days !== undefined && initialValues?.duration_days !== null
+          ? String(initialValues.duration_days)
           : "",
       start_date: initialValues?.start_date || "",
       end_date: initialValues?.end_date || "",
@@ -446,6 +451,7 @@ export default function OfferForm({
       description: form.description ? form.description.trim() : undefined,
       offer_type: form.offer_type,
       price: form.price,
+      duration_days: form.duration_days ? form.duration_days : undefined,
       start_date: !isUnlimitedDuration && form.start_date ? form.start_date : undefined,
       end_date: !isUnlimitedDuration && form.end_date ? form.end_date : undefined,
       is_active: form.is_active,
@@ -750,6 +756,48 @@ export default function OfferForm({
             )}
           </div>
 
+          {/* 5.1 مدة الاشتراك بالأيام */}
+          <div>
+            <Field
+              label="مدة الاشتراك (بالأيام)"
+              type="number"
+              min="1"
+              step="1"
+              value={form.duration_days}
+              onChange={(e) => updateField("duration_days", e.target.value)}
+              placeholder="مثال: 30"
+              error={errors.duration_days}
+            />
+
+            {/* أزرار سريعة */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {DURATION_PRESETS.map((preset) => (
+                <button
+                  key={preset.days}
+                  type="button"
+                  onClick={() => updateField("duration_days", String(preset.days))}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    String(form.duration_days) === String(preset.days)
+                      ? "border-app-yellow bg-app-yellow/20 text-app-yellow"
+                      : "border-app-line bg-app-card-soft text-app-muted-light hover:border-app-yellow/50 hover:text-white"
+                  }`}
+                >
+                  {preset.label} ({preset.days})
+                </button>
+              ))}
+            </div>
+
+            {/* تلميح المدة التلقائي */}
+            {form.duration_days && Number(form.duration_days) > 0 && (
+              <p className="mt-1.5 text-[11px] text-cyan-400 flex items-center gap-1">
+                <span>⏱</span>
+                <span>
+                  يعادل <strong>{formatDurationDays(form.duration_days)}</strong>
+                </span>
+              </p>
+            )}
+          </div>
+
           {/* عدد المشتركين المتاح تسجيلهم لهذا العرض */}
           <div className="rounded-xl border border-app-line bg-app-card-soft/80 p-3.5 text-xs space-y-2">
             <div className="flex items-center justify-between">
@@ -892,6 +940,14 @@ export default function OfferForm({
                 <dt className="text-app-muted-light">الفعاليات المحددة</dt>
                 <dd className="font-medium text-app-text">{planCount.toLocaleString("ar")}</dd>
               </div>
+              {form.duration_days && Number(form.duration_days) > 0 && (
+                <div className="flex items-center justify-between gap-3 border-b border-app-line/70 pb-3">
+                  <dt className="text-app-muted-light">مدة الاشتراك</dt>
+                  <dd className="font-medium text-cyan-400">
+                    {formatDurationDays(form.duration_days)}
+                  </dd>
+                </div>
+              )}
               <div className="flex items-start justify-between gap-3">
                 <dt className="shrink-0 text-app-muted-light">السعة المتاحة</dt>
                 <dd className="text-left text-xs font-medium leading-5 text-emerald-400">

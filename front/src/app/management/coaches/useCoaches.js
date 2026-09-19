@@ -327,7 +327,16 @@ export function useCoaches(params = {}) {
         body: formData,
       }).unwrap();
 
-      if (values.photo instanceof File) {
+      if (values.photoChanged) {
+        const photoFormData = new FormData();
+        if (values.photo instanceof File) {
+          photoFormData.append("photo", values.photo);
+        } else {
+          // في حالة حذف الصورة
+          photoFormData.append("delete_photo", "1");
+        }
+        await updateCoachPhoto({ id: selectedCoachId, body: photoFormData }).unwrap();
+      } else if (values.photo instanceof File) {
         const photoFormData = new FormData();
         photoFormData.append("photo", values.photo);
         await updateCoachPhoto({ id: selectedCoachId, body: photoFormData }).unwrap();

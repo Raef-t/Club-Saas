@@ -23,7 +23,7 @@ function ReceiptBadge({ label, value, tone }) {
   );
 }
 
-/** Displays the receipt numbers compactly with a styled tooltip showing full receipt details. */
+/** Displays the receipt numbers with labels directly in the table with custom tooltip. */
 export default function SubscriptionReceiptBadges({ subscription, className = "" }) {
   const { receiptNumber, coachReceiptNumber, branchReceiptNumber } =
     getSubscriptionReceiptNumbers(subscription);
@@ -72,20 +72,22 @@ export default function SubscriptionReceiptBadges({ subscription, className = ""
   );
 
   return (
-    <div className={`flex min-w-0 items-center justify-center ${className}`}>
+    <div className={`flex min-w-0 flex-col items-center gap-1.5 ${className}`}>
       <AppTooltip content={tooltipContent}>
-        {hasPrivateReceipts ? (
-          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-            {coachReceiptNumber && (
-              <ReceiptBadge value={coachReceiptNumber} tone="coach" />
-            )}
-            {branchReceiptNumber && (
-              <ReceiptBadge value={branchReceiptNumber} tone="branch" />
-            )}
-          </div>
-        ) : (
-          <ReceiptBadge value={receiptNumber} />
-        )}
+        <div className="flex min-w-0 flex-col items-center gap-1">
+          {hasPrivateReceipts ? (
+            <>
+              {coachReceiptNumber && (
+                <ReceiptBadge label="إيصال الكوتش" value={coachReceiptNumber} tone="coach" />
+              )}
+              {branchReceiptNumber && (
+                <ReceiptBadge label="إيصال النادي" value={branchReceiptNumber} tone="branch" />
+              )}
+            </>
+          ) : (
+            <ReceiptBadge label="الإيصال" value={receiptNumber} />
+          )}
+        </div>
       </AppTooltip>
     </div>
   );

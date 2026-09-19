@@ -22,6 +22,7 @@ import {
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { getMemberAccountName } from "@/lib/memberIdentity";
 import SubscriptionDiscountFields from "./SubscriptionDiscountFields";
+import { getEndDateFromDuration } from "@/app/management/offers/_lib/durationHelpers";
 
 function getResetDiscountFields(plan, monthsCount = 1) {
   const { originalTotal, coachOriginal, branchOriginal } = getSubscriptionOriginalAmounts(
@@ -362,33 +363,45 @@ export function SubscriptionCreateForm({
     const offerPrice = String(selectedOffer.price ?? "0");
     const today = getLocalDateValue();
 
+    // Calculate end_date: prefer duration_days over offer's own dates
+    function resolveEndDate(startDate, currentEndDate, currentMonths) {
+      if (selectedOffer.duration_days) {
+        return getEndDateFromDuration(startDate, selectedOffer.duration_days);
+      }
+      return (
+        selectedOffer.end_date ||
+        currentEndDate ||
+        getSubscriptionEndDate(startDate, currentMonths || 1)
+      );
+    }
+
     if (selectedOffer.offer_type === "single_choice") {
-      setForm((current) => ({
-        ...current,
-        offer_id: String(selectedOffer.id),
-        plan_id: String(opt.planId),
-        paid_amount: offerPrice,
-        start_date: selectedOffer.start_date || current.start_date || today,
-        end_date:
-          selectedOffer.end_date ||
-          current.end_date ||
-          getSubscriptionEndDate(current.start_date || today, current.months_count || 1),
-      }));
+      setForm((current) => {
+        const startDate = selectedOffer.start_date || current.start_date || today;
+        return {
+          ...current,
+          offer_id: String(selectedOffer.id),
+          plan_id: String(opt.planId),
+          paid_amount: offerPrice,
+          start_date: startDate,
+          end_date: resolveEndDate(startDate, current.end_date, current.months_count),
+        };
+      });
     } else {
       // bundle
       const offerPlans = selectedOffer.plans || [];
       const firstPlan = offerPlans[0];
-      setForm((current) => ({
-        ...current,
-        offer_id: String(selectedOffer.id),
-        plan_id: firstPlan?.id ? String(firstPlan.id) : current.plan_id || "1",
-        paid_amount: offerPrice,
-        start_date: selectedOffer.start_date || current.start_date || today,
-        end_date:
-          selectedOffer.end_date ||
-          current.end_date ||
-          getSubscriptionEndDate(current.start_date || today, current.months_count || 1),
-      }));
+      setForm((current) => {
+        const startDate = selectedOffer.start_date || current.start_date || today;
+        return {
+          ...current,
+          offer_id: String(selectedOffer.id),
+          plan_id: firstPlan?.id ? String(firstPlan.id) : current.plan_id || "1",
+          paid_amount: offerPrice,
+          start_date: startDate,
+          end_date: resolveEndDate(startDate, current.end_date, current.months_count),
+        };
+      });
     }
 
     setErrors((current) => ({
@@ -542,11 +555,16 @@ export function SubscriptionCreateForm({
       return;
     }
 
+    const resolvedPaidAmount =
+      form.paid_amount !== "" && form.paid_amount !== undefined && form.paid_amount !== null
+        ? Number(form.paid_amount)
+        : Number(originalAmounts.originalTotal) || 0;
+
     const validationData = {
       member_id: Number(form.member_id),
       plan_id: isOfferSelected ? Number(form.plan_id) || 1 : Number(form.plan_id),
       offer_id: isOfferSelected ? Number(form.offer_id) : undefined,
-      paid_amount: Number(form.paid_amount) || 0,
+      paid_amount: resolvedPaidAmount,
       months_count: isDailyEntryPlan ? 1 : form.months_count,
       receipt_number: form.receipt_number,
       coach_receipt_number: form.coach_receipt_number,
@@ -861,60 +879,38 @@ export function SubscriptionCreateForm({
         </div>
       )}
 
-      {!isPrivatePlan && (
+      <input type="hidden" name="paid_amount" value={form.paid_amount ?? ""} />
+      {errors && errors.paid_amount && (
+        <span className="block text-right text-xs text-app-red" role="alert">
+          {errors.paid_amount}
+        </span>
+      )}
+
+      {!form.offer_id && (
         <label className="block text-right text-sm text-app-muted-light">
-          المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
+          عدد الأشهر *
           <input
             type="number"
-            min="0"
-            value={form.paid_amount}
-            onChange={(e) => updateField("paid_amount", e.target.value)}
-            aria-invalid={Boolean(errors && errors.paid_amount)}
-            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-              errors && errors.paid_amount
+            min="1"
+            step="1"
+            value={form.months_count}
+            onChange={(event) => handleMonthsChange(event.target.value)}
+            disabled={isDailyEntryPlan}
+            aria-invalid={Boolean(errors && errors.months_count)}
+            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:opacity-60 ${
+              errors && errors.months_count
                 ? "border border-app-red focus:border-app-red"
                 : "focus:border-app-yellow/70"
             }`}
-            placeholder={
-              form.offer_id
-                ? "سعر العرض الترويجي"
-                : selectedPlanObj
-                  ? `السعر الأساسي: ${selectedPlanObj.base_price}`
-                  : ""
-            }
             required
           />
-          {errors && errors.paid_amount && (
+          {errors && errors.months_count && (
             <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.paid_amount}
+              {errors.months_count}
             </span>
           )}
         </label>
       )}
-
-      <label className="block text-right text-sm text-app-muted-light">
-        عدد الأشهر *
-        <input
-          type="number"
-          min="1"
-          step="1"
-          value={form.months_count}
-          onChange={(event) => handleMonthsChange(event.target.value)}
-          disabled={isDailyEntryPlan}
-          aria-invalid={Boolean(errors && errors.months_count)}
-          className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:opacity-60 ${
-            errors && errors.months_count
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          required
-        />
-        {errors && errors.months_count && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.months_count}
-          </span>
-        )}
-      </label>
 
       <SubscriptionDiscountFields
         form={form}

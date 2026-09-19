@@ -5,7 +5,7 @@ import SubscriptionAmountBadges from "./SubscriptionAmountBadges";
 describe("subscription amount badges", () => {
   afterEach(() => cleanup());
 
-  it("shows the net price without the label and displays paid amount in tooltip", () => {
+  it("shows the amount badge and paid badge if partially paid", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -16,21 +16,22 @@ describe("subscription amount badges", () => {
       />,
     );
 
-    expect(screen.queryByText("الصافي:")).not.toBeInTheDocument();
-    expect(screen.queryByText("المدفوع:")).not.toBeInTheDocument();
+    expect(screen.getByText("المبلغ:")).toBeInTheDocument();
+    expect(screen.getByText("المدفوع:")).toBeInTheDocument();
     expect(screen.getByText("750 ل.س")).toBeInTheDocument();
+    expect(screen.getByText("500 ل.س")).toBeInTheDocument();
 
     const trigger = screen.getByTestId("app-tooltip-trigger");
     fireEvent.mouseEnter(trigger);
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
-    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("المبلغ:");
     expect(tooltip).toHaveTextContent("750 ل.س");
     expect(tooltip).toHaveTextContent("المدفوع:");
     expect(tooltip).toHaveTextContent("500 ل.س");
   });
 
-  it("keeps the discount context while showing amount and details in tooltip", () => {
+  it("keeps the discount context while showing amount directly in table", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -38,7 +39,7 @@ describe("subscription amount badges", () => {
           original_total_amount: 1000,
           discount_percentage: 20,
           total_amount: 800,
-          paid_amount: 600,
+          paid_amount: 800,
           discount_reason: "حسم خاص",
           plan: { base_price: 1000 },
         }}
@@ -46,21 +47,21 @@ describe("subscription amount badges", () => {
     );
 
     expect(screen.getByText("حسم 20%")).toHaveAttribute("title", "حسم خاص");
+    expect(screen.getByText("المبلغ:")).toBeInTheDocument();
     expect(screen.getByText("800 ل.س")).toBeInTheDocument();
+    expect(screen.queryByText("المدفوع:")).not.toBeInTheDocument();
 
     const trigger = screen.getByTestId("app-tooltip-trigger");
     fireEvent.mouseEnter(trigger);
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
-    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("المبلغ:");
     expect(tooltip).toHaveTextContent("800 ل.س");
-    expect(tooltip).toHaveTextContent("المدفوع:");
-    expect(tooltip).toHaveTextContent("600 ل.س");
     expect(tooltip).toHaveTextContent("حسم 20%");
     expect(tooltip).toHaveTextContent("حسم خاص");
   });
 
-  it("includes coach and club prices in the tooltip for private subscriptions", () => {
+  it("displays coach, branch, and total amounts directly in table for private subscriptions", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -77,20 +78,22 @@ describe("subscription amount badges", () => {
       />,
     );
 
-    expect(screen.queryByText("سعر الكوتش:")).not.toBeInTheDocument();
-    expect(screen.queryByText("سعر النادي:")).not.toBeInTheDocument();
+    expect(screen.getByText("المبلغ:")).toBeInTheDocument();
+    expect(screen.getByText("700 ل.س")).toBeInTheDocument();
+    expect(screen.getByText("الكوتش:")).toBeInTheDocument();
+    expect(screen.getByText("400 ل.س")).toBeInTheDocument();
+    expect(screen.getByText("النادي:")).toBeInTheDocument();
+    expect(screen.getByText("300 ل.س")).toBeInTheDocument();
 
     const trigger = screen.getByTestId("app-tooltip-trigger");
     fireEvent.mouseEnter(trigger);
     const tooltip = screen.getByRole("tooltip");
     expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
-    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("المبلغ:");
     expect(tooltip).toHaveTextContent("700 ل.س");
-    expect(tooltip).toHaveTextContent("المدفوع:");
-    expect(tooltip).toHaveTextContent("700 ل.س");
-    expect(tooltip).toHaveTextContent("سعر الكوتش:");
+    expect(tooltip).toHaveTextContent("الكوتش:");
     expect(tooltip).toHaveTextContent("400 ل.س");
-    expect(tooltip).toHaveTextContent("سعر النادي:");
+    expect(tooltip).toHaveTextContent("النادي:");
     expect(tooltip).toHaveTextContent("300 ل.س");
   });
 });

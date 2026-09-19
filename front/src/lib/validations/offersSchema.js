@@ -29,6 +29,12 @@ export const offerSchema = z.object({
     ])
     .refine((val) => Number.isFinite(val) && val >= 0, "السعر يجب أن يكون رقماً موجباً"),
 
+  duration_days: z
+    .union([z.number(), z.string().min(1).transform(Number)])
+    .refine((val) => Number.isInteger(val) && val > 0, "المدة يجب أن تكون رقماً صحيحاً موجباً")
+    .optional()
+    .nullable(),
+
   start_date: z.string().optional().nullable().or(z.literal("")),
   end_date: z.string().optional().nullable().or(z.literal("")),
 

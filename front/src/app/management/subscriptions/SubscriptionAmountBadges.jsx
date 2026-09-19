@@ -6,7 +6,16 @@ import {
   getSubscriptionDiscountSummary,
   getSubscriptionOriginalAmounts,
   isPrivateSubscriptionPlan,
+  parseSubscriptionAmount,
 } from "./subscriptionUtils";
+
+function formatAmountNumber(value) {
+  const num = parseSubscriptionAmount(value);
+  return num.toLocaleString("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
 
 function AmountBadge({ label, value, tone }) {
   const toneClass =
@@ -21,16 +30,17 @@ function AmountBadge({ label, value, tone }) {
   return (
     <span
       className={`inline-flex max-w-full items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] ${toneClass}`}
+      dir="rtl"
     >
       {label && <span className="shrink-0 opacity-75">{label}:</span>}
-      <span className="truncate font-medium" dir="ltr">
-        {formatSubscriptionMoney(value)}
+      <span className="truncate font-medium">
+        <bdi dir="ltr">{formatAmountNumber(value)}</bdi> ل.س
       </span>
     </span>
   );
 }
 
-/** Displays the subscription net price and paid amount details with a styled tooltip. */
+/** Displays the subscription amounts directly in the table with custom tooltip. */
 export default function SubscriptionAmountBadges({ subscription }) {
   const discount = getSubscriptionDiscountSummary(subscription);
   const isPrivatePlan = isPrivateSubscriptionPlan(subscription?.plan || subscription);
@@ -46,29 +56,29 @@ export default function SubscriptionAmountBadges({ subscription }) {
         <span>تفاصيل المبلغ</span>
       </div>
       <div className="flex items-center justify-between gap-4">
-        <span className="text-app-muted-light">الصافي:</span>
-        <span className="font-semibold text-blue-300" dir="ltr">
-          {formatSubscriptionMoney(discount.finalPrice)}
+        <span className="text-app-muted-light">المبلغ:</span>
+        <span className="font-semibold text-blue-300">
+          <bdi dir="ltr">{formatAmountNumber(discount.finalPrice)}</bdi> ل.س
         </span>
       </div>
       <div className="flex items-center justify-between gap-4">
         <span className="text-app-muted-light">المدفوع:</span>
-        <span className="font-semibold text-app-green" dir="ltr">
-          {formatSubscriptionMoney(subscription?.paid_amount)}
+        <span className="font-semibold text-app-green">
+          <bdi dir="ltr">{formatAmountNumber(subscription?.paid_amount)}</bdi> ل.س
         </span>
       </div>
       {isPrivatePlan && (
         <>
           <div className="flex items-center justify-between gap-4 border-t border-app-line/40 pt-1.5">
-            <span className="text-app-muted-light">سعر الكوتش:</span>
-            <span className="font-semibold text-blue-300" dir="ltr">
-              {formatSubscriptionMoney(coachOriginal)}
+            <span className="text-app-muted-light">الكوتش:</span>
+            <span className="font-semibold text-blue-300">
+              <bdi dir="ltr">{formatAmountNumber(coachOriginal)}</bdi> ل.س
             </span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span className="text-app-muted-light">سعر النادي:</span>
-            <span className="font-semibold text-app-yellow" dir="ltr">
-              {formatSubscriptionMoney(branchOriginal)}
+            <span className="text-app-muted-light">النادي:</span>
+            <span className="font-semibold text-app-yellow">
+              <bdi dir="ltr">{formatAmountNumber(branchOriginal)}</bdi> ل.س
             </span>
           </div>
         </>
@@ -84,12 +94,17 @@ export default function SubscriptionAmountBadges({ subscription }) {
     </div>
   );
 
+  const isPartiallyPaid =
+    subscription?.paid_amount !== undefined &&
+    subscription?.paid_amount !== null &&
+    Number(subscription.paid_amount) !== Number(discount.finalPrice);
+
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5">
       {discount.isDiscount && (
         <div className="flex items-center gap-1.5 text-[10px]">
           <span className="text-app-muted line-through">
-            {formatSubscriptionMoney(discount.originalTotal)}
+            <bdi dir="ltr">{formatAmountNumber(discount.originalTotal)}</bdi> ل.س
           </span>
           <span
             className="rounded-full border border-app-yellow/25 bg-app-yellow/10 px-2 py-0.5 font-medium text-app-yellow"
@@ -101,7 +116,21 @@ export default function SubscriptionAmountBadges({ subscription }) {
       )}
 
       <AppTooltip content={tooltipContent}>
-        <AmountBadge value={discount.finalPrice} tone="net" />
+        <div className="flex min-w-0 flex-col items-center gap-1">
+          <AmountBadge label="المبلغ" value={discount.finalPrice} tone="net" />
+          {isPrivatePlan && (
+            <div
+              className="flex min-w-0 flex-col items-center gap-1"
+              aria-label="تفصيل سعر الكوتش والنادي"
+            >
+              <AmountBadge label="الكوتش" value={coachOriginal} tone="coach" />
+              <AmountBadge label="النادي" value={branchOriginal} tone="branch" />
+            </div>
+          )}
+          {isPartiallyPaid && (
+            <AmountBadge label="المدفوع" value={subscription.paid_amount} tone="paid" />
+          )}
+        </div>
       </AppTooltip>
     </div>
   );

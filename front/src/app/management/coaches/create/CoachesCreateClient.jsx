@@ -35,14 +35,14 @@ export default function CoachesCreateClient() {
   const editInitialValues = isEdit ? getEditInitialValues() : null;
 
   const [photo, setPhoto] = useState([]);
+  const [photoChanged, setPhotoChanged] = useState(false);
   const [createdCredentials, setCreatedCredentials] = useState(null);
 
   const initialPhoto = editInitialValues?.photo;
   useEffect(() => {
-    if (initialPhoto) {
-      setPhoto([initialPhoto]);
-    }
-  }, [initialPhoto]);
+    if (!isEdit || !initialPhoto || photoChanged) return;
+    setPhoto([initialPhoto]);
+  }, [initialPhoto, isEdit, photoChanged]);
 
   async function submit(values) {
     const payload = {
@@ -65,9 +65,15 @@ export default function CoachesCreateClient() {
     const payload = {
       ...values,
       photo: photo[0] || null,
+      photoChanged,
     };
     const ok = await handleUpdate(payload);
     if (ok) router.push("/management/coaches");
+  }
+
+  function changePhoto(nextPhoto) {
+    setPhoto(nextPhoto);
+    setPhotoChanged(true);
   }
 
   function closeCredentialsDialog() {
@@ -121,12 +127,16 @@ export default function CoachesCreateClient() {
           <UploadBox
             className="entry-form-card"
             label="صورة المدرب"
-            subtitle="الصورة الشخصية للمدرب"
+            subtitle={
+              isEdit && initialPhoto
+                ? "يمكن استبدال الصورة الحالية أو حذفها"
+                : "الصورة الشخصية للمدرب"
+            }
             accept=".png,.jpg,.jpeg"
             multiple={false}
             maxSizeMB={2}
             value={photo}
-            onChange={setPhoto}
+            onChange={changePhoto}
           />
         </div>
       </ManagementCreatePage>

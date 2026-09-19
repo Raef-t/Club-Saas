@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatMoney } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { withAllItems } from "@/lib/pagination";
+import { formatDurationDays, getEndDateFromDuration } from "./_lib/durationHelpers";
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "نقداً (كاش)" },
@@ -52,18 +53,30 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
   useEffect(() => {
     if (!open || !offer) return;
 
+    const today = new Date().toISOString().split("T")[0];
+
     setForm({
       member_id: "",
       paid_amount: offer.price !== undefined ? String(offer.price) : "0",
       payment_method: "cash",
       receipt_number: "",
-      start_date: new Date().toISOString().split("T")[0],
+      start_date: today,
+      end_date: offer.duration_days ? getEndDateFromDuration(today, offer.duration_days) : "",
       notes: "",
     });
 
     setErrors({});
     setGeneralError("");
   }, [open, offer]);
+
+  // Auto-calculate end_date when start_date changes and offer has duration_days
+  useEffect(() => {
+    if (!offer?.duration_days || !form.start_date) return;
+    const calculatedEnd = getEndDateFromDuration(form.start_date, offer.duration_days);
+    if (calculatedEnd && calculatedEnd !== form.end_date) {
+      setForm((prev) => ({ ...prev, end_date: calculatedEnd }));
+    }
+  }, [form.start_date, offer?.duration_days]);
 
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -99,6 +112,7 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
       payment_method: form.payment_method,
       receipt_number: form.receipt_number.trim() || null,
       start_date: form.start_date || null,
+      end_date: form.end_date || null,
       notes: form.notes.trim() || null,
     };
 
@@ -149,6 +163,17 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
               المقاعد المتاحة في الباقة: <strong>{offer.available_slots} مقعد</strong>
             </div>
           )}
+          {(offer.duration_days || offer.duration_formatted) && (
+            <div className="text-[11px] text-cyan-300 flex items-center gap-1">
+              <span>⏱</span>
+              <span>
+                مدة الاشتراك:{" "}
+                <strong className="text-white">
+                  {offer.duration_formatted || formatDurationDays(offer.duration_days)}
+                </strong>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Member selection */}
@@ -183,6 +208,17 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
             placeholder="DD/MM/YYYY"
           />
         </div>
+
+        {/* End Date (auto-calculated from duration_days) */}
+        {form.end_date && (
+          <div className="rounded-lg border border-cyan-500/30 bg-cyan-950/20 p-2.5 flex items-center justify-between text-xs">
+            <span className="text-cyan-300 flex items-center gap-1">
+              <span>📅</span>
+              <span>تاريخ نهاية الاشتراك (محسوب تلقائياً):</span>
+            </span>
+            <span className="font-bold text-white">{form.end_date}</span>
+          </div>
+        )}
 
         {/* Payment details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
