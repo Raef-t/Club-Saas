@@ -12,6 +12,8 @@ readonly class MemberDTO
         public ?string $barcode = null,
         public ?string $status = null, // e.g. active, frozen, expired
         public bool $isActive,
-        public ?PersonDTO $person = null
+        public ?PersonDTO $person = null,
+        public ?string $username = null,
+        public ?string $customUsername = null
     ) {}
 }

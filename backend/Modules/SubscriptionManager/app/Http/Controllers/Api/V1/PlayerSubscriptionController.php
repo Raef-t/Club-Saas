@@ -188,7 +188,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts'])),
                 __('Member subscribed successfully'),
                 201
             );
@@ -257,7 +257,7 @@ class PlayerSubscriptionController extends BaseController
                     return response()->json(['message' => __('Unauthorized access')], 403);
                 }
             }
-            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit']);
+            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')
@@ -356,7 +356,7 @@ class PlayerSubscriptionController extends BaseController
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription updated successfully')
             );
         } catch (ModelNotFoundException $e) {
@@ -427,7 +427,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription frozen successfully')
             );
         } catch (\Exception $e) {
@@ -470,7 +470,7 @@ class PlayerSubscriptionController extends BaseController
         try {
             $subscription = $this->subscriptionService->unfreezeSubscription($id);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription unfrozen successfully')
             );
         } catch (\Exception $e) {
@@ -535,7 +535,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->renewSubscription($id, $options);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription renewed successfully'),
                 201
             );
@@ -589,7 +589,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->cancelSubscription($id, $data['reason'] ?? null);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription cancelled successfully')
             );
         } catch (\Exception $e) {
@@ -647,7 +647,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->recordPayment($id, (float) $data['amount'], $data);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments', 'member.person.user', 'member.person.contacts'])),
                 __('Payment recorded successfully')
             );
         } catch (\Exception $e) {
