@@ -453,8 +453,10 @@ class StaffService
             }
 
             // Delete old photo if exists
-            if ($person->photo_url) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            $oldPhoto = $person->getRawOriginal('photo_url') ?: $person->photo_url;
+            if ($oldPhoto) {
+                $relativePath = preg_replace('#^/?storage/#', '', $oldPhoto);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($relativePath);
             }
 
             $photoUrl = $photo ? $photo->store('people/photos', 'public') : null;

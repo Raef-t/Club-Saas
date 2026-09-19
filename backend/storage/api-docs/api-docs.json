@@ -22692,6 +22692,12 @@
                                             "type": "integer",
                                             "example": 1
                                         }
+                                    },
+                                    "delete_photo": {
+                                        "description": "حذف صورة المدرب (true لحذف الصورة الحالية)",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -22901,6 +22907,12 @@
                                         "description": "صورة المدرب (اتركه فارغاً لحذف الصورة)",
                                         "type": "string",
                                         "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "delete_photo": {
+                                        "description": "حدد true لحذف الصورة الحالية",
+                                        "type": "boolean",
+                                        "example": false,
                                         "nullable": true
                                     }
                                 },

@@ -312,6 +312,23 @@ class CoachService
                     $personData['full_name'] = trim($firstName . ' ' . $lastName);
                 }
 
+                // Handle Photo Update or Deletion
+                if (!empty($data['delete_photo']) || (array_key_exists('photo', $data) && empty($data['photo']) && !isset($data['photo_url']))) {
+                    $oldPhoto = $person->getRawOriginal('photo_url') ?: $person->photo_url;
+                    if ($oldPhoto) {
+                        $relativePath = preg_replace('#^/?storage/#', '', $oldPhoto);
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($relativePath);
+                    }
+                    $personData['photo_url'] = null;
+                } elseif (isset($data['photo']) && $data['photo'] instanceof \Illuminate\Http\UploadedFile) {
+                    $oldPhoto = $person->getRawOriginal('photo_url') ?: $person->photo_url;
+                    if ($oldPhoto) {
+                        $relativePath = preg_replace('#^/?storage/#', '', $oldPhoto);
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($relativePath);
+                    }
+                    $personData['photo_url'] = $data['photo']->store('people/photos', 'public');
+                }
+
                 if (!empty($personData)) {
                     $person->update($personData);
                 }
@@ -483,8 +500,10 @@ class CoachService
             }
 
             // Delete old photo if exists
-            if ($person->photo_url) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($person->photo_url);
+            $oldPhoto = $person->getRawOriginal('photo_url') ?: $person->photo_url;
+            if ($oldPhoto) {
+                $relativePath = preg_replace('#^/?storage/#', '', $oldPhoto);
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($relativePath);
             }
 
             $photoUrl = $photo ? $photo->store('people/photos', 'public') : null;
