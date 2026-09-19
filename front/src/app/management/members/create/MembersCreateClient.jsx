@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ManagementCreatePage from "@/components/forms/ManagementCreatePage";
 import AccountCredentialsDialog from "@/components/ui/AccountCredentialsDialog";
@@ -12,6 +12,7 @@ import { useMembers } from "../useMembers";
 import { SubscriptionCreateForm } from "@/app/management/subscriptions/SubscriptionForm";
 import { useCreateSubscription } from "@/app/management/subscriptions/useCreateSubscription";
 import { extractCreatedAccount } from "@/lib/generatedAccount";
+import { resolveMemberPhotoUrl } from "../memberFormUtils";
 
 const MEMBER_FORM_ID = "create-member-form";
 const SUBSCRIPTION_FORM_ID = "create-subscription-stepper-form";
@@ -30,6 +31,8 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
   const [step, setStep] = useState(0);
   const [createdMemberId, setCreatedMemberId] = useState(null);
   const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [photo, setPhoto] = useState([]);
+  const [photoChanged, setPhotoChanged] = useState(false);
 
   /* ── Members hook ──────────────────────────────────────────── */
   const {
@@ -62,14 +65,20 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
   } = useCreateSubscription({ initialData: initialSubscriptionData });
 
   const editInitialValues = isEdit ? getEditInitialValues() : null;
+  const initialPhoto = editInitialValues?.photo;
+
+  useEffect(() => {
+    if (!isEdit || !initialPhoto || photoChanged) return;
+    setPhoto([resolveMemberPhotoUrl(initialPhoto)]);
+  }, [initialPhoto, isEdit, photoChanged]);
 
   /* ── Step 1: submit member ─────────────────────────────────── */
   async function submitMember(values) {
     if (isEdit) {
-      const ok = await handleUpdate(values);
+      const ok = await handleUpdate({ ...values, photo: photo[0] || null });
       if (ok) router.push("/management/members");
     } else {
-      const response = await handleCreate(values);
+      const response = await handleCreate({ ...values, photo: photo[0] || null });
       if (response) {
         const account = extractCreatedAccount(response, { entityKeys: ["member"] });
         setCreatedMemberId(account.id);
@@ -99,6 +108,11 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
   function continueAfterCredentials() {
     setCreatedCredentials(null);
     setStep(1);
+  }
+
+  function changePhoto(nextPhoto) {
+    setPhoto(nextPhoto);
+    setPhotoChanged(true);
   }
 
   /* ── Titles ────────────────────────────────────────────────── */
@@ -154,7 +168,20 @@ export default function MembersCreateClient({ initialSubscriptionData }) {
                   />
                 )}
               </FormCard>
-              <UploadBox compact className="entry-form-card" maxSizeMB={2} />
+              <UploadBox
+                className="entry-form-card"
+                label="صورة اللاعب"
+                subtitle={
+                  isEdit && initialPhoto
+                    ? "يمكن استبدال الصورة الحالية"
+                    : "الصورة الشخصية (اختيارية)"
+                }
+                accept=".png,.jpg,.jpeg"
+                multiple={false}
+                maxSizeMB={2}
+                value={photo}
+                onChange={changePhoto}
+              />
             </div>
           </div>
         )}

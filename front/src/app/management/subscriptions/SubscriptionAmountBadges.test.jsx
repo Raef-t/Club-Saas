@@ -41,4 +41,26 @@ describe("subscription amount badges", () => {
     expect(screen.getByTitle("الصافي: 800 ل.س")).toBeInTheDocument();
     expect(screen.getByTitle("المدفوع: 600 ل.س")).toBeInTheDocument();
   });
+
+  it("separates the coach and club prices for private subscriptions", () => {
+    render(
+      <SubscriptionAmountBadges
+        subscription={{
+          months_count: 2,
+          total_amount: 700,
+          paid_amount: 700,
+          plan: {
+            base_price: 350,
+            coach_price: 200,
+            branch_price: 150,
+            is_private_plan: true,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText("تفصيل سعر الكوتش والنادي")).toBeInTheDocument();
+    expect(screen.getByTitle("سعر الكوتش: 400 ل.س")).toBeInTheDocument();
+    expect(screen.getByTitle("سعر النادي: 300 ل.س")).toBeInTheDocument();
+  });
 });

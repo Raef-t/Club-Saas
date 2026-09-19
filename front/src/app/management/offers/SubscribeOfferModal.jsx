@@ -38,7 +38,7 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
   const branchParam = offer?.branch_id ? { branch_id: offer.branch_id } : {};
   const { data: membersData, isLoading: isMembersLoading } = useGetMembersQuery(
     withAllItems(branchParam),
-    { skip: !open }
+    { skip: !open },
   );
 
   const members = useMemo(() => {
@@ -104,10 +104,14 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
 
     try {
       await subscribeToOffer({ id: offer.id, body: payload }).unwrap();
-      toast.success(`تم اشتراك اللاعب في عرض "${offer.name}" وتوليد الفاتورة والاشتراكات بنجاح! 🎉`);
+      toast.success(
+        `تم اشتراك اللاعب في عرض "${offer.name}" وتوليد الفاتورة والاشتراكات بنجاح! 🎉`,
+      );
       onClose();
     } catch (err) {
-      setGeneralError(getApiErrorMessage(err, "تعذر إتمام عملية الاشتراك. تحقق من البيانات وحاول مرة أخرى."));
+      setGeneralError(
+        getApiErrorMessage(err, "تعذر إتمام عملية الاشتراك. تحقق من البيانات وحاول مرة أخرى."),
+      );
     }
   }
 
@@ -164,7 +168,9 @@ export default function SubscribeOfferModal({ open, onClose, offer }) {
             placeholder={isMembersLoading ? "جاري تحميل اللاعبين..." : "اختر اللاعب"}
             error={errors.member_id}
           />
-          {errors.member_id && <span className="mt-1 block text-xs text-app-red">{errors.member_id}</span>}
+          {errors.member_id && (
+            <span className="mt-1 block text-xs text-app-red">{errors.member_id}</span>
+          )}
         </label>
 
         {/* Start Date */}

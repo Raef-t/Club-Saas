@@ -95,7 +95,7 @@ describe("OffersClient", () => {
 
     // Check single choice offer row
     expect(screen.getAllByText("عرض أيروبيك خاص").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("🏷️ يختار المشترك فعالية واحدة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("يختار المشترك فعالية واحدة").length).toBeGreaterThanOrEqual(1);
 
     // In single_choice: each activity is listed on its row spanning all columns
     expect(screen.getAllByText("أيروبيك كوتش سارة").length).toBeGreaterThanOrEqual(1);
@@ -128,7 +128,7 @@ describe("OffersClient", () => {
     render(<OffersClient />);
 
     expect(screen.getAllByText("باقة اللياقة والسباحة").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("📦 باقة مجمعة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("باقة مجمعة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("اشتراك سباحة شهري").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("اشتراك لياقة بدنية").length).toBeGreaterThanOrEqual(1);
 

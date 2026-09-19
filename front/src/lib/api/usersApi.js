@@ -49,6 +49,14 @@ export const usersApi = createBackendApi({
       invalidatesTags: (result, error, { userId }) => ["Users", { type: "UserRoles", id: userId }],
       onQueryStarted: refreshCurrentProfileAfterMutation,
     }),
+    toggleUserStatus: builder.mutation({
+      query: (userId) => ({
+        url: `users/${userId}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, userId) => ["Users", { type: "Users", id: userId }],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
+    }),
   }),
 });
 
@@ -58,4 +66,6 @@ export const {
   useGetUserRolesQuery,
   useAssignUserRoleMutation,
   useRevokeUserRoleMutation,
+  useToggleUserStatusMutation,
 } = usersApi;
+

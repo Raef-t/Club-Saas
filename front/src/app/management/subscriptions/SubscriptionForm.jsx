@@ -563,6 +563,7 @@ export function SubscriptionCreateForm({
       branch_discount_percentage: form.branch_discount_percentage,
       coach_paid_amount: form.coach_paid_amount,
       branch_paid_amount: form.branch_paid_amount,
+      currency: "SYP",
     };
 
     const result = subscriptionSchema.safeParse(validationData);
@@ -860,34 +861,36 @@ export function SubscriptionCreateForm({
         </div>
       )}
 
-      <label className="block text-right text-sm text-app-muted-light">
-        المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
-        <input
-          type="number"
-          min="0"
-          value={form.paid_amount}
-          onChange={(e) => updateField("paid_amount", e.target.value)}
-          aria-invalid={Boolean(errors && errors.paid_amount)}
-          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-            errors && errors.paid_amount
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          placeholder={
-            form.offer_id
-              ? "سعر العرض الترويجي"
-              : selectedPlanObj
-                ? `السعر الأساسي: ${selectedPlanObj.base_price}`
-                : ""
-          }
-          required
-        />
-        {errors && errors.paid_amount && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.paid_amount}
-          </span>
-        )}
-      </label>
+      {!isPrivatePlan && (
+        <label className="block text-right text-sm text-app-muted-light">
+          المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
+          <input
+            type="number"
+            min="0"
+            value={form.paid_amount}
+            onChange={(e) => updateField("paid_amount", e.target.value)}
+            aria-invalid={Boolean(errors && errors.paid_amount)}
+            className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
+              errors && errors.paid_amount
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
+            placeholder={
+              form.offer_id
+                ? "سعر العرض الترويجي"
+                : selectedPlanObj
+                  ? `السعر الأساسي: ${selectedPlanObj.base_price}`
+                  : ""
+            }
+            required
+          />
+          {errors && errors.paid_amount && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.paid_amount}
+            </span>
+          )}
+        </label>
+      )}
 
       <label className="block text-right text-sm text-app-muted-light">
         عدد الأشهر *
@@ -924,14 +927,12 @@ export function SubscriptionCreateForm({
         onModeChange={changeDiscountMode}
         onFinalPriceChange={(value) => changeUnifiedDiscount(value, "price")}
         onPercentageChange={(value) => changeUnifiedDiscount(value, "percentage")}
-        onCoachPriceChange={(value) => changeSplitDiscount("coach", value, "price")}
         onCoachPercentageChange={(value) => changeSplitDiscount("coach", value, "percentage")}
-        onBranchPriceChange={(value) => changeSplitDiscount("branch", value, "price")}
         onBranchPercentageChange={(value) => changeSplitDiscount("branch", value, "percentage")}
         onReasonChange={(value) => updateField("discount_reason", value)}
       />
 
-      {isPrivatePlan ? (
+      {isPrivatePlan && (
         <div className="grid gap-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4 sm:grid-cols-2">
           <label className="block text-right text-sm text-app-muted-light">
             دفعة الكوتش ({CURRENCY_SYMBOL})
@@ -962,30 +963,6 @@ export function SubscriptionCreateForm({
             <span className="font-medium text-app-green">{formatMoney(form.paid_amount)}</span>
           </p>
         </div>
-      ) : (
-        <label className="block text-right text-sm text-app-muted-light">
-          المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
-          <input
-            type="number"
-            min="0"
-            max={form.final_price}
-            step="0.01"
-            value={form.paid_amount}
-            onChange={(event) => updateField("paid_amount", event.target.value)}
-            aria-invalid={Boolean(errors.paid_amount)}
-            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${
-              errors.paid_amount
-                ? "border border-app-red focus:border-app-red"
-                : "focus:border-app-yellow/70"
-            }`}
-            required
-          />
-          {errors.paid_amount && (
-            <span className="mt-1.5 block text-xs text-app-red" role="alert">
-              {errors.paid_amount}
-            </span>
-          )}
-        </label>
       )}
 
       {isPrivatePlan ? (
@@ -1554,9 +1531,7 @@ export function SubscriptionEditForm({
         onModeChange={changeEditDiscountMode}
         onFinalPriceChange={(value) => changeEditUnifiedDiscount(value, "price")}
         onPercentageChange={(value) => changeEditUnifiedDiscount(value, "percentage")}
-        onCoachPriceChange={(value) => changeEditSplitDiscount("coach", value, "price")}
         onCoachPercentageChange={(value) => changeEditSplitDiscount("coach", value, "percentage")}
-        onBranchPriceChange={(value) => changeEditSplitDiscount("branch", value, "price")}
         onBranchPercentageChange={(value) => changeEditSplitDiscount("branch", value, "percentage")}
         onReasonChange={(value) => updateField("discount_reason", value)}
       />

@@ -263,6 +263,25 @@ describe("subscription create validation", () => {
 });
 
 describe("subscription discount calculations", () => {
+  it("uses the base-price title until a discount is enabled", () => {
+    render(
+      <SubscriptionCreateForm
+        members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
+        plans={[{ id: 2, name: "اشتراك شهري", base_price: 300000 }]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("السعر الأساسي")).toBeInTheDocument();
+    expect(screen.queryByText("السعر الأصلي قبل الحسم")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
+
+    expect(screen.getByText("السعر الأصلي قبل الحسم")).toBeInTheDocument();
+    expect(screen.queryByText("السعر الأساسي")).not.toBeInTheDocument();
+  });
+
   it("calculates the percentage, final price, and proposed payment in both directions", () => {
     render(
       <SubscriptionCreateForm
@@ -326,8 +345,9 @@ describe("subscription discount calculations", () => {
     );
   });
 
-  it("supports a coach-only discount for a private subscription", () => {
-    render(
+  it("keeps the private total in the form while showing only non-duplicated split controls", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
       <SubscriptionCreateForm
         members={[{ id: 1, person: { full_name: "لاعب تجريبي" } }]}
         plans={[
@@ -339,21 +359,45 @@ describe("subscription discount calculations", () => {
             branch_price: 100000,
           },
         ]}
-        onSubmit={vi.fn()}
+        onSubmit={onSubmit}
         onCancel={vi.fn()}
       />,
     );
 
+    expect(screen.queryByLabelText(/المبلغ المدفوع للاشتراك/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("checkbox", { name: "تطبيق حسم" }));
     fireEvent.click(screen.getByRole("button", { name: "حسم منفصل" }));
-    fireEvent.change(screen.getByLabelText(/حصة الكوتش بعد الحسم/), {
-      target: { value: "100000" },
+    expect(screen.queryByLabelText(/حصة الكوتش بعد الحسم/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/حصة النادي بعد الحسم/)).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/نسبة حسم الكوتش/), {
+      target: { value: "50" },
     });
 
     expect(screen.getByLabelText(/نسبة حسم الكوتش/)).toHaveValue(50);
     expect(screen.getByLabelText(/نسبة حسم النادي/)).toHaveValue(0);
     expect(screen.getByLabelText(/دفعة الكوتش/)).toHaveValue(100000);
     expect(screen.getByLabelText(/دفعة النادي/)).toHaveValue(100000);
+
+    fireEvent.change(screen.getByLabelText(/رقم إيصال الكوتش/), {
+      target: { value: "COACH-1" },
+    });
+    fireEvent.change(screen.getByLabelText(/رقم إيصال النادي/), {
+      target: { value: "BRANCH-1" },
+    });
+    fireEvent.change(screen.getByLabelText(/سبب الحسم/), {
+      target: { value: "حسم للكوتش" },
+    });
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paid_amount: 200000,
+        coach_paid_amount: 100000,
+        branch_paid_amount: 100000,
+      }),
+      "normal",
+    );
   });
 });
 

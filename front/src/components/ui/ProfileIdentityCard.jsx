@@ -6,7 +6,6 @@ import QRCode from "qrcode";
 import CopyableUsername from "@/components/ui/CopyableUsername";
 
 function QrZoomModal({ imageUrl, name, onClose }) {
-  // Close on backdrop click or Escape key
   useEffect(() => {
     function handleKey(e) {
       if (e.key === "Escape") onClose();
@@ -29,7 +28,6 @@ function QrZoomModal({ imageUrl, name, onClose }) {
         className="relative flex flex-col items-center gap-4 rounded-2xl border border-app-line bg-white p-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
@@ -39,16 +37,26 @@ function QrZoomModal({ imageUrl, name, onClose }) {
           ✕
         </button>
 
-        {/* Large QR */}
-        <Image
-          src={imageUrl}
-          alt={`رمز QR الخاص بـ ${name}`}
-          width={280}
-          height={280}
-          unoptimized
-          className="rounded-xl"
-          priority
-        />
+        <button
+          type="button"
+          onClick={onClose}
+          className="group relative overflow-hidden rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-yellow"
+          aria-label={`تصغير رمز QR الخاص بـ ${name}`}
+          title="اضغط لتصغير رمز QR"
+        >
+          <Image
+            src={imageUrl}
+            alt={`رمز QR الخاص بـ ${name}`}
+            width={320}
+            height={320}
+            unoptimized
+            className="size-[min(80vw,320px)] object-contain"
+            priority
+          />
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/70 py-2 text-center text-xs font-semibold text-app-yellow opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+            اضغط للتصغير
+          </span>
+        </button>
 
         <p className="text-center text-xs text-slate-500">{name}</p>
       </div>
@@ -56,7 +64,7 @@ function QrZoomModal({ imageUrl, name, onClose }) {
   );
 }
 
-function InlineQrCode({ value, name, username }) {
+function InlineQrCode({ value, name }) {
   const [imageUrl, setImageUrl] = useState("");
   const [failed, setFailed] = useState(false);
   const [zoomed, setZoomed] = useState(false);
@@ -126,7 +134,6 @@ function InlineQrCode({ value, name, username }) {
               className="size-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
 
-            {/* Hover overlay hint */}
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/65 opacity-0 transition-opacity duration-200 group-hover:opacity-100 p-1 text-center pointer-events-none">
               <span className="text-[10px] font-bold text-app-yellow leading-tight">
                 اضغط لتكبير
@@ -142,13 +149,7 @@ function InlineQrCode({ value, name, username }) {
         )}
       </button>
 
-      {zoomed && (
-        <QrZoomModal
-          imageUrl={imageUrl}
-          name={name}
-          onClose={() => setZoomed(false)}
-        />
-      )}
+      {zoomed && <QrZoomModal imageUrl={imageUrl} name={name} onClose={() => setZoomed(false)} />}
     </>
   );
 }
@@ -178,7 +179,7 @@ export default function ProfileIdentityCard({ name, username, qrCode, status }) 
         )}
       </div>
 
-      <InlineQrCode value={qrCode} name={displayName} username={username} />
+      <InlineQrCode value={qrCode} name={displayName} />
     </section>
   );
 }

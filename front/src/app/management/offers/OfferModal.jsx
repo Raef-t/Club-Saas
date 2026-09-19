@@ -49,7 +49,7 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
     activeBranchId && activeBranchId !== "all"
       ? { branch_id: activeBranchId, all: true }
       : { all: true },
-    { skip: !open }
+    { skip: !open },
   );
 
   const availablePlans = useMemo(() => {
@@ -91,8 +91,8 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
         initialBranchId && initialBranchId !== "all"
           ? String(initialBranchId)
           : branches[0]?.id
-          ? String(branches[0].id)
-          : "";
+            ? String(branches[0].id)
+            : "";
 
       setForm({
         branch_id: defaultBranch,
@@ -187,7 +187,9 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
       }
       onClose();
     } catch (err) {
-      setGeneralError(getApiErrorMessage(err, "تعذر حفظ بيانات العرض. تحقق من الحقول وأعد المحاولة."));
+      setGeneralError(
+        getApiErrorMessage(err, "تعذر حفظ بيانات العرض. تحقق من الحقول وأعد المحاولة."),
+      );
     }
   }
 
@@ -279,7 +281,9 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
                 errors.price ? "border-app-red" : ""
               }`}
             />
-            {errors.price && <span className="mt-1 block text-xs text-app-red">{errors.price}</span>}
+            {errors.price && (
+              <span className="mt-1 block text-xs text-app-red">{errors.price}</span>
+            )}
           </label>
 
           <div className="flex flex-col justify-center rounded-xl border border-app-line bg-app-card-soft/50 p-3 text-xs space-y-1">
@@ -291,7 +295,7 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
               <div className="flex justify-between text-emerald-400 font-medium">
                 <span>توفير المشترك:</span>
                 <span>
-                  {formatMoney(discountAmount)} ({discountPercentage}%) 🏷️
+                  {formatMoney(discountAmount)} ({discountPercentage}%)
                 </span>
               </div>
             )}
@@ -333,9 +337,7 @@ export default function OfferModal({ open, onClose, offer = null, initialBranchI
             </span>
           </div>
 
-          {errors.plans && (
-            <span className="block text-xs text-app-red">{errors.plans}</span>
-          )}
+          {errors.plans && <span className="block text-xs text-app-red">{errors.plans}</span>}
 
           {isPlansLoading ? (
             <div className="text-center py-4 text-xs text-app-muted">جاري تحميل الخطط...</div>

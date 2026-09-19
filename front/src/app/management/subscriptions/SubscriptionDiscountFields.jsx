@@ -38,9 +38,7 @@ export default function SubscriptionDiscountFields({
   onModeChange,
   onFinalPriceChange,
   onPercentageChange,
-  onCoachPriceChange,
   onCoachPercentageChange,
-  onBranchPriceChange,
   onBranchPercentageChange,
   onReasonChange,
 }) {
@@ -48,7 +46,9 @@ export default function SubscriptionDiscountFields({
     <section className="space-y-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-right">
-          <p className="text-xs text-app-muted-light">السعر الأصلي قبل الحسم</p>
+          <p className="text-xs text-app-muted-light">
+            {form.is_discount ? "السعر الأصلي قبل الحسم" : "السعر الأساسي"}
+          </p>
           <p className="mt-1 text-lg font-semibold text-app-text">{formatMoney(originalTotal)}</p>
         </div>
 
@@ -119,48 +119,28 @@ export default function SubscriptionDiscountFields({
                 <p className="mb-3 text-xs font-medium text-app-yellow">
                   حسم الكوتش — الأصل {formatMoney(coachOriginal)}
                 </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <NumberField
-                    label="حصة الكوتش بعد الحسم"
-                    suffix={CURRENCY_SYMBOL}
-                    value={form.coach_final_price}
-                    max={coachOriginal}
-                    onChange={onCoachPriceChange}
-                    error={errors.coach_final_price}
-                  />
-                  <NumberField
-                    label="نسبة حسم الكوتش"
-                    suffix="%"
-                    value={form.coach_discount_percentage}
-                    max="100"
-                    onChange={onCoachPercentageChange}
-                    error={errors.coach_discount_percentage}
-                  />
-                </div>
+                <NumberField
+                  label="نسبة حسم الكوتش"
+                  suffix="%"
+                  value={form.coach_discount_percentage}
+                  max="100"
+                  onChange={onCoachPercentageChange}
+                  error={errors.coach_discount_percentage}
+                />
               </div>
 
               <div className="rounded-lg border border-app-line bg-black/10 p-3">
                 <p className="mb-3 text-xs font-medium text-app-yellow">
                   حسم النادي — الأصل {formatMoney(branchOriginal)}
                 </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <NumberField
-                    label="حصة النادي بعد الحسم"
-                    suffix={CURRENCY_SYMBOL}
-                    value={form.branch_final_price}
-                    max={branchOriginal}
-                    onChange={onBranchPriceChange}
-                    error={errors.branch_final_price}
-                  />
-                  <NumberField
-                    label="نسبة حسم النادي"
-                    suffix="%"
-                    value={form.branch_discount_percentage}
-                    max="100"
-                    onChange={onBranchPercentageChange}
-                    error={errors.branch_discount_percentage}
-                  />
-                </div>
+                <NumberField
+                  label="نسبة حسم النادي"
+                  suffix="%"
+                  value={form.branch_discount_percentage}
+                  max="100"
+                  onChange={onBranchPercentageChange}
+                  error={errors.branch_discount_percentage}
+                />
               </div>
             </div>
           )}
@@ -181,15 +161,25 @@ export default function SubscriptionDiscountFields({
           </div>
 
           <label className="block text-right text-sm text-app-muted-light">
-            سبب الحسم (اختياري)
+            سبب الحسم <span className="text-app-red">*</span>
             <textarea
               rows={2}
               maxLength={500}
               value={form.discount_reason}
               onChange={(event) => onReasonChange(event.target.value)}
               placeholder="مثال: حسم خاص لمشتركة قديمة"
-              className="app-input mt-2 min-h-20 w-full resize-y bg-app-card-soft px-3 py-2 text-right text-white outline-none focus:border-app-yellow/70"
+              aria-invalid={Boolean(errors.discount_reason)}
+              className={`app-input mt-2 min-h-20 w-full resize-y bg-app-card-soft px-3 py-2 text-right text-white outline-none ${
+                errors.discount_reason
+                  ? "border-app-red focus:border-app-red"
+                  : "focus:border-app-yellow/70"
+              }`}
             />
+            {errors.discount_reason && (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {errors.discount_reason}
+              </span>
+            )}
           </label>
         </div>
       )}

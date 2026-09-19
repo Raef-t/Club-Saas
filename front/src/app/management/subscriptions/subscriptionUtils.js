@@ -405,6 +405,14 @@ export function getDefaultSubscriptionActivityTypeId(activityTypes = []) {
   return selectedType?.id === undefined || selectedType?.id === null ? "" : String(selectedType.id);
 }
 
+/** Labels the current subscription revenue card with an explicit month number. */
+export function getSubscriptionRevenueMonthLabel(date = new Date()) {
+  const monthNumber = new Intl.NumberFormat("ar-SY", { useGrouping: false }).format(
+    date.getMonth() + 1,
+  );
+  return `إجمالي إيرادات الشهر ${monthNumber}`;
+}
+
 /** Reads the activity type already assigned to a subscription's plan. */
 export function getSubscriptionActivityTypeId(subscription) {
   const plan = subscription?.plan;

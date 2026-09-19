@@ -142,7 +142,9 @@ export function useCreateSubscription({
           }
           if (
             Array.isArray(p.activities) &&
-            p.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+            p.activities.some(
+              (act) => String(act.activity_type_id) === String(selectedActivityTypeId),
+            )
           ) {
             return true;
           }
@@ -156,7 +158,9 @@ export function useCreateSubscription({
             }
             if (
               Array.isArray(fullPlan.activities) &&
-              fullPlan.activities.some((act) => String(act.activity_type_id) === String(selectedActivityTypeId))
+              fullPlan.activities.some(
+                (act) => String(act.activity_type_id) === String(selectedActivityTypeId),
+              )
             ) {
               return true;
             }
@@ -171,11 +175,13 @@ export function useCreateSubscription({
 
   useEffect(() => {
     setSelectedActivityTypeId((currentId) => {
-      if (!currentId || currentId === "all") return currentId;
+      const normalizedCurrentId = currentId && currentId !== "all" ? String(currentId) : "";
       const currentTypeExists = activityTypes.some(
-        (activityType) => String(activityType.id) === String(currentId),
+        (activityType) => String(activityType.id) === normalizedCurrentId,
       );
-      return currentTypeExists ? currentId : "";
+      return currentTypeExists
+        ? normalizedCurrentId
+        : getDefaultSubscriptionActivityTypeId(activityTypes);
     });
   }, [activityTypes]);
   const allActivities = useMemo(
