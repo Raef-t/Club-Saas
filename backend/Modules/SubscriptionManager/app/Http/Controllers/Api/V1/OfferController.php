@@ -56,6 +56,9 @@ class OfferController extends BaseController
                             new OA\Property(property: 'description', type: 'string', nullable: true, example: 'اشتراك سباحة + لياقة بدنية بسعر مخفض'),
                             new OA\Property(property: 'offer_type', type: 'string', enum: ['bundle', 'single_choice'], example: 'bundle'),
                             new OA\Property(property: 'price', type: 'number', format: 'float', example: 1500.00),
+                            new OA\Property(property: 'duration_days', description: 'مدة اشتراك اللاعب في العرض بالأيام (مثال: 45، 365)', type: 'integer', nullable: true, example: 45),
+                            new OA\Property(property: 'duration_months', description: 'المدة المحسوبة بالأشهر', type: 'number', format: 'float', nullable: true, example: 1.5),
+                            new OA\Property(property: 'duration_formatted', description: 'النص المنسق للمدة', type: 'string', nullable: true, example: 'شهر ونصف (45 يوم)'),
                             new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true, example: '2026-06-01'),
                             new OA\Property(property: 'end_date', type: 'string', format: 'date', nullable: true, example: '2026-08-31'),
                             new OA\Property(property: 'is_active', type: 'boolean', example: true),
@@ -92,7 +95,7 @@ class OfferController extends BaseController
     #[OA\Post(
         path: '/v1/offers',
         summary: '➕ إنشاء عرض ترويجي جديد',
-        description: 'إنشاء عرض جديد وتحديد السعر الإجمالي وربطه بمجموعة من خطط الأنشطة.',
+        description: 'إنشاء عرض جديد وتحديد السعر الإجمالي ومدة اشتراك اللاعب بالأيام وربطه بمجموعة من خطط الأنشطة.',
         tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
@@ -106,8 +109,9 @@ class OfferController extends BaseController
                 new OA\Property(property: 'description', description: '(اختياري) وصف العرض', type: 'string', nullable: true, example: 'خصومات حصرية لمشتركي النادي'),
                 new OA\Property(property: 'offer_type', description: 'نوع العرض (bundle للباقة المجمعة، single_choice لاختيار فعالية واحدة)', type: 'string', enum: ['bundle', 'single_choice'], example: 'bundle'),
                 new OA\Property(property: 'price', description: '(مطلوب) السعر الإجمالي أو سعر الفعالية الواحدة المشمولة', type: 'number', format: 'float', example: 1200.00),
-                new OA\Property(property: 'start_date', description: '(اختياري) تاريخ البداية', type: 'string', format: 'date', example: '2026-09-20'),
-                new OA\Property(property: 'end_date', description: '(اختياري) تاريخ النهاية', type: 'string', format: 'date', example: '2026-09-30'),
+                new OA\Property(property: 'duration_days', description: '(اختياري) مدة اشتراك اللاعب في العرض بالأيام (مثال: 45، 30، 365)', type: 'integer', example: 45),
+                new OA\Property(property: 'start_date', description: '(اختياري) تاريخ توفر العرض', type: 'string', format: 'date', example: '2026-09-20'),
+                new OA\Property(property: 'end_date', description: '(اختياري) تاريخ انتهاء توفر العرض', type: 'string', format: 'date', example: '2026-09-30'),
                 new OA\Property(property: 'is_active', description: 'حالة تفعيل العرض', type: 'boolean', example: true),
                 new OA\Property(
                     property: 'plans',
@@ -134,6 +138,7 @@ class OfferController extends BaseController
                         new OA\Property(property: 'name', type: 'string', example: 'عرض العيد الوطني'),
                         new OA\Property(property: 'description', type: 'string', example: 'خصومات حصرية لمشتركي النادي'),
                         new OA\Property(property: 'price', type: 'number', example: 1200.00),
+                        new OA\Property(property: 'duration_days', type: 'integer', example: 45),
                         new OA\Property(property: 'is_active', type: 'boolean', example: true),
                         new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:45:00.000000Z')
                     ]
@@ -182,6 +187,9 @@ class OfferController extends BaseController
                         new OA\Property(property: 'name', type: 'string', example: 'باقة الصيف الرياضية'),
                         new OA\Property(property: 'description', type: 'string', example: 'اشتراك سباحة + لياقة بدنية بسعر مخفض'),
                         new OA\Property(property: 'price', type: 'number', example: 1500.00),
+                        new OA\Property(property: 'duration_days', type: 'integer', example: 45),
+                        new OA\Property(property: 'duration_months', type: 'number', example: 1.5),
+                        new OA\Property(property: 'duration_formatted', type: 'string', example: 'شهر ونصف (45 يوم)'),
                         new OA\Property(property: 'start_date', type: 'string', example: '2026-06-01'),
                         new OA\Property(property: 'end_date', type: 'string', example: '2026-08-31'),
                         new OA\Property(property: 'is_active', type: 'boolean', example: true),
@@ -216,7 +224,7 @@ class OfferController extends BaseController
     #[OA\Put(
         path: '/v1/offers/{id}',
         summary: '✏️ تعديل العرض الترويجي',
-        description: 'تحديث بيانات العرض والأسعار والخطط المرتبطة به.',
+        description: 'تحديث بيانات العرض والأسعار والمدة والخطط المرتبطة به.',
         tags: ['Offers'],
         security: [['bearerAuth' => []]]
     )]
@@ -229,6 +237,7 @@ class OfferController extends BaseController
                 new OA\Property(property: 'description', type: 'string', example: 'وصف العرض بعد التعديل'),
                 new OA\Property(property: 'offer_type', type: 'string', enum: ['bundle', 'single_choice'], example: 'single_choice'),
                 new OA\Property(property: 'price', type: 'number', example: 800.00),
+                new OA\Property(property: 'duration_days', description: 'مدة اشتراك اللاعب بالأيام (مثال: 45، 30، 365)', type: 'integer', example: 45),
                 new OA\Property(property: 'start_date', type: 'string', format: 'date', example: '2026-12-01'),
                 new OA\Property(property: 'end_date', type: 'string', format: 'date', example: '2027-01-31'),
                 new OA\Property(property: 'is_active', type: 'boolean', example: true),
@@ -250,6 +259,7 @@ class OfferController extends BaseController
                         new OA\Property(property: 'id', type: 'integer', example: 1),
                         new OA\Property(property: 'name', type: 'string', example: 'عرض الشتاء المميز'),
                         new OA\Property(property: 'price', type: 'number', example: 800.00),
+                        new OA\Property(property: 'duration_days', type: 'integer', example: 45),
                         new OA\Property(property: 'updated_at', type: 'string', example: '2026-09-06T12:45:00.000000Z')
                     ]
                 )

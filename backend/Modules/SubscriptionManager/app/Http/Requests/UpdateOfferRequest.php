@@ -18,6 +18,7 @@ class UpdateOfferRequest extends FormRequest
             'description' => 'nullable|string',
             'offer_type' => 'nullable|string|in:bundle,single_choice',
             'price' => 'sometimes|required|numeric|min:0',
+            'duration_days' => 'nullable|integer|min:1',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'is_active' => 'nullable|boolean',

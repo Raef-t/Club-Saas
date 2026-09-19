@@ -91,6 +91,7 @@ class OfferService
                 'description' => $data['description'] ?? null,
                 'offer_type' => $data['offer_type'] ?? Offer::TYPE_BUNDLE,
                 'price' => $data['price'],
+                'duration_days' => $data['duration_days'] ?? null,
                 'start_date' => $data['start_date'] ?? null,
                 'end_date' => $data['end_date'] ?? null,
                 'is_active' => $data['is_active'] ?? true,

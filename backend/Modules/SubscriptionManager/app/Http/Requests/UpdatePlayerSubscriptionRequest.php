@@ -55,6 +55,7 @@ class UpdatePlayerSubscriptionRequest extends FormRequest
             'plan_id' => 'nullable|exists:subscription_plans,id',
             'offer_id' => 'nullable|exists:offers,id',
             'months_count' => 'nullable|integer|min:1',
+            'duration_days' => 'nullable|integer|min:1',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'nullable|string|in:active,finished,frozen,terminated',

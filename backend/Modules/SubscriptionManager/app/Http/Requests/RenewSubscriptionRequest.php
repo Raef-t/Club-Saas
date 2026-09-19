@@ -26,6 +26,7 @@ class RenewSubscriptionRequest extends FormRequest
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'months_count' => 'nullable|integer|min:1',
+            'duration_days' => 'nullable|integer|min:1',
             'notes' => 'nullable|string|max:500',
         ];
     }
