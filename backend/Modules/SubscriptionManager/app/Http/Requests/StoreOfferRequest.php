@@ -11,6 +11,16 @@ class StoreOfferRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if (!$this->filled('branch_id') && $this->filled('plans') && is_array($this->plans)) {
+            $firstPlan = \Modules\SubscriptionManager\Models\SubscriptionPlan::find($this->plans[0] ?? null);
+            if ($firstPlan && $firstPlan->branch_id) {
+                $this->merge(['branch_id' => $firstPlan->branch_id]);
+            }
+        }
+    }
+
     public function rules()
     {
         return [
