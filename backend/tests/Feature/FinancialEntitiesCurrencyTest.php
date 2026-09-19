@@ -183,7 +183,7 @@ class FinancialEntitiesCurrencyTest extends TestCase
             'name' => 'USD Plan',
             'base_price' => 100,
             'currency' => 'USD',
-            'session_count' => 10,
+            'session_count' => 8,
             'sessions_per_week' => 2,
             'staff_activity_ids' => [$this->staffActivity->id],
         ]);
