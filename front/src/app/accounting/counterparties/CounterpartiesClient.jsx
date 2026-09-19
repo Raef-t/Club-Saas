@@ -105,6 +105,7 @@ export default function CounterpartiesClient({ initialCounterparties = [] }) {
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">اسم الجهة</th>
                   <th className="p-3">التصنيف</th>
                   <th className="p-3">الهاتف</th>
@@ -115,7 +116,7 @@ export default function CounterpartiesClient({ initialCounterparties = [] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {filteredCounterparties.map((counterparty) => {
+                {filteredCounterparties.map((counterparty, idx) => {
                   const typeInfo = COUNTERPARTY_TYPES[counterparty.type] || {
                     label: counterparty.type,
                     color: "text-app-text",
@@ -123,6 +124,7 @@ export default function CounterpartiesClient({ initialCounterparties = [] }) {
 
                   return (
                     <tr key={counterparty.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-medium text-app-text">{counterparty.name}</td>
                       <td className="p-3">
                         <span

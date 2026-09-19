@@ -79,6 +79,13 @@ export default function StaffClient({ initialData }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "الموظف",
         align: "start",

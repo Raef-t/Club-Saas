@@ -1,4 +1,4 @@
-export const ACTIVITY_TABLE_COLUMNS = "minmax(180px,1.2fr) minmax(200px,1.8fr) 120px 120px 100px";
+export const ACTIVITY_TABLE_COLUMNS = "48px minmax(180px,1.2fr) minmax(200px,1.8fr) 120px 120px 100px";
 
 export const GENDER_OPTIONS = [
   { value: "mixed", label: "مختلط" },

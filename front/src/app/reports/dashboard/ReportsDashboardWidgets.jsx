@@ -135,6 +135,7 @@ export function ReportPanel({ report, branchName, onPrint }) {
         <table className="w-full border-separate border-spacing-y-2 text-right text-sm">
           <thead className="text-xs text-app-muted-light">
             <tr>
+              <th className="w-12 px-4 pb-1 text-center font-medium">#</th>
               {report.columns.map((column) => (
                 <th key={column.key} className="px-4 pb-1 font-medium">
                   {column.label}
@@ -145,15 +146,14 @@ export function ReportPanel({ report, branchName, onPrint }) {
           <tbody>
             {visibleRows.map((row, rowIndex) => (
               <tr key={`${report.id}-${rowIndex}`} className="bg-app-card-soft">
+                <td className="w-12 rounded-s-xl px-4 py-3 text-center text-xs font-mono text-app-muted-light">
+                  {rowIndex + 1}
+                </td>
                 {report.columns.map((column, columnIndex) => (
                   <td
                     key={column.key}
                     className={`px-4 py-3 text-app-text ${
-                      columnIndex === 0
-                        ? "rounded-s-xl"
-                        : columnIndex === report.columns.length - 1
-                          ? "rounded-e-xl"
-                          : ""
+                      columnIndex === report.columns.length - 1 ? "rounded-e-xl" : ""
                     }`}
                   >
                     {row[column.key] ?? "-"}

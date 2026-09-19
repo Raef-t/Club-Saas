@@ -20,6 +20,13 @@ export default function ActivitiesTable({ state }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "النشاط",
         align: "center",

@@ -21,6 +21,13 @@ export default function ClubsTable({ state }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "logo_url",
         label: "الشعار",
         align: "center",

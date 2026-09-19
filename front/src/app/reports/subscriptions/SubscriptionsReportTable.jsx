@@ -34,6 +34,14 @@ function StatusBadge({ value, status, classes }) {
 export default function SubscriptionsReportTable({ rows, summary, isLoading }) {
   const currency = summary.currency_type === "SYP" ? "ل.س" : summary.currency_type;
   const columns = [
+    {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
     { key: "accountName", label: "اسم الحساب", width: "130px" },
     { key: "memberName", label: "اللاعب", width: "minmax(160px,1.35fr)" },
     { key: "phone", label: "رقم الهاتف", width: "130px" },
@@ -110,7 +118,7 @@ export default function SubscriptionsReportTable({ rows, summary, isLoading }) {
       isLoading={isLoading}
       pageSize={10}
       pageSizeOptions={[10, 20, 50, 100]}
-      minWidth="1740px"
+      minWidth="1790px"
       desktopScrollable
       emptyMessage="لا توجد اشتراكات مطابقة للفلاتر المختارة."
     />

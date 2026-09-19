@@ -23,6 +23,14 @@ export default function ShiftsSettingsTab({
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        width: "48px",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "اسم الوردية",
         align: "right",
