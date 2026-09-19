@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateDiscountFromFinalPrice,
+  calculateDiscountFromPercentage,
   formatSubscriptionMoney,
   getAvailableSubscriptionPlanParams,
   getDefaultSubscriptionActivityTypeId,
@@ -11,6 +13,8 @@ import {
   getSubscriptionActivityTypeId,
   getSubscriptionReceiptNumber,
   getSubscriptionReceiptNumbers,
+  getSubscriptionRevenueMonthLabel,
+  getSubscriptionOriginalAmounts,
   getSubscriptionSplitPaymentAmounts,
   getSubscriptionRows,
   getSubscriptionStats,
@@ -76,6 +80,10 @@ describe("subscription utilities", () => {
     expect(getDefaultSubscriptionActivityTypeId(activityTypes)).toBe("1");
     expect(getDefaultSubscriptionActivityTypeId([{ id: 9, name: "نوع أول" }])).toBe("9");
     expect(getDefaultSubscriptionActivityTypeId([])).toBe("");
+  });
+
+  it("includes the numeric month in the monthly revenue label", () => {
+    expect(getSubscriptionRevenueMonthLabel(new Date(2026, 8, 1))).toBe("إجمالي إيرادات الشهر ٩");
   });
 
   it("reads aggregate statistics from the player subscriptions response", () => {
@@ -156,10 +164,8 @@ describe("subscription utilities", () => {
     });
   });
 
-  it("detects only private-training plans and does not infer their type from split prices", () => {
-    expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(
-      false,
-    );
+  it("detects private plans from their flag, type, or complete split prices", () => {
+    expect(isPrivateSubscriptionPlan({ coach_price: "200.00", branch_price: "150.00" })).toBe(true);
     expect(
       isPrivateSubscriptionPlan({
         is_private_equipment: true,
@@ -175,8 +181,29 @@ describe("subscription utilities", () => {
         { is_private_equipment: true },
         { code: "general_training", name: "تدريب عام", is_private_equipment: false },
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(isPrivateSubscriptionPlan(null)).toBe(false);
+  });
+
+  it("calculates duration totals and discounts in both directions", () => {
+    expect(
+      getSubscriptionOriginalAmounts(
+        { base_price: 300000, coach_price: 200000, branch_price: 100000 },
+        2,
+      ),
+    ).toEqual({ originalTotal: 600000, coachOriginal: 400000, branchOriginal: 200000 });
+    expect(calculateDiscountFromFinalPrice(300000, 150000)).toEqual({
+      finalPrice: 150000,
+      discountAmount: 150000,
+      discountPercentage: 50,
+    });
+    expect(calculateDiscountFromPercentage(300000, 25)).toEqual({
+      finalPrice: 225000,
+      discountAmount: 75000,
+      discountPercentage: 25,
+    });
+    expect(calculateDiscountFromPercentage(300000, 140).discountPercentage).toBe(100);
+    expect(calculateDiscountFromFinalPrice(300000, -10).finalPrice).toBe(0);
   });
 
   it("reads split payment amounts and falls back to private-plan prices", () => {

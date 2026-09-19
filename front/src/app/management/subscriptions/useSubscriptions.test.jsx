@@ -89,4 +89,13 @@ describe("subscription activity type filter", () => {
       page: 1,
     });
   });
+
+  it("labels the monthly revenue card with the current month number", () => {
+    const { result } = renderHook(() => useSubscriptions());
+    const currentMonth = new Intl.NumberFormat("ar-SY", { useGrouping: false }).format(
+      new Date().getMonth() + 1,
+    );
+
+    expect(result.current.stats[2].title).toBe(`إجمالي إيرادات الشهر ${currentMonth}`);
+  });
 });

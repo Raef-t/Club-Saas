@@ -2,7 +2,13 @@ import DetailItem from "@/components/ui/DetailItem";
 import Button from "@/components/ui/Button";
 import ProfileIdentityCard from "@/components/ui/ProfileIdentityCard";
 import SubscriptionStatusBadge from "@/app/management/subscriptions/SubscriptionStatusBadge";
-import { CalendarIcon, ClockIcon, LockerIcon, TagIcon } from "@/components/icons/Icons";
+import {
+  CalendarIcon,
+  ChevronDownIcon,
+  ClockIcon,
+  LockerIcon,
+  TagIcon,
+} from "@/components/icons/Icons";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import {
   formatSubscriptionMoney,
@@ -60,6 +66,55 @@ function MetricCard({ icon, label, value, helper, tone = "default" }) {
       <p className={`mt-2 truncate text-lg font-semibold ${toneClass}`}>{value}</p>
       {helper && <p className="mt-1 truncate text-[11px] text-app-muted">{helper}</p>}
     </div>
+  );
+}
+
+function PlayerDataSection({
+  member,
+  accountName,
+  branchName,
+  gender,
+  mobile,
+  countryCode,
+  dob,
+  age,
+}) {
+  return (
+    <details
+      open
+      className="group overflow-hidden rounded-2xl border border-app-line bg-app-card-soft/45"
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 transition hover:bg-app-card-hover/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-app-yellow sm:px-5 [&::-webkit-details-marker]:hidden">
+        <div>
+          <h3 className="text-sm font-semibold text-app-text">بيانات اللاعب</h3>
+          <p className="mt-1 text-xs text-app-muted-light">اضغط لفتح البيانات أو إغلاقها</p>
+        </div>
+
+        <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-app-yellow">
+          <span className="group-open:hidden">عرض</span>
+          <span className="hidden group-open:inline">إخفاء</span>
+          <ChevronDownIcon className="size-4 transition-transform duration-200 group-open:rotate-180" />
+        </span>
+      </summary>
+
+      <div className="border-t border-app-line p-4 sm:p-5">
+        <div
+          role="region"
+          aria-label="بيانات اللاعب التفصيلية"
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5"
+        >
+          <DetailItem label="اسم الحساب" value={accountName || "-"} />
+          <DetailItem label="الفرع" value={branchName} tone="yellow" />
+          <DetailItem label="الجنس" value={genderLabels[gender] || gender} />
+          <DetailItem label="الهاتف" value={mobile ? `${countryCode} ${mobile}`.trim() : "-"} />
+          <DetailItem label="تاريخ الميلاد" value={formatDate(dob)} />
+          <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
+          <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
+          <DetailItem label="سبب آخر تعديل" value={member.reason || "-"} />
+          <DetailItem label="الموظف المسجل" value={getMemberCreatorUsername(member) || "-"} />
+        </div>
+      </div>
+    </details>
   );
 }
 
@@ -361,14 +416,11 @@ export default function MemberDetails({
   currentSubscriptionLoading = false,
   subscriptionsLoading = false,
   attendancesLoading = false,
-  lockersLoading = false,
   subscriptionsError,
   currentSubscriptionError,
   attendancesError,
-  lockersError,
   onRetrySubscriptions,
   onRetryAttendances,
-  onRetryLockers,
 }) {
   if (!member) {
     return (
@@ -401,12 +453,13 @@ export default function MemberDetails({
     className: "bg-app-card-hover text-app-muted-light",
   };
   const lastAttendanceDate = getAttendanceCheckIn(summary?.lastAttendance);
+  const accountName = getMemberAccountName(member);
 
   return (
     <div className="space-y-5">
       <ProfileIdentityCard
         name={fullName}
-        username={getMemberAccountName(member)}
+        username={accountName}
         qrCode={member.today_qr_code || member.qr_code}
         status={status}
       />
@@ -446,84 +499,52 @@ export default function MemberDetails({
         />
       </div>
 
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(280px,1fr)]">
-        <div className="space-y-5">
-          <MemberSubscriptions
-            subscription={subscription}
-            subscriptions={subscriptions}
-            isLoading={currentSubscriptionLoading || subscriptionsLoading}
-            error={currentSubscriptionError || subscriptionsError}
-            onRetry={onRetrySubscriptions}
-            onShowSubscription={onShowSubscription}
-          />
-          <AttendanceHistory
-            attendances={attendances}
-            isLoading={attendancesLoading}
-            error={attendancesError}
-            onRetry={onRetryAttendances}
-          />
-        </div>
+      <PlayerDataSection
+        member={member}
+        accountName={accountName}
+        branchName={branchName}
+        gender={gender}
+        mobile={mobile}
+        countryCode={countryCode}
+        dob={dob}
+        age={age}
+      />
 
-        <div className="space-y-5">
-          <Section title="بيانات اللاعب">
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-              <DetailItem label="اسم الحساب" value={getMemberAccountName(member) || "-"} />
-              <DetailItem label="الفرع" value={branchName} tone="yellow" />
-              <DetailItem label="الجنس" value={genderLabels[gender] || gender} />
-              <DetailItem label="الهاتف" value={mobile ? `${countryCode} ${mobile}`.trim() : "-"} />
-              <DetailItem label="تاريخ الميلاد" value={formatDate(dob)} />
-              <DetailItem label="العمر" value={age !== "" && age != null ? `${age} سنة` : "-"} />
-              <DetailItem label="تاريخ تسجيل الاستمارة" value={formatDate(member.created_at)} />
-              <DetailItem label="سبب آخر تعديل" value={member.reason || "-"} />
-              <DetailItem label="الموظف المسجل" value={getMemberCreatorUsername(member) || "-"} />
+      <div className="space-y-5">
+        <MemberSubscriptions
+          subscription={subscription}
+          subscriptions={subscriptions}
+          isLoading={currentSubscriptionLoading || subscriptionsLoading}
+          error={currentSubscriptionError || subscriptionsError}
+          onRetry={onRetrySubscriptions}
+          onShowSubscription={onShowSubscription}
+        />
+        <AttendanceHistory
+          attendances={attendances}
+          isLoading={attendancesLoading}
+          error={attendancesError}
+          onRetry={onRetryAttendances}
+        />
+
+        {emergencyContact && (
+          <Section title="جهة اتصال الطوارئ">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <DetailItem label="الاسم" value={emergencyContact.name} />
+              <DetailItem
+                label="العلاقة"
+                value={relationLabels[emergencyContact.relation] || emergencyContact.relation}
+              />
+              <DetailItem
+                label="رقم الهاتف"
+                value={
+                  emergencyContact.phone_number
+                    ? `${emergencyContact.country_code || ""} ${emergencyContact.phone_number}`
+                    : "-"
+                }
+              />
             </div>
           </Section>
-
-          <Section title="الخزائن" description="الخزائن المسندة حاليًا">
-            <SectionState
-              isLoading={lockersLoading}
-              error={lockersError ? "تعذر تحميل بيانات الخزائن." : ""}
-              emptyMessage="لا توجد خزانة مسندة لهذا اللاعب."
-              onRetry={onRetryLockers}
-            >
-              {lockers.length ? (
-                <div className="space-y-2">
-                  {lockers.map((locker) => (
-                    <div
-                      key={locker.id}
-                      className="flex items-center justify-between rounded-xl border border-app-line bg-black/20 px-4 py-3"
-                    >
-                      <span className="text-sm text-app-text">خزانة {locker.locker_number}</span>
-                      <span className="text-xs text-app-yellow">
-                        {locker.key_number || "مسندة"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </SectionState>
-          </Section>
-
-          {emergencyContact && (
-            <Section title="جهة اتصال الطوارئ">
-              <div className="space-y-3">
-                <DetailItem label="الاسم" value={emergencyContact.name} />
-                <DetailItem
-                  label="العلاقة"
-                  value={relationLabels[emergencyContact.relation] || emergencyContact.relation}
-                />
-                <DetailItem
-                  label="رقم الهاتف"
-                  value={
-                    emergencyContact.phone_number
-                      ? `${emergencyContact.country_code || ""} ${emergencyContact.phone_number}`
-                      : "-"
-                  }
-                />
-              </div>
-            </Section>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

@@ -7,7 +7,9 @@ import {
   getPermissionsFromRoles,
   getRoleCollection,
   getRolePermissionNames,
+  getRolePresentation,
   groupPermissions,
+  isProtectedRole,
   mergePermissionCatalog,
   validateRoleName,
 } from "./roleUtils";
@@ -16,6 +18,15 @@ describe("role utilities", () => {
   it("extracts roles from the backend contract", () => {
     const roles = getRoleCollection({ data: { roles: [{ id: 7, name: "super_admin" }] } });
     expect(roles).toEqual([{ id: 7, name: "super_admin" }]);
+  });
+
+  it("uses the backend Arabic role name and protects built-in admin roles", () => {
+    expect(
+      getRolePresentation({ name: "reception_supervisor", name_ar: "مشرف الاستقبال" }).label,
+    ).toBe("مشرف الاستقبال");
+    expect(isProtectedRole({ name: "super_admin" })).toBe(true);
+    expect(isProtectedRole({ name: "admin" })).toBe(true);
+    expect(isProtectedRole({ name: "reception_supervisor" })).toBe(false);
   });
 
   it("normalizes and deduplicates permission records", () => {
@@ -34,6 +45,29 @@ describe("role utilities", () => {
       "member.view-any",
     ]);
     expect(permissions[1].module).toBe("member");
+  });
+
+  it("reads the permissions endpoint flat and grouped response fields", () => {
+    expect(
+      getPermissionCollection({
+        data: {
+          flat: [{ id: 10, name: "member.view-any", module: "member" }],
+          grouped: {
+            member: [{ id: 11, name: "member.create", module: "member" }],
+          },
+        },
+      }).map((permission) => permission.name),
+    ).toEqual(["member.view-any"]);
+
+    expect(
+      getPermissionCollection({
+        data: {
+          grouped: {
+            member: ["member.create"],
+          },
+        },
+      }).map((permission) => permission.name),
+    ).toEqual(["member.create"]);
   });
 
   it("extracts permission names from a role", () => {
@@ -115,4 +149,3 @@ describe("role utilities", () => {
     expect(names).toContain("attendance.check-in");
   });
 });
-

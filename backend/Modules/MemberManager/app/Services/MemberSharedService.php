@@ -26,7 +26,10 @@ class MemberSharedService implements MemberSharedServiceInterface
     public function getMemberById(int $id): ?MemberDTO
     {
         try {
-            $member = $this->repository->find($id);
+            $member = \Modules\MemberManager\Models\Member::with(['person.user', 'person.contacts'])->find($id);
+            if (!$member) {
+                $member = $this->repository->find($id);
+            }
             if (!$member) {
                 return null;
             }
@@ -43,7 +46,7 @@ class MemberSharedService implements MemberSharedServiceInterface
         }
 
         try {
-            $members = \Modules\MemberManager\Models\Member::whereIn('id', $ids)->get();
+            $members = \Modules\MemberManager\Models\Member::with(['person.user', 'person.contacts'])->whereIn('id', $ids)->get();
             $dtos = [];
             foreach ($members as $member) {
                 $dtos[] = $this->mapToDTO($member);
@@ -77,6 +80,10 @@ class MemberSharedService implements MemberSharedServiceInterface
             $personDTO = $this->personSharedService->getPersonById($member->person_id);
         }
 
+        $user = $member->relationLoaded('person') && $member->person && $member->person->relationLoaded('user')
+            ? $member->person->user
+            : ($member->person?->user ?? ($member->person_id ? \Modules\Authentication\Models\User::where('person_id', $member->person_id)->first() : null));
+
         return new MemberDTO(
             id: $member->id,
             personId: $member->person_id,
@@ -85,7 +92,9 @@ class MemberSharedService implements MemberSharedServiceInterface
             barcode: null, // QR codes are now in person_qr_codes table
             status: $member->membership_status,
             isActive: (bool)$member->isActive,
-            person: $personDTO
+            person: $personDTO,
+            username: $user?->username ?? $personDTO?->username ?? null,
+            customUsername: $user?->custom_username ?? $personDTO?->customUsername ?? null,
         );
     }
 }

@@ -49,7 +49,10 @@ describe("NotificationCenter payroll action", () => {
   it("minimizes the floating notification and runs payroll generation from the circle", () => {
     render(<NotificationCenter />);
 
-    expect(screen.getByLabelText("إشعار استحقاق الرواتب")).toBeInTheDocument();
+    const floatingNotification = screen.getByLabelText("إشعار استحقاق الرواتب");
+    expect(floatingNotification).toBeInTheDocument();
+    expect(floatingNotification.parentElement).toBe(document.body);
+    expect(floatingNotification).toHaveClass("fixed", "bottom-5");
     fireEvent.click(screen.getByRole("button", { name: "تصغير الإشعار إلى دائرة" }));
 
     const minimizedAction = screen.getByRole("button", {

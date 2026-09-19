@@ -61,6 +61,7 @@ const navGroups = [
 
       { title: "الأنشطة الرياضية", href: "/management/activities" },
       { title: "الفعاليات", href: "/management/subscription-plans" },
+      { title: "العروض الترويجية", href: "/management/offers" },
       { title: "المشتركين", href: "/management/members" },
       { title: "الاشتراكات", href: "/management/subscriptions" },
       { title: "الخزائن", href: "/management/lockers" },
@@ -103,7 +104,7 @@ export default function ManagementSidebar({ className }) {
   const visibleNavGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => canAccess(item.href)),
+      items: group.items.filter((item) => isSuperAdmin || canAccess(item.href)),
     }))
     .filter((group) => group.items.length > 0);
 

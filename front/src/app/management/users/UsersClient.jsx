@@ -7,28 +7,36 @@ import Button from "@/components/ui/Button";
 import DataTable from "@/components/ui/DataTable";
 import StatsGrid from "@/components/ui/StatsGrid";
 import RowActions from "@/components/ui/RowActions";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
 import { SearchIcon } from "@/components/icons/Icons";
 import { useUsers } from "./useUsers";
 import UserRoleTabs from "./UserRoleTabs";
 import UserPermissionsDrawer from "./UserPermissionsDrawer";
 import { useResetPasswordMutation } from "@/lib/api/authApi";
+import { useToggleUserStatusMutation } from "@/lib/api/usersApi";
 import { useToast } from "@/components/ui/Toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { getPasswordStatus, getUserRoleLabel, getUserRoles } from "./usersUtils";
+import {
+  canToggleUserStatus,
+  getPasswordStatus,
+  getUserRoleLabel,
+  getUserRoles,
+} from "./usersUtils";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { usePermissions } from "@/lib/PermissionContext";
-
-const USER_TABLE_GRID =
-  "60px minmax(220px,1.6fr) minmax(150px,1fr) minmax(150px,1fr) minmax(170px,1fr) 120px 80px";
+import { DEFAULT_PASSWORD, hashDefaultPassword } from "@/lib/passwordHash";
 
 export default function UsersClient({ initialUsers }) {
-  const { can } = usePermissions();
+  const { user: currentUser, can, isSuperAdmin } = usePermissions();
   const canViewUserRoles = can("user-role.view") || can("user.view-any");
   const canAssignRoles = can("user-role.assign") || can("user-role.sync");
+  const canToggleStatus = isSuperAdmin || can("user.toggle-status") || can("user.update");
   const [selectedUser, setSelectedUser] = useState(null);
   const [userToResetPassword, setUserToResetPassword] = useState(null);
+  const [userToToggleStatus, setUserToToggleStatus] = useState(null);
   const toast = useToast();
   const [resetPassword, { isLoading: isResettingPassword }] = useResetPasswordMutation();
+  const [toggleUserStatus, { isLoading: isTogglingStatus }] = useToggleUserStatusMutation();
   const {
     search,
     setSearch,
@@ -49,15 +57,47 @@ export default function UsersClient({ initialUsers }) {
     if (!userToResetPassword) return;
 
     try {
-      await resetPassword({ user_id: userToResetPassword.id }).unwrap();
+      const passwordHash = await hashDefaultPassword();
+      await resetPassword({
+        user_id: userToResetPassword.id,
+        password: passwordHash,
+      }).unwrap();
       toast.success(
-        `تم إعادة تعيين كلمة المرور للمستخدم ${userToResetPassword.name || userToResetPassword.username || ""} بنجاح إلى 12345678`
+        `تم إعادة تعيين كلمة المرور للمستخدم ${userToResetPassword.name || userToResetPassword.username || ""} بنجاح إلى ${DEFAULT_PASSWORD}`,
       );
       setUserToResetPassword(null);
     } catch (error) {
       toast.error(error?.data?.message || "تعذر إعادة تعيين كلمة المرور. حاول مرة أخرى.");
     }
   };
+
+  const handleToggleStatus = async () => {
+    if (!userToToggleStatus) return;
+
+    const { allowed, reason } = canToggleUserStatus(
+      userToToggleStatus,
+      currentUser,
+      canToggleStatus,
+    );
+    if (!allowed) {
+      toast.error(reason || "غير مسموح بتعديل حالة هذا الحساب.");
+      setUserToToggleStatus(null);
+      return;
+    }
+
+    try {
+      const response = await toggleUserStatus(userToToggleStatus.id).unwrap();
+      const nextIsActive = !userToToggleStatus.is_active;
+      const defaultMsg = nextIsActive
+        ? `تم تفعيل حساب المستخدم ${userToToggleStatus.name || userToToggleStatus.username || ""} بنجاح.`
+        : `تم إيقاف حساب المستخدم ${userToToggleStatus.name || userToToggleStatus.username || ""} وإلغاء جلساته الفعالة بنجاح.`;
+      toast.success(response?.message || defaultMsg);
+      setUserToToggleStatus(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "تعذر تغيير حالة الحساب. حاول مرة أخرى.");
+    }
+  };
+
 
   const columns = useMemo(
     () => [
@@ -124,6 +164,40 @@ export default function UsersClient({ initialUsers }) {
           ),
       },
       {
+        key: "is_active",
+        label: "حالة الحساب",
+        align: "center",
+        sortValue: (user) => (user?.is_active ? 1 : 0),
+        render: (_, user) => {
+          const { allowed, reason } = canToggleUserStatus(user, currentUser, canToggleStatus);
+          const isActive = Boolean(user?.is_active ?? true);
+          const isPending = isTogglingStatus && userToToggleStatus?.id === user.id;
+
+          return (
+            <div
+              className="flex items-center justify-center gap-2"
+              onClick={(event) => event.stopPropagation()}
+              title={reason || undefined}
+            >
+              <ToggleSwitch
+                checked={isActive}
+                onChange={() => setUserToToggleStatus(user)}
+                disabled={!allowed || isPending}
+                size="sm"
+                ariaLabel={`تبديل حالة حساب ${user.name || user.username || ""}`}
+              />
+              <span
+                className={`text-[11px] font-semibold ${
+                  isActive ? "text-app-green" : "text-app-red"
+                }`}
+              >
+                {isActive ? "نشط" : "موقوف"}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         key: "password_status",
         label: "حالة كلمة المرور",
         align: "center",
@@ -167,15 +241,33 @@ export default function UsersClient({ initialUsers }) {
               align: "center",
               sortable: false,
               render: (_, user) => (
-                <RowActions
-                  onEdit={() => setSelectedUser(user)}
-                  editTitle="عرض الصلاحيات"
-                />
+                <RowActions onEdit={() => setSelectedUser(user)} editTitle="عرض الصلاحيات" />
               ),
             },
           ]
         : []),
     ],
+    [
+      canToggleStatus,
+      canViewUserRoles,
+      currentUser,
+      isTogglingStatus,
+      userToToggleStatus,
+    ],
+  );
+
+  const tableColumnsGrid = useMemo(
+    () =>
+      [
+        "60px",
+        "minmax(200px,1.5fr)",
+        "minmax(130px,1fr)",
+        "minmax(130px,1fr)",
+        "130px",
+        "minmax(160px,1fr)",
+        "120px",
+        ...(canViewUserRoles ? ["80px"] : []),
+      ].join(" "),
     [canViewUserRoles],
   );
 
@@ -212,8 +304,8 @@ export default function UsersClient({ initialUsers }) {
             subtitle="اختر فئة من التبويبات، ثم ابحث بالاسم أو اسم المستخدم."
             columns={columns}
             rows={users}
-            tableColumns={USER_TABLE_GRID}
-            minWidth="930px"
+            tableColumns={tableColumnsGrid}
+            minWidth="1060px"
             defaultSortColumn="name"
             showAdd={false}
             showSearch={false}
@@ -286,12 +378,37 @@ export default function UsersClient({ initialUsers }) {
         title="إعادة تعيين كلمة المرور"
         message={`هل أنت متأكد من رغبتك في إعادة تعيين كلمة المرور للمستخدم (${
           userToResetPassword?.name || userToResetPassword?.username || ""
-        }) إلى "12345678"؟`}
+        }) إلى "${DEFAULT_PASSWORD}"؟`}
         confirmLabel="إعادة تعيين"
         cancelLabel="إلغاء"
         tone="danger"
         isLoading={isResettingPassword}
       />
+
+      <ConfirmDialog
+        open={Boolean(userToToggleStatus)}
+        onClose={() => setUserToToggleStatus(null)}
+        onConfirm={handleToggleStatus}
+        title={
+          userToToggleStatus?.is_active
+            ? "إيقاف حساب المستخدم"
+            : "تفعيل حساب المستخدم"
+        }
+        message={
+          userToToggleStatus?.is_active
+            ? `هل أنت متأكد من رغبتك في إيقاف حساب (${
+                userToToggleStatus?.name || userToToggleStatus?.username || ""
+              })؟ سيتم فوراً إبطال جميع جلسات الدخول الفعالة للمستخدم وطرده من التطبيق والموقع.`
+            : `هل أنت متأكد من رغبتك في تفعيل حساب (${
+                userToToggleStatus?.name || userToToggleStatus?.username || ""
+              })؟ سيتمكن المستخدم من تسجيل الدخول مجدداً بصورة طبيعية.`
+        }
+        confirmLabel={userToToggleStatus?.is_active ? "إيقاف الحساب" : "تفعيل الحساب"}
+        cancelLabel="إلغاء"
+        tone={userToToggleStatus?.is_active ? "danger" : "warning"}
+        isLoading={isTogglingStatus}
+      />
     </div>
   );
 }
+

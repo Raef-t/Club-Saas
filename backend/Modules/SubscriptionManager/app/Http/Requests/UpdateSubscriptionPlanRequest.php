@@ -19,6 +19,10 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             $merge['max_subscribers'] = 0;
         }
 
+        if ($this->filled('sessions_per_week') && !$this->filled('session_count')) {
+            $merge['session_count'] = (int) $this->input('sessions_per_week') * 4;
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }
@@ -140,6 +144,66 @@ class UpdateSubscriptionPlanRequest extends FormRequest
 
                 if ($conflictError) {
                     $validator->errors()->add('session_templates', $conflictError);
+                }
+            }
+
+            // 3. Weekly sessions vs Total sessions validation
+            $sessionsPerWeek = $this->filled('sessions_per_week')
+                ? (int) $this->input('sessions_per_week')
+                : ($this->filled('session_count') ? (int) $plan?->sessions_per_week : null);
+
+            $sessionCount = $this->filled('session_count')
+                ? (int) $this->input('session_count')
+                : ($this->filled('sessions_per_week') ? (int) $plan?->session_count : null);
+
+            if ($sessionsPerWeek && $sessionCount) {
+                $expectedCount = $sessionsPerWeek * 4;
+                if ($sessionCount !== $expectedCount) {
+                    $validator->errors()->add(
+                        'session_count',
+                        __('عدد الجلسات الإجمالي يجب أن يساوي عدد الجلسات في الأسبوع مضروباً في 4 (أسابيع الشهر).')
+                    );
+                }
+            }
+
+            // 4. Session Templates count validation vs sessions_per_week
+            $effectiveSessionsPerWeek = $this->filled('sessions_per_week')
+                ? (int) $this->input('sessions_per_week')
+                : ($plan?->sessions_per_week ? (int) $plan->sessions_per_week : null);
+
+            if ($effectiveSessionsPerWeek && $this->has('session_templates') && is_array($this->session_templates) && !empty($this->session_templates)) {
+                $templatesCount = count($this->session_templates);
+                if ($templatesCount !== $effectiveSessionsPerWeek) {
+                    $validator->errors()->add(
+                        'session_templates',
+                        __('عدد أوقات جدول الفعالية (:count) يجب أن يتطابق مع عدد الجلسات في الأسبوع (:expected).', [
+                            'count' => $templatesCount,
+                            'expected' => $effectiveSessionsPerWeek,
+                        ])
+                    );
+                }
+            }
+
+            // 5. Branch Gender Restriction
+            $targetBranchId = $this->filled('branch_id') ? (int) $this->input('branch_id') : ($plan?->branch_id);
+            if ($targetBranchId) {
+                $branch = \Modules\ClubManager\Models\Branch::find($targetBranchId);
+                if ($branch) {
+                    $gender = $this->filled('gender_restriction')
+                        ? $this->input('gender_restriction')
+                        : ($this->has('branch_id') ? $plan?->gender_restriction : null);
+
+                    if ($branch->gender_restriction === 'female' && $gender && $gender !== 'female') {
+                        $validator->errors()->add(
+                            'gender_restriction',
+                            __('لا يمكن تحديد هذا الجنس، لأن الفرع مخصص للإناث فقط.')
+                        );
+                    } elseif ($branch->gender_restriction === 'male' && $gender && $gender !== 'male') {
+                        $validator->errors()->add(
+                            'gender_restriction',
+                            __('لا يمكن تحديد هذا الجنس، لأن الفرع مخصص للذكور فقط.')
+                        );
+                    }
                 }
             }
         });

@@ -26,6 +26,14 @@ export default function RenewalStatusReportTable({ rows, summary, isLoading, onS
 
   const columns = [
     {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
+    {
       key: "accountName",
       label: "اسم الحساب",
       width: "130px",

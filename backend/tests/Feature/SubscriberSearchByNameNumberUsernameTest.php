@@ -259,4 +259,45 @@ class SubscriberSearchByNameNumberUsernameTest extends TestCase
         $this->assertContains($this->member2->id, $idsName);
         $this->assertNotContains($this->member1->id, $idsName);
     }
+
+    public function test_player_subscription_returns_username_and_custom_username_in_member_data(): void
+    {
+        $sub = PlayerSubscription::create([
+            'member_id' => $this->member2->id,
+            'plan_id' => $this->plan->id,
+            'months_count' => 1,
+            'total_amount' => 200.00,
+            'paid_amount' => 200.00,
+            'remaining_amount' => 0.00,
+            'start_date' => Carbon::today()->toDateString(),
+            'end_date' => Carbon::today()->addMonth()->toDateString(),
+            'status' => PlayerSubscriptionStatus::ACTIVE->value,
+        ]);
+
+        // 1. Check index list
+        $indexRes = $this->getJson('/api/v1/player-subscriptions?search=' . $this->playerUser2->username);
+        $indexRes->assertStatus(200);
+
+        $item = collect($indexRes->json('data'))->firstWhere('id', $sub->id);
+        $this->assertNotNull($item);
+        $this->assertEquals($this->playerUser2->username, $item['member']['username']);
+        $this->assertEquals($this->playerUser2->custom_username, $item['member']['custom_username']);
+        $this->assertEquals($this->playerUser2->custom_username, $item['member']['custom_user_name']);
+        $this->assertEquals($this->playerUser2->username, $item['member']['person']['username']);
+        $this->assertEquals($this->playerUser2->custom_username, $item['member']['person']['custom_username']);
+        $this->assertEquals($this->playerUser2->custom_username, $item['member']['person']['custom_user_name']);
+
+        // 2. Check single show
+        $showRes = $this->getJson('/api/v1/player-subscriptions/' . $sub->id);
+        $showRes->assertStatus(200);
+
+        $showData = $showRes->json('data');
+        $this->assertEquals($this->playerUser2->username, $showData['member']['username']);
+        $this->assertEquals($this->playerUser2->custom_username, $showData['member']['custom_username']);
+        $this->assertEquals($this->playerUser2->custom_username, $showData['member']['custom_user_name']);
+        $this->assertEquals($this->playerUser2->username, $showData['member']['person']['username']);
+        $this->assertEquals($this->playerUser2->custom_username, $showData['member']['person']['custom_username']);
+        $this->assertEquals($this->playerUser2->custom_username, $showData['member']['person']['custom_user_name']);
+    }
 }
+

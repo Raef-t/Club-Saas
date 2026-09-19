@@ -1,5 +1,21 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## Password hashing contract
+
+The web and Flutter clients must use the same password transformation before calling the API:
+
+```text
+lowercaseHex(SHA-256(UTF-8(secretKey + password)))
+```
+
+- Concatenate the key and password directly, without a separator.
+- Set the web key as `NEXT_PUBLIC_PASSWORD_HASH_SECRET_KEY` at build time.
+- Encode the concatenated value as UTF-8 and send the 64-character lowercase hexadecimal digest.
+- The default password used by the administrative reset flow is `12345678`.
+
+The key is included in the browser bundle and must not be treated as a private backend secret. The API
+must still store the received digest with a slow password-hashing function such as Argon2id or bcrypt.
+
 ## Getting Started
 
 First, run the development server:

@@ -313,5 +313,118 @@ class UsernameValidationAndSuggestionTest extends TestCase
 
         $this->assertNotEmpty($response->json('data.suggestions'));
     }
+
+    public function test_change_password_fails_when_new_password_is_default_12345678()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10011',
+            'custom_username' => null,
+            'password' => bcrypt('12345678'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        // Plain text default password
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => '12345678',
+            'new_password_confirmation' => '12345678',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['new_password']);
+
+        $this->assertStringContainsString('12345678', $response->json('errors.new_password.0'));
+
+        // Frontend hashed default password
+        $hashedDefault = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+        $responseHashed = $this->postJson('/api/v1/auth/change-password', [
+            'new_password' => $hashedDefault,
+            'new_password_confirmation' => $hashedDefault,
+        ]);
+
+        $responseHashed->assertStatus(422)
+            ->assertJsonValidationErrors(['new_password']);
+
+        $this->assertStringContainsString('12345678', $responseHashed->json('errors.new_password.0'));
+    }
+
+    public function test_reset_password_stores_hash_and_allows_login()
+    {
+        $admin = $this->createUser([
+            'username' => 'admin_tester',
+            'role' => 'admin',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $user = $this->createUser([
+            'username' => 'tec-ply-10012',
+            'password' => bcrypt('oldpassword123'),
+            'must_change_password' => false,
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $hashedDefault = '119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed';
+
+        $response = $this->postJson('/api/v1/auth/reset-password', [
+            'user_id' => $user->id,
+            'password' => $hashedDefault,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue((bool) $user->fresh()->must_change_password);
+
+        // Login with hashed password (from web frontend)
+        $loginResponse = $this->postJson('/api/v1/auth/login', [
+            'username' => 'tec-ply-10012',
+            'password' => $hashedDefault,
+        ]);
+        $loginResponse->assertStatus(200);
+
+        // Also login with plain '12345678' (from mobile / direct API)
+        $loginPlainResponse = $this->postJson('/api/v1/auth/login', [
+            'username' => 'tec-ply-10012',
+            'password' => '12345678',
+        ]);
+        $loginPlainResponse->assertStatus(200);
+    }
+
+    public function test_change_password_uses_authenticated_user_and_ignores_user_id()
+    {
+        $currentUser = $this->createUser([
+            'username' => 'tec-ply-10020',
+            'password' => bcrypt('oldpassword123'),
+        ]);
+
+        $victimUser = $this->createUser([
+            'username' => 'tec-ply-10021',
+            'password' => bcrypt('victim_secret'),
+        ]);
+
+        Sanctum::actingAs($currentUser);
+
+        // Sending user_id pointing to victimUser should NOT affect victimUser
+        $response = $this->postJson('/api/v1/auth/change-password', [
+            'user_id' => $victimUser->id,
+            'new_password' => 'newpassword123',
+            'new_password_confirmation' => 'newpassword123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Password changed successfully',
+            ]);
+
+        // Current user password was changed
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('newpassword123', $currentUser->fresh()->password));
+
+        // Victim user password was NOT touched
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('victim_secret', $victimUser->fresh()->password));
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('newpassword123', $victimUser->fresh()->password));
+    }
 }
+
+
+
 

@@ -254,6 +254,7 @@ export default function AccountsClient({ initialAccounts = [] }) {
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">الكود</th>
                   <th className="p-3">اسم الحساب</th>
                   <th className="p-3">الاسم بالإنجليزية</th>
@@ -265,10 +266,11 @@ export default function AccountsClient({ initialAccounts = [] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {filteredAccounts.map((acc) => {
+                {filteredAccounts.map((acc, idx) => {
                   const typeInfo = ACCOUNT_TYPES[acc.type] || { label: acc.type, color: "text-app-text" };
                   return (
                     <tr key={acc.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-mono font-bold text-app-yellow">{acc.code}</td>
                       <td className="p-3 font-medium text-app-text">{acc.name}</td>
                       <td className="p-3 text-app-muted font-sans" dir="ltr">{acc.name_en || "-"}</td>

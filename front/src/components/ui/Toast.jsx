@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useMemo } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
+import { AUTHORIZATION_DENIED_EVENT } from "@/lib/authorizationEvents";
 
 const ToastContext = createContext(null);
 
@@ -11,15 +20,39 @@ export function useToast() {
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const lastToastRef = useRef({ message: "", type: "", timestamp: 0 });
 
   const showToast = useCallback((message, type = "info") => {
+    const normalizedMessage = String(message || "").trim();
+    if (!normalizedMessage) return;
+
+    const now = Date.now();
+    const lastToast = lastToastRef.current;
+    if (
+      lastToast.message === normalizedMessage &&
+      lastToast.type === type &&
+      now - lastToast.timestamp < 750
+    ) {
+      return;
+    }
+
+    lastToastRef.current = { message: normalizedMessage, type, timestamp: now };
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts((prev) => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message: normalizedMessage, type }]);
 
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }, []);
+
+  useEffect(() => {
+    function handleAuthorizationDenied(event) {
+      showToast(event?.detail?.message, "error");
+    }
+
+    window.addEventListener(AUTHORIZATION_DENIED_EVENT, handleAuthorizationDenied);
+    return () => window.removeEventListener(AUTHORIZATION_DENIED_EVENT, handleAuthorizationDenied);
+  }, [showToast]);
 
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -61,11 +94,7 @@ export function ToastProvider({ children }) {
                 stroke="currentColor"
                 strokeWidth={2.5}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             );
           } else if (t.type === "error") {
@@ -146,12 +175,12 @@ export function ToastProvider({ children }) {
               {/* Content Container */}
               <div className="relative z-10 flex w-full items-center justify-between gap-4 px-2">
                 {/* Icon (Right) */}
-                <div className={`shrink-0 ${typeStyles.text}`}>
-                  {icon}
-                </div>
+                <div className={`shrink-0 ${typeStyles.text}`}>{icon}</div>
 
                 {/* Text (Center) */}
-                <p className={`flex-1 text-center text-sm font-medium leading-relaxed ${typeStyles.text}`}>
+                <p
+                  className={`flex-1 text-center text-sm font-medium leading-relaxed ${typeStyles.text}`}
+                >
                   {t.message}
                 </p>
 
@@ -168,11 +197,7 @@ export function ToastProvider({ children }) {
                     stroke="currentColor"
                     strokeWidth={2}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>

@@ -1,4 +1,14 @@
 import { createBackendApi } from "@/lib/api/baseQuery";
+import { authApi } from "@/lib/api/authApi";
+
+async function refreshCurrentProfileAfterMutation(_, { dispatch, queryFulfilled }) {
+  try {
+    await queryFulfilled;
+    dispatch(authApi.util.invalidateTags(["Profile"]));
+  } catch {
+    // The mutation error is exposed to its caller; keep the current profile cache.
+  }
+}
 
 export const rolesApi = createBackendApi({
   reducerPath: "rolesApi",
@@ -42,6 +52,7 @@ export const rolesApi = createBackendApi({
         body: { permissions },
       }),
       invalidatesTags: (result, error, { id }) => ["Roles", { type: "Role", id }],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
     }),
     deleteRole: builder.mutation({
       query: (id) => ({
@@ -49,6 +60,7 @@ export const rolesApi = createBackendApi({
         method: "DELETE",
       }),
       invalidatesTags: ["Roles"],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
     }),
   }),
 });

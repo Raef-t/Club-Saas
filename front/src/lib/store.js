@@ -19,7 +19,9 @@ import { payslipsApi } from "@/lib/api/payslipsApi";
 import { rolesApi } from "@/lib/api/rolesApi";
 import { notificationsApi } from "@/lib/api/notificationsApi";
 import { appVersionsApi } from "@/lib/api/appVersionsApi";
+import { offersApi } from "@/lib/api/offersApi";
 import { clearAuthStorage } from "@/lib/authStorage";
+import { publishAuthorizationDenied } from "@/lib/authorizationEvents";
 
 const authErrorMiddleware = () => (next) => (action) => {
   if (action?.type && action.type.endsWith("/rejected")) {
@@ -37,6 +39,10 @@ const authErrorMiddleware = () => (next) => (action) => {
       ) {
         window.location.replace("/login");
       }
+    }
+
+    if (status === 403) {
+      publishAuthorizationDenied(action.payload);
     }
   }
   return next(action);
@@ -64,6 +70,7 @@ export const store = configureStore({
     [rolesApi.reducerPath]: rolesApi.reducer,
     [notificationsApi.reducerPath]: notificationsApi.reducer,
     [appVersionsApi.reducerPath]: appVersionsApi.reducer,
+    [offersApi.reducerPath]: offersApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -88,5 +95,6 @@ export const store = configureStore({
       rolesApi.middleware,
       notificationsApi.middleware,
       appVersionsApi.middleware,
+      offersApi.middleware,
     ),
 });

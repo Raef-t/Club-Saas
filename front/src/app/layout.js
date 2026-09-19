@@ -18,7 +18,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="antialiased" dir="rtl">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <TimeFormatProvider>

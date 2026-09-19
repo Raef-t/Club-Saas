@@ -135,7 +135,13 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'coach_receipt_number', type: 'string', example: 'REC-COACH-001', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'branch_receipt_number', type: 'string', example: 'REC-CLUB-001', description: 'رقم إيصال دفعة النادي للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'coach_paid_amount', type: 'number', format: 'float', example: 200.00, description: 'مبلغ دفعة الكوتش (اختياري)'),
-                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', example: 100.00, description: 'مبلغ دفعة النادي (اختياري)')
+                new OA\Property(property: 'branch_paid_amount', type: 'number', format: 'float', example: 100.00, description: 'مبلغ دفعة النادي (اختياري)'),
+                new OA\Property(property: 'is_discount', type: 'boolean', nullable: true, example: true, description: 'هل الاشتراك مشمول بحسم (اختياري)'),
+                new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة الحسم من 0 إلى 100% (اختياري، تحسب تلقائياً إذا تم إدخال السعر بعد الحسم)'),
+                new OA\Property(property: 'coach_discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة حسم حصة الكوتش (اختياري)'),
+                new OA\Property(property: 'branch_discount_percentage', type: 'number', format: 'float', nullable: true, example: 50.00, description: 'نسبة حسم حصة الفرع/النادي (اختياري)'),
+                new OA\Property(property: 'discount_amount', type: 'number', format: 'float', nullable: true, example: 150000.00, description: 'قيمة مبلغ الحسم المقطوع (اختياري)'),
+                new OA\Property(property: 'discount_reason', type: 'string', nullable: true, example: 'حسم خاص لمشتركة قديمة', description: 'سبب الحسم (اختياري)')
             ]
         )
     )]
@@ -182,7 +188,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts'])),
                 __('Member subscribed successfully'),
                 201
             );
@@ -251,7 +257,7 @@ class PlayerSubscriptionController extends BaseController
                     return response()->json(['message' => __('Unauthorized access')], 403);
                 }
             }
-            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit']);
+            $subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'freezes', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts']);
             return $this->successResponse(
                 new PlayerSubscriptionResource($subscription),
                 __('Subscription retrieved successfully')
@@ -293,6 +299,12 @@ class PlayerSubscriptionController extends BaseController
                 new OA\Property(property: 'receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-004', description: 'رقم إيصال الدفع العام (اختياري)'),
                 new OA\Property(property: 'coach_receipt_number', type: 'string', nullable: true, example: 'REC-COACH-005', description: 'رقم إيصال دفعة الكوتش للاشتراك الخاص (اختياري)'),
                 new OA\Property(property: 'branch_receipt_number', type: 'string', nullable: true, example: 'REC-CLUB-006', description: 'رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)'),
+                new OA\Property(property: 'is_discount', type: 'boolean', nullable: true, example: true, description: 'تفعيل أو إلغاء الحسم (اختياري)'),
+                new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة الحسم من 0 إلى 100% (اختياري)'),
+                new OA\Property(property: 'coach_discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة حسم حصة الكوتش (اختياري)'),
+                new OA\Property(property: 'branch_discount_percentage', type: 'number', format: 'float', nullable: true, example: 20.00, description: 'نسبة حسم حصة الفرع (اختياري)'),
+                new OA\Property(property: 'discount_amount', type: 'number', format: 'float', nullable: true, example: 60000.00, description: 'مبلغ الحسم (اختياري)'),
+                new OA\Property(property: 'discount_reason', type: 'string', nullable: true, example: 'تعديل سبب الحسم', description: 'سبب الحسم (اختياري)'),
                 new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'ملاحظات إضافية معدلة', description: 'ملاحظات (اختياري)')
             ],
             example: [
@@ -344,7 +356,7 @@ class PlayerSubscriptionController extends BaseController
             $subscription = $this->subscriptionService->updateSubscription((int) $id, $data);
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit'])),
+                new PlayerSubscriptionResource($subscription->load(['creator.person', 'plan.planActivities.staffActivity.activity', 'plan.planActivities.staffActivity.staff.person', 'items', 'payments', 'invoices.payments', 'revenueSplit', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription updated successfully')
             );
         } catch (ModelNotFoundException $e) {
@@ -415,7 +427,7 @@ class PlayerSubscriptionController extends BaseController
             );
 
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription frozen successfully')
             );
         } catch (\Exception $e) {
@@ -458,7 +470,7 @@ class PlayerSubscriptionController extends BaseController
         try {
             $subscription = $this->subscriptionService->unfreezeSubscription($id);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription unfrozen successfully')
             );
         } catch (\Exception $e) {
@@ -523,7 +535,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->renewSubscription($id, $options);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription renewed successfully'),
                 201
             );
@@ -577,7 +589,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->cancelSubscription($id, $data['reason'] ?? null);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'member.person.user', 'member.person.contacts'])),
                 __('Subscription cancelled successfully')
             );
         } catch (\Exception $e) {
@@ -635,7 +647,7 @@ class PlayerSubscriptionController extends BaseController
 
             $subscription = $this->subscriptionService->recordPayment($id, (float) $data['amount'], $data);
             return $this->successResponse(
-                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments'])),
+                new PlayerSubscriptionResource($subscription->load(['plan', 'payments', 'invoices.payments', 'member.person.user', 'member.person.contacts'])),
                 __('Payment recorded successfully')
             );
         } catch (\Exception $e) {

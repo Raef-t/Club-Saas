@@ -111,6 +111,93 @@ export function parseSubscriptionAmount(value) {
   return Number.isFinite(amount) ? amount : 0;
 }
 
+function roundSubscriptionAmount(value) {
+  return Number(parseSubscriptionAmount(value).toFixed(2));
+}
+
+function clampSubscriptionAmount(value, maximum) {
+  return roundSubscriptionAmount(
+    Math.max(0, Math.min(parseSubscriptionAmount(maximum), parseSubscriptionAmount(value))),
+  );
+}
+
+/** Returns the plan totals before any discount, including the selected duration. */
+export function getSubscriptionOriginalAmounts(plan, monthsCount = 1) {
+  const months = Math.max(1, Number.parseInt(monthsCount, 10) || 1);
+  const basePrice = parseSubscriptionAmount(plan?.base_price ?? plan?.price);
+  const hasCoachPrice = plan?.coach_price !== null && plan?.coach_price !== undefined;
+  const hasBranchPrice = plan?.branch_price !== null && plan?.branch_price !== undefined;
+  const coachOriginal = roundSubscriptionAmount(
+    (hasCoachPrice ? parseSubscriptionAmount(plan.coach_price) : 0) * months,
+  );
+  let branchOriginal = roundSubscriptionAmount(
+    (hasBranchPrice ? parseSubscriptionAmount(plan.branch_price) : 0) * months,
+  );
+  const baseTotal = roundSubscriptionAmount(basePrice * months);
+
+  // Older private-plan responses may expose only base_price. Keep the total
+  // payable by assigning that unsplit amount to the branch side.
+  if (!hasCoachPrice && !hasBranchPrice && baseTotal > 0) branchOriginal = baseTotal;
+
+  return {
+    originalTotal: baseTotal || roundSubscriptionAmount(coachOriginal + branchOriginal),
+    coachOriginal,
+    branchOriginal,
+  };
+}
+
+/** Calculates the percentage and amount when the operator enters the net price. */
+export function calculateDiscountFromFinalPrice(originalTotal, enteredPrice) {
+  const original = roundSubscriptionAmount(originalTotal);
+  const finalPrice = clampSubscriptionAmount(enteredPrice, original);
+  const discountAmount = roundSubscriptionAmount(original - finalPrice);
+  const discountPercentage =
+    original > 0 ? Number(((discountAmount / original) * 100).toFixed(2)) : 0;
+
+  return { finalPrice, discountAmount, discountPercentage };
+}
+
+/** Calculates the net price and amount when the operator enters a percentage. */
+export function calculateDiscountFromPercentage(originalTotal, enteredPercentage) {
+  const original = roundSubscriptionAmount(originalTotal);
+  const discountPercentage = Number(
+    Math.max(0, Math.min(100, parseSubscriptionAmount(enteredPercentage))).toFixed(2),
+  );
+  const discountAmount = roundSubscriptionAmount((original * discountPercentage) / 100);
+  const finalPrice = roundSubscriptionAmount(Math.max(0, original - discountAmount));
+
+  return { finalPrice, discountAmount, discountPercentage };
+}
+
+/** Normalizes discount values returned by old and new subscription responses. */
+export function getSubscriptionDiscountSummary(subscription) {
+  const planTotals = getSubscriptionOriginalAmounts(subscription?.plan, subscription?.months_count);
+  const apiOriginal = parseSubscriptionAmount(subscription?.original_total_amount);
+  const originalTotal = apiOriginal || planTotals.originalTotal;
+  const apiDiscountAmount = parseSubscriptionAmount(subscription?.discount_amount);
+  const apiPercentage = parseSubscriptionAmount(subscription?.discount_percentage);
+  const apiTotal = parseSubscriptionAmount(subscription?.total_amount);
+  const calculated = apiPercentage
+    ? calculateDiscountFromPercentage(originalTotal, apiPercentage)
+    : calculateDiscountFromFinalPrice(
+        originalTotal,
+        apiTotal || Math.max(0, originalTotal - apiDiscountAmount),
+      );
+  const isDiscount =
+    subscription?.is_discount === true ||
+    Number(subscription?.is_discount) === 1 ||
+    apiPercentage > 0 ||
+    apiDiscountAmount > 0;
+
+  return {
+    isDiscount,
+    originalTotal,
+    finalPrice: isDiscount ? calculated.finalPrice : apiTotal || originalTotal,
+    discountAmount: isDiscount ? calculated.discountAmount : 0,
+    discountPercentage: isDiscount ? calculated.discountPercentage : 0,
+  };
+}
+
 /**
  * Formats subscription amounts using the currency shown by the dashboard.
  */
@@ -147,6 +234,19 @@ function matchesPrivateTrainingType(record) {
  * may also expose split prices.
  */
 export function isPrivateSubscriptionPlan(plan, selectedActivityType = null) {
+  if (plan && typeof plan === "object") {
+    const planFlag = hasPrivateEquipmentFlag(plan);
+    if (planFlag === true) return true;
+    if (
+      plan.coach_price !== null &&
+      plan.coach_price !== undefined &&
+      plan.branch_price !== null &&
+      plan.branch_price !== undefined
+    ) {
+      return true;
+    }
+  }
+
   if (selectedActivityType && typeof selectedActivityType === "object") {
     return matchesPrivateTrainingType(selectedActivityType);
   }
@@ -303,6 +403,14 @@ export function getDefaultSubscriptionActivityTypeId(activityTypes = []) {
 
   const selectedType = generalTraining || activityTypes[0];
   return selectedType?.id === undefined || selectedType?.id === null ? "" : String(selectedType.id);
+}
+
+/** Labels the current subscription revenue card with an explicit month number. */
+export function getSubscriptionRevenueMonthLabel(date = new Date()) {
+  const monthNumber = new Intl.NumberFormat("ar-SY", { useGrouping: false }).format(
+    date.getMonth() + 1,
+  );
+  return `إجمالي إيرادات الشهر ${monthNumber}`;
 }
 
 /** Reads the activity type already assigned to a subscription's plan. */

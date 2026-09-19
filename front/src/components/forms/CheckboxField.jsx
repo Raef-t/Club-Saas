@@ -8,8 +8,8 @@ export function CheckboxField({
   ...props
 }) {
   return (
-    <div
-      className={`flex items-center justify-between rounded-lg border border-app-line bg-app-card-soft/40 p-3 text-right ${className}`}
+    <label
+      className={`flex items-center justify-between rounded-lg border border-app-line bg-app-card-soft/40 p-3 text-right cursor-pointer select-none ${className}`}
     >
       {label && <span className="text-sm text-app-muted-light">{label}</span>}
       <input
@@ -18,9 +18,10 @@ export function CheckboxField({
         checked={checked}
         onChange={onChange}
         disabled={disabled}
-        className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow accent-[#f2dc2e] focus:ring-0 disabled:opacity-50"
+        aria-label={label}
+        className="size-4 rounded border-app-line bg-app-card-soft text-app-yellow accent-[#f2dc2e] focus:ring-0 disabled:opacity-50 cursor-pointer"
         {...props}
       />
-    </div>
+    </label>
   );
 }

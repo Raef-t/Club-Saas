@@ -142,6 +142,7 @@ export default function SalariesClient({
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">اسم المستحق</th>
                   <th className="p-3">الصفة / الدور</th>
                   <th className="p-3">تاريخ الصرف</th>
@@ -153,7 +154,7 @@ export default function SalariesClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {payments.map((p) => {
+                {payments.map((p, idx) => {
                   const staffName =
                     p.staff?.person?.full_name ||
                     `${p.staff?.person?.first_name || ""} ${p.staff?.person?.last_name || ""}`.trim() ||
@@ -162,6 +163,7 @@ export default function SalariesClient({
 
                   return (
                     <tr key={p.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-medium text-app-text">{staffName}</td>
                       <td className="p-3">
                         <span className="rounded-full bg-app-card-soft px-2.5 py-0.5 text-[10px] font-medium text-app-muted-light border border-app-line/30">

@@ -8,6 +8,31 @@ const optionalReceiptSchema = z
   .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف")
   .optional();
 
+const optionalAmountSchema = z.coerce
+  .number()
+  .finite("المبلغ غير صالح")
+  .nonnegative("المبلغ يجب أن يكون صفراً أو أكثر")
+  .optional();
+
+const optionalDiscountPercentageSchema = z.coerce
+  .number()
+  .finite("نسبة الحسم غير صالحة")
+  .min(0, "نسبة الحسم لا يمكن أن تكون سالبة")
+  .max(100, "نسبة الحسم لا يمكن أن تتجاوز 100%")
+  .optional();
+
+const discountFields = {
+  is_discount: z.boolean().optional(),
+  discount_percentage: optionalDiscountPercentageSchema,
+  discount_amount: optionalAmountSchema,
+  discount_reason: z.string().trim().max(500, "سبب الحسم يجب ألا يتجاوز 500 حرف").optional(),
+  coach_discount_percentage: optionalDiscountPercentageSchema,
+  branch_discount_percentage: optionalDiscountPercentageSchema,
+  coach_paid_amount: optionalAmountSchema,
+  branch_paid_amount: optionalAmountSchema,
+  currency: z.string().trim().max(10).optional(),
+};
+
 export const subscriptionRenewalSchema = z.object({
   plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
   paid_amount: z.preprocess(
@@ -34,7 +59,16 @@ export const subscriptionSchema = z
     plan_id: z
       .number({ invalid_type_error: "يرجى اختيار الخطة" })
       .positive("يرجى اختيار الخطة")
-      .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number)),
+      .or(z.string().min(1, "يرجى اختيار الخطة").transform(Number))
+      .optional()
+      .nullable(),
+
+    offer_id: z
+      .number()
+      .positive()
+      .or(z.string().min(1).transform(Number))
+      .optional()
+      .nullable(),
 
     paid_amount: z
       .number()
@@ -47,6 +81,7 @@ export const subscriptionSchema = z
     coach_receipt_number: optionalReceiptSchema,
     branch_receipt_number: optionalReceiptSchema,
     is_private_plan: z.boolean().optional().default(false),
+    ...discountFields,
 
     start_date: z
       .string({ required_error: "تاريخ بداية الاشتراك مطلوب" })
@@ -57,18 +92,36 @@ export const subscriptionSchema = z
       .min(1, "تاريخ نهاية الاشتراك مطلوب"),
   })
   .superRefine((data, ctx) => {
-    const requiredReceipts = data.is_private_plan
-      ? [
-          ["coach_receipt_number", data.coach_receipt_number, "رقم إيصال الكوتش مطلوب"],
-          ["branch_receipt_number", data.branch_receipt_number, "رقم إيصال النادي مطلوب"],
-        ]
-      : [["receipt_number", data.receipt_number, "رقم الإيصال مطلوب"]];
+    if (!data.offer_id && !data.plan_id) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "يرجى اختيار خطة الاشتراك أو باقة العرض",
+        path: ["plan_id"],
+      });
+    }
 
-    requiredReceipts.forEach(([field, value, message]) => {
-      if (!value) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
-      }
-    });
+    if (!data.offer_id) {
+      const requiredReceipts = data.is_private_plan
+        ? [
+            ["coach_receipt_number", data.coach_receipt_number, "رقم إيصال الكوتش مطلوب"],
+            ["branch_receipt_number", data.branch_receipt_number, "رقم إيصال النادي مطلوب"],
+          ]
+        : [["receipt_number", data.receipt_number, "رقم الإيصال مطلوب"]];
+
+      requiredReceipts.forEach(([field, value, message]) => {
+        if (!value) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+        }
+      });
+    }
+
+    if (data.is_discount && (!data.discount_reason || !data.discount_reason.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "سبب الحسم مطلوب عند تطبيق حسم",
+        path: ["discount_reason"],
+      });
+    }
   })
   .transform(({ is_private_plan, ...data }) => {
     const normalizedData = { ...data };
@@ -109,10 +162,24 @@ export const subscriptionEditSchema = z
       .number()
       .nonnegative("مبلغ النادي يجب أن يكون صفراً أو أكثر")
       .optional(),
+    ...discountFields,
     notes: z.string().max(1000, "الملاحظات يجب ألا تتجاوز 1000 حرف").optional(),
     reason: modificationReasonSchema,
   })
-  .refine((data) => data.end_date >= data.start_date, {
-    message: "تاريخ النهاية يجب ألا يسبق تاريخ البداية",
-    path: ["end_date"],
+  .superRefine((data, ctx) => {
+    if (data.end_date < data.start_date) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "تاريخ النهاية يجب ألا يسبق تاريخ البداية",
+        path: ["end_date"],
+      });
+    }
+
+    if (data.is_discount && (!data.discount_reason || !data.discount_reason.trim())) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "سبب الحسم مطلوب عند تطبيق حسم",
+        path: ["discount_reason"],
+      });
+    }
   });

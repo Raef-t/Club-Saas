@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AccountSetupForm from "./AccountSetupForm";
 
 const replace = vi.fn();
@@ -14,11 +14,16 @@ vi.mock("@/components/common/BrandLogo", () => ({
 }));
 
 describe("AccountSetupForm", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_PASSWORD_HASH_SECRET_KEY", "oid900=rjfreipwhefdk");
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     replace.mockReset();
     refresh.mockReset();
+    vi.unstubAllEnvs();
   });
 
   it("sends the new unified change-password payload", async () => {
@@ -47,8 +52,9 @@ describe("AccountSetupForm", () => {
         method: "POST",
         body: JSON.stringify({
           user_id: 15,
-          new_password: "12345678",
-          new_password_confirmation: "12345678",
+          new_password: "119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed",
+          new_password_confirmation:
+            "119f6226667c1bc87396838134392ef4f4d38e68f1719aed7b2dff13be62d5ed",
           custom_username: "ahmed_player99",
         }),
       }),
@@ -94,8 +100,9 @@ describe("AccountSetupForm", () => {
       expect.objectContaining({
         body: JSON.stringify({
           user_id: 15,
-          new_password: "1",
-          new_password_confirmation: "2",
+          new_password: "14d13db470da41ed4b8de24e3f04e097efe6d8f739201f343ffcb7662cf50eae",
+          new_password_confirmation:
+            "250df892138a3001f40399167d2ab8827c48562aa7d420e4c5bf514e3e026b9d",
           custom_username: "أ",
         }),
       }),

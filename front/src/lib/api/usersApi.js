@@ -1,4 +1,14 @@
 import { createBackendApi } from "@/lib/api/baseQuery";
+import { authApi } from "@/lib/api/authApi";
+
+async function refreshCurrentProfileAfterMutation(_, { dispatch, queryFulfilled }) {
+  try {
+    await queryFulfilled;
+    dispatch(authApi.util.invalidateTags(["Profile"]));
+  } catch {
+    // The mutation error is exposed to its caller; keep the current profile cache.
+  }
+}
 
 export const usersApi = createBackendApi({
   reducerPath: "usersApi",
@@ -22,15 +32,30 @@ export const usersApi = createBackendApi({
       providesTags: (result, error, userId) => [{ type: "UserRoles", id: userId }],
     }),
     assignUserRole: builder.mutation({
-      query: ({ userId, roles }) => ({
+      query: ({ userId, role }) => ({
         url: `users/${userId}/roles`,
         method: "POST",
-        body: { roles },
+        body: { role },
       }),
-      invalidatesTags: (result, error, { userId }) => [
-        "Users",
-        { type: "UserRoles", id: userId },
-      ],
+      invalidatesTags: (result, error, { userId }) => ["Users", { type: "UserRoles", id: userId }],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
+    }),
+    revokeUserRole: builder.mutation({
+      query: ({ userId, role }) => ({
+        url: `users/${userId}/roles`,
+        method: "DELETE",
+        body: { role },
+      }),
+      invalidatesTags: (result, error, { userId }) => ["Users", { type: "UserRoles", id: userId }],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
+    }),
+    toggleUserStatus: builder.mutation({
+      query: (userId) => ({
+        url: `users/${userId}/toggle-status`,
+        method: "PATCH",
+      }),
+      invalidatesTags: (result, error, userId) => ["Users", { type: "Users", id: userId }],
+      onQueryStarted: refreshCurrentProfileAfterMutation,
     }),
   }),
 });
@@ -40,4 +65,7 @@ export const {
   useGetRolesQuery,
   useGetUserRolesQuery,
   useAssignUserRoleMutation,
+  useRevokeUserRoleMutation,
+  useToggleUserStatusMutation,
 } = usersApi;
+

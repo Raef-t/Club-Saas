@@ -5,10 +5,14 @@ import { ManagementBranchProvider } from "@/lib/ManagementBranchContext";
 import { verifySession } from "@/lib/server/auth";
 import { loadAvailableBranches } from "@/lib/server/backend";
 import { canAccessAllBranches } from "@/lib/permissions";
-import { normalizeSelectedBranchId, REPORTS_BRANCH_COOKIE } from "@/lib/managementBranchUtils";
+import {
+  LEGACY_REPORTS_BRANCH_COOKIE,
+  MANAGEMENT_BRANCH_COOKIE,
+  normalizeSelectedBranchId,
+} from "@/lib/managementBranchUtils";
 
 /**
- * Provides the verified user and report-specific branch selection.
+ * Provides the verified user and the branch selection shared with management.
  */
 export default async function ReportsLayout({ children }) {
   const session = await verifySession();
@@ -26,30 +30,29 @@ export default async function ReportsLayout({ children }) {
   } else if (userBranchId) {
     const userBranch = branches.find((b) => String(b.id) === String(userBranchId));
     effectiveBranches = [
-      userBranch || branches[0] || { id: Number(userBranchId) || userBranchId, name: "تكنو جيم بنات" },
+      userBranch ||
+        branches[0] || { id: Number(userBranchId) || userBranchId, name: "تكنو جيم بنات" },
     ];
   }
 
-  const rawBranchCookie = cookieStore.get(REPORTS_BRANCH_COOKIE)?.value;
+  const rawBranchCookie =
+    cookieStore.get(MANAGEMENT_BRANCH_COOKIE)?.value ||
+    cookieStore.get(LEGACY_REPORTS_BRANCH_COOKIE)?.value;
   const candidateBranchId = isAllBranchesAllowed
     ? rawBranchCookie || (userBranchId ? String(userBranchId) : undefined)
     : userBranchId
       ? String(userBranchId)
       : undefined;
 
-  const initialSelectedBranchId = normalizeSelectedBranchId(
-    candidateBranchId,
-    effectiveBranches,
-    { fallbackToFirst: !isAllBranchesAllowed },
-  );
+  const initialSelectedBranchId = normalizeSelectedBranchId(candidateBranchId, effectiveBranches, {
+    fallbackToFirst: !isAllBranchesAllowed,
+  });
 
   return (
     <ManagementBranchProvider
       initialBranches={effectiveBranches}
       initialSelectedBranchId={initialSelectedBranchId}
       canSelectAllBranches={isAllBranchesAllowed}
-      cookieName={REPORTS_BRANCH_COOKIE}
-      cookiePath="/reports"
     >
       <AppShell sidebar={<ReportsSidebar />} currentUser={session.user}>
         {children}

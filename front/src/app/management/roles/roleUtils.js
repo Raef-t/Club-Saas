@@ -134,6 +134,7 @@ const ACTION_LABELS = {
 };
 
 const ROLE_NAME_PATTERN = /^[a-z][a-z0-9_]{2,49}$/;
+const PROTECTED_ROLE_NAMES = new Set(["super_admin", "admin"]);
 
 // Permissions backed by routes and API calls that currently exist in the web dashboard.
 // Mobile/self-service and backend-only features stay assigned to a role, but are not
@@ -201,6 +202,15 @@ const WEB_PERMISSION_RULES = {
     "locker.release-reservation",
   ],
   member: ["member.view-any", "member.view", "member.create", "member.update", "member.delete"],
+  offer: [
+    "offer.view-any",
+    "offer.view",
+    "offer.create",
+    "offer.update",
+    "offer.delete",
+    "offer.restore",
+    "offer.subscribe",
+  ],
   payslip: true,
   permission: ["permission.view-any"],
   "player-subscription": [
@@ -294,16 +304,20 @@ function flattenPermissionGroups(groups) {
 export function getPermissionCollection(response) {
   const directCandidates = [
     response,
+    response?.data?.flat,
     response?.data?.permissions,
+    response?.flat,
     response?.permissions,
     response?.data?.data,
     response?.data,
   ];
   const direct = directCandidates.find(Array.isArray);
-  const nestedGroups = flattenPermissionGroups(response?.data?.grouped_by_module);
+  const nestedGroups = flattenPermissionGroups(
+    response?.data?.grouped_by_module || response?.data?.grouped,
+  );
   const grouped = nestedGroups.length
     ? nestedGroups
-    : flattenPermissionGroups(response?.grouped_by_module);
+    : flattenPermissionGroups(response?.grouped_by_module || response?.grouped);
   const source = direct || grouped;
   const byName = new Map();
 
@@ -327,13 +341,25 @@ export function getRolePermissionNames(role) {
 
 export function getRolePresentation(role) {
   const name = String(role?.name || "");
-  return (
-    ROLE_PRESENTATION[name] || {
-      label: humanizeIdentifier(name) || "دور بدون اسم",
-      description: "دور مخصص يمكن ضبط صلاحياته بحسب مسؤوليات المستخدمين.",
-      tone: "yellow",
-    }
-  );
+  const providedLabel = typeof role?.name_ar === "string" ? role.name_ar.trim() : "";
+  const preset = ROLE_PRESENTATION[name];
+
+  if (preset) {
+    return {
+      ...preset,
+      label: providedLabel || preset.label,
+    };
+  }
+
+  return {
+    label: providedLabel || humanizeIdentifier(name) || "دور بدون اسم",
+    description: "دور مخصص يمكن ضبط صلاحياته بحسب مسؤوليات المستخدمين.",
+    tone: "yellow",
+  };
+}
+
+export function isProtectedRole(role) {
+  return Boolean(role?.is_protected) || PROTECTED_ROLE_NAMES.has(String(role?.name || ""));
 }
 
 export function getModuleLabel(permissionModule) {
@@ -461,6 +487,7 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
   { name: "staff-commission-rule.create", module: "staff-commission-rule" },
   { name: "staff-commission-rule.update", module: "staff-commission-rule" },
   { name: "staff-commission-rule.delete", module: "staff-commission-rule" },
+  { name: "staff-commission-rule.delete", module: "staff-commission-rule" },
 
   // Branch
   { name: "branch.view-any", module: "branch" },
@@ -528,10 +555,14 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
   { name: "payroll.create", module: "payroll" },
   { name: "payroll.delete", module: "payroll" },
   { name: "payroll.process", module: "payroll" },
+  { name: "payroll.rollback", module: "payroll" },
   { name: "payroll.generate-payslips", module: "payroll" },
   { name: "payslip.view-any", module: "payslip" },
   { name: "payslip.view", module: "payslip" },
   { name: "payslip.download", module: "payslip" },
+  { name: "payslip.generate", module: "payslip" },
+  { name: "payslip.confirm", module: "payslip" },
+  { name: "payslip.update", module: "payslip" },
 
   // Offer
   { name: "offer.view-any", module: "offer" },
@@ -572,12 +603,15 @@ export const SYSTEM_PERMISSIONS_CATALOG = [
 export function mergePermissionCatalog(permissions = [], role = null) {
   const byName = new Map();
 
-  for (const permission of SYSTEM_PERMISSIONS_CATALOG) {
-    const normalized = normalizePermission(permission);
-    if (normalized) byName.set(normalized.name, normalized);
-  }
-
-  for (const permission of [...(permissions || []), ...(role?.permissions || [])]) {
+  // The backend catalog is authoritative when available. The local standard
+  // catalog keeps unchecked permissions visible if an older deployment returns
+  // only assigned permissions, while role permissions preserve unknown/new
+  // backend capabilities until the catalog endpoint catches up.
+  for (const permission of [
+    ...SYSTEM_PERMISSIONS_CATALOG,
+    ...(permissions || []),
+    ...(role?.permissions || []),
+  ]) {
     const normalized = normalizePermission(permission);
     if (normalized) byName.set(normalized.name, normalized);
   }
@@ -678,7 +712,7 @@ export function filterRoles(roles, search) {
 }
 
 export function createRoleStats(roles, permissions) {
-  const protectedRoles = roles.filter((role) => role.is_protected).length;
+  const protectedRoles = roles.filter(isProtectedRole).length;
   return [
     {
       title: "إجمالي الأدوار",

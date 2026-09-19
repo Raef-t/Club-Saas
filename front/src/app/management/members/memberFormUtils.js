@@ -14,6 +14,32 @@ export function getMemberMembershipStatus(member) {
   return member?.is_active === false ? "inactive" : "active";
 }
 
+/** Routes protected backend member photos through the local authenticated asset proxy. */
+export function resolveMemberPhotoUrl(value) {
+  if (!value || typeof value !== "string") return "";
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+  if (
+    trimmedValue.startsWith("data:") ||
+    trimmedValue.startsWith("blob:") ||
+    trimmedValue.startsWith("/img/") ||
+    trimmedValue.startsWith("/api/")
+  ) {
+    return trimmedValue;
+  }
+
+  let assetPath = trimmedValue;
+  try {
+    const remoteUrl = new URL(trimmedValue);
+    assetPath = `${remoteUrl.pathname}${remoteUrl.search}`;
+  } catch {
+    // Relative backend paths are handled below.
+  }
+
+  const normalizedPath = assetPath.replace(/^\/+/, "");
+  return normalizedPath ? `/api/assets/${normalizedPath}` : "";
+}
+
 /** Converts a member-details response record into the controlled edit form values. */
 export function getMemberEditInitialValues(member) {
   if (!member) return null;
@@ -52,6 +78,7 @@ export function getMemberEditInitialValues(member) {
     emergency_country_code: emergencyContact?.country_code || "+963",
     emergency_phone: emergencyContact?.phone_number || "",
     membership_status: getMemberMembershipStatus(member),
+    photo: person.photo_url || person.photo || member.photo_url || member.photo || null,
     reason: "",
   };
 }

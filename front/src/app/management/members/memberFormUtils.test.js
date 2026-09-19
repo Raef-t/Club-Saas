@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getMemberEditInitialValues, getMemberMembershipStatus } from "./memberFormUtils";
+import {
+  getMemberEditInitialValues,
+  getMemberMembershipStatus,
+  resolveMemberPhotoUrl,
+} from "./memberFormUtils";
 
 describe("member form utilities", () => {
   it("maps the member details API response to edit form values", () => {
@@ -12,6 +16,7 @@ describe("member form utilities", () => {
           gender: "female",
           age: null,
           dob: null,
+          photo_url: "storage/people/photos/member-66.jpg",
           contacts: [
             {
               id: 266,
@@ -37,6 +42,7 @@ describe("member form utilities", () => {
       emergency_country_code: "+963",
       emergency_phone: "",
       membership_status: "active",
+      photo: "storage/people/photos/member-66.jpg",
       reason: "",
     });
   });
@@ -84,5 +90,14 @@ describe("member form utilities", () => {
     );
     expect(getMemberMembershipStatus({ is_active: false })).toBe("inactive");
     expect(getMemberMembershipStatus({ is_active: true })).toBe("active");
+  });
+
+  it("routes backend member photos through the authenticated asset endpoint", () => {
+    expect(resolveMemberPhotoUrl("storage/people/photos/member.jpg")).toBe(
+      "/api/assets/storage/people/photos/member.jpg",
+    );
+    expect(resolveMemberPhotoUrl("https://technogym.example/storage/member.jpg?v=2")).toBe(
+      "/api/assets/storage/member.jpg?v=2",
+    );
   });
 });

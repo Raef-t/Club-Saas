@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import SubscriptionDetails from "./SubscriptionDetails";
 import SubscriptionStatusBadge from "./SubscriptionStatusBadge";
 import SubscriptionReceiptBadges from "./SubscriptionReceiptBadges";
+import SubscriptionAmountBadges from "./SubscriptionAmountBadges";
+import SubscriptionMemberIdentity from "./SubscriptionMemberIdentity";
+import SubscriptionTableActions from "./SubscriptionTableActions";
 import RenewSubscriptionModal from "./RenewSubscriptionModal";
 import { useMemo } from "react";
 import PageHeader from "@/components/common/PageHeader";
@@ -13,123 +15,17 @@ import Dropdown from "@/components/ui/Dropdown";
 import Drawer from "@/components/ui/Drawer";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatsGrid from "@/components/ui/StatsGrid";
-import {
-  FilterIcon,
-  PencilIcon,
-  PlusIcon,
-  RefreshIcon,
-  SearchIcon,
-  TrashIcon,
-} from "@/components/icons/Icons";
+import { FilterIcon, PlusIcon, SearchIcon } from "@/components/icons/Icons";
 import { useSubscriptions } from "./useSubscriptions";
 import { formatDate, formatLocalizedName } from "@/lib/utils";
 import { SUBSCRIPTION_PERIOD_OPTIONS, SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
-import { formatSubscriptionMoney, getSubscriptionCreatorName } from "./subscriptionUtils";
+import { getSubscriptionCreatorName } from "./subscriptionUtils";
 import { usePermissions } from "@/lib/PermissionContext";
 import { PAGE_SIZE_OPTIONS } from "@/lib/pagination";
 import { getMemberAccountName } from "@/lib/memberIdentity";
 
 const TABLE_GRID_COLUMNS =
-  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.8fr) minmax(0,1.2fr) minmax(0,.9fr) 96px 152px";
-
-const ACTION_BUTTON_CLASS =
-  "grid size-8 shrink-0 place-items-center rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-50";
-
-function MoreVerticalIcon({ className = "size-4" }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <circle cx="12" cy="5" r="1.5" />
-      <circle cx="12" cy="12" r="1.5" />
-      <circle cx="12" cy="19" r="1.5" />
-    </svg>
-  );
-}
-
-function SubscriptionTableActions({
-  subscription,
-  canView,
-  canUpdate,
-  canDelete,
-  canRenew,
-  isBusy,
-  onView,
-  onDelete,
-  onRenew,
-}) {
-  const canRenewSubscription = canRenew && subscription.status === "finished";
-
-  return (
-    <div className="flex w-full items-center justify-center gap-1.5" dir="rtl">
-      {canUpdate && (
-        <Link
-          href={`/management/subscriptions/create?mode=edit&id=${subscription.id}`}
-          title="تعديل الاشتراك"
-          aria-label="تعديل الاشتراك"
-          onClick={(event) => {
-            event.stopPropagation();
-            if (isBusy) event.preventDefault();
-          }}
-          className={`${ACTION_BUTTON_CLASS} border-app-line bg-slate-500/15 text-app-muted-light hover:border-slate-400/50 hover:bg-slate-500/25 hover:text-app-text ${
-            isBusy ? "pointer-events-none opacity-50" : ""
-          }`}
-          aria-disabled={isBusy}
-        >
-          <PencilIcon className="size-4" />
-        </Link>
-      )}
-
-      {canRenew &&
-        (canRenewSubscription ? (
-          <button
-            type="button"
-            title="تجديد الاشتراك"
-            aria-label="تجديد الاشتراك"
-            className={`${ACTION_BUTTON_CLASS} border-app-yellow/35 bg-app-yellow/15 text-app-yellow hover:border-app-yellow/70 hover:bg-app-yellow/25`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onRenew(subscription);
-            }}
-            disabled={isBusy}
-          >
-            <RefreshIcon className="size-4" />
-          </button>
-        ) : (
-          <span className="size-8 shrink-0" aria-hidden="true" />
-        ))}
-
-      {canDelete && (
-        <button
-          type="button"
-          title="حذف الاشتراك"
-          aria-label="حذف الاشتراك"
-          className={`${ACTION_BUTTON_CLASS} border-app-red/25 bg-app-red/10 text-app-red hover:border-app-red/60 hover:bg-app-red/20`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onDelete(subscription);
-          }}
-          disabled={isBusy}
-        >
-          <TrashIcon className="size-4" />
-        </button>
-      )}
-
-      {canView && (
-        <button
-          type="button"
-          title="عرض التفاصيل"
-          aria-label="عرض التفاصيل"
-          className={`${ACTION_BUTTON_CLASS} border-app-line bg-slate-500/15 text-app-muted-light hover:border-slate-400/50 hover:bg-slate-500/25 hover:text-app-text`}
-          onClick={(event) => {
-            event.stopPropagation();
-            onView(subscription);
-          }}
-        >
-          <MoreVerticalIcon />
-        </button>
-      )}
-    </div>
-  );
-}
+  "44px minmax(0,1.45fr) minmax(0,1.1fr) minmax(0,.95fr) minmax(0,.95fr) minmax(0,1.2fr) minmax(0,.9fr) 96px 64px";
 
 /**
  * Renders the subscription list, filters, statistics, and detail drawer.
@@ -222,22 +118,7 @@ export default function SubscriptionsClient({ initialData }) {
           const person = member.person || {};
           return person.full_name || getMemberAccountName(member, subscription);
         },
-        render: (_, subscription) => {
-          const member = subscription.member || {};
-          const person = member.person || {};
-          const accountName = getMemberAccountName(member, subscription);
-
-          return (
-            <div className="min-w-0 text-center">
-              <p className="truncate text-sm font-medium text-app-text">
-                {person.full_name || "-"}
-              </p>
-              <p className="mt-1 truncate text-[11px] text-app-muted-light" dir="ltr">
-                {accountName || "-"} · {person.phone || "-"}
-              </p>
-            </div>
-          );
-        },
+        render: (_, subscription) => <SubscriptionMemberIdentity subscription={subscription} />,
       },
       {
         key: "plan",
@@ -253,8 +134,10 @@ export default function SubscriptionsClient({ initialData }) {
             typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
 
           return (
-            <div className="min-w-0 text-center">
-              <p className="truncate font-medium text-app-text">{planName}</p>
+            <div className="min-w-0 max-w-[220px] text-center">
+              <p className="font-medium text-app-text whitespace-normal break-words leading-relaxed">
+                {planName}
+              </p>
               <p className="mt-1 text-[11px] text-app-muted-light">
                 {plan.session_count ? `${plan.session_count} جلسة` : "مفتوح"}
               </p>
@@ -275,12 +158,10 @@ export default function SubscriptionsClient({ initialData }) {
       },
       {
         key: "paid_amount",
-        label: "المبلغ المدفوع",
+        label: "الصافي / المدفوع",
         align: "center",
         sortValue: (subscription) => Number(subscription.paid_amount || 0),
-        render: (value) => (
-          <span className="font-medium text-app-green">{formatSubscriptionMoney(value)}</span>
-        ),
+        render: (_, subscription) => <SubscriptionAmountBadges subscription={subscription} />,
       },
       {
         key: "receipts",
@@ -379,6 +260,15 @@ export default function SubscriptionsClient({ initialData }) {
             </Button>
             {canCreate && (
               <Button
+                href="/management/offers"
+                tone="outline"
+                className="h-10 px-4 text-xs font-semibold border-app-yellow/50 text-app-yellow hover:bg-app-yellow/10 transition-colors"
+              >
+                باقات العروض
+              </Button>
+            )}
+            {canCreate && (
+              <Button
                 href="/management/subscriptions/create"
                 icon={<PlusIcon className="size-4" style={{ color: "#000000" }} />}
                 style={{ color: "#000000" }}
@@ -432,8 +322,8 @@ export default function SubscriptionsClient({ initialData }) {
         onPageChange={pagination.setPage}
         onPageSizeChange={pagination.setPerPage}
         toolbarActions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <label className="relative block w-full sm:w-80 md:w-96">
+          <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_9rem_10rem] sm:items-center">
+            <label className="relative col-span-2 block min-w-0 sm:col-span-1">
               <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-app-muted-light" />
               <input
                 className="app-input h-10 w-full bg-app-card-soft ps-9 pe-3 text-right text-sm text-white outline-none transition focus:border-app-yellow/70"
@@ -445,29 +335,32 @@ export default function SubscriptionsClient({ initialData }) {
             </label>
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft text-white"
+              className="w-full min-w-0 bg-app-card-soft text-white"
               icon={FilterIcon}
               value={status}
               options={SUBSCRIPTION_STATUS_OPTIONS}
               onChange={setStatus}
+              compact
             />
 
             <Dropdown
-              className="min-w-44 bg-app-card-soft text-white"
+              className="w-full min-w-0 bg-app-card-soft text-white"
               icon={FilterIcon}
               value={period}
               options={SUBSCRIPTION_PERIOD_OPTIONS}
               onChange={setPeriod}
+              compact
             />
 
             <Dropdown
-              className="min-w-48 bg-app-card-soft text-white"
+              className="col-span-2 w-full min-w-0 bg-app-card-soft text-white sm:col-span-1"
               icon={FilterIcon}
               value={activityTypeId}
               options={activityTypeOptions}
               onChange={setActivityTypeId}
               disabled={isActivityTypesLoading}
               ariaLabel="تصفية حسب نوع النشاط"
+              compact
             />
           </div>
         }

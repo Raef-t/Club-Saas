@@ -119,6 +119,7 @@ export default function IconRail({ className, isMobile = false }) {
             <Link
               key={sys.id}
               href={sys.href}
+              prefetch={false}
               title={sys.title}
               className={`relative grid size-11 place-items-center rounded-lg transition-colors ${
                 active

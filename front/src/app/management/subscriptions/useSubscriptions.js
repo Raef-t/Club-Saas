@@ -18,6 +18,7 @@ import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import {
   formatSubscriptionMoney,
   getSubscriptionDetail,
+  getSubscriptionRevenueMonthLabel,
   getSubscriptionRows,
   getSubscriptionStats,
   sortSubscriptionsNewestFirst,
@@ -196,9 +197,9 @@ export function useSubscriptions({ initialData } = {}) {
         active: status === "active",
       },
       {
-        title: "المبالغ المدفوعة",
+        title: getSubscriptionRevenueMonthLabel(),
         value: formatSubscriptionMoney(subscriptionStats.totalPaidAmount),
-        helper: "إجمالي المبالغ المحصلة",
+        helper: "إجمالي الإيرادات المحصلة خلال الشهر",
         tone: "blue",
         compact: true,
       },

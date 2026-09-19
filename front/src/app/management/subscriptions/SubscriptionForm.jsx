@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import DatePickerSmart from "@/components/forms/DatePickerSmart";
 import ModificationReasonField from "@/components/forms/ModificationReasonField";
 import Button from "@/components/ui/Button";
@@ -14,9 +14,161 @@ import {
   getSubscriptionEndDate,
   isDailyEntrySubscriptionPlan,
   isPrivateSubscriptionPlan,
+  calculateDiscountFromFinalPrice,
+  calculateDiscountFromPercentage,
+  getSubscriptionDiscountSummary,
+  getSubscriptionOriginalAmounts,
 } from "./subscriptionUtils";
 import { SUBSCRIPTION_STATUS_OPTIONS } from "./subscriptionConstants";
 import { getMemberAccountName } from "@/lib/memberIdentity";
+import SubscriptionDiscountFields from "./SubscriptionDiscountFields";
+import {
+  getEndDateFromDuration,
+  formatDurationDays,
+  getDurationInMonths,
+} from "@/app/management/offers/_lib/durationHelpers";
+
+export function getOfferDurationInfo(offer, fallbackStartDate = null, fallbackEndDate = null) {
+  if (!offer) return null;
+
+  let days = Number(offer.duration_days) || 0;
+  if (!days && offer.start_date && offer.end_date) {
+    const s = new Date(offer.start_date);
+    const e = new Date(offer.end_date);
+    if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && e > s) {
+      days = Math.round((e - s) / (1000 * 60 * 60 * 24));
+    }
+  }
+  if (!days && fallbackStartDate && fallbackEndDate) {
+    const s = new Date(fallbackStartDate);
+    const e = new Date(fallbackEndDate);
+    if (!isNaN(s.getTime()) && !isNaN(e.getTime()) && e > s) {
+      days = Math.round((e - s) / (1000 * 60 * 60 * 24));
+    }
+  }
+
+  const months = days > 0 ? getDurationInMonths(days) : 0;
+  const rawFormatted = offer.duration_formatted || (days > 0 ? formatDurationDays(days) : "");
+
+  let monthsText = "";
+  if (months > 0) {
+    if (months === 1) monthsText = "شهر واحد";
+    else if (months === 2) monthsText = "شهرين";
+    else if (months <= 10 && Number.isInteger(months)) monthsText = `${months} أشهر`;
+    else if (Number.isInteger(months)) monthsText = `${months} شهر`;
+    else monthsText = `${months} شهر تقريباً`;
+  }
+
+  let formattedText = rawFormatted || (monthsText ? monthsText : "غير محددة");
+  if (rawFormatted && monthsText && !rawFormatted.includes(monthsText)) {
+    formattedText = `${rawFormatted} (${monthsText})`;
+  }
+
+  return {
+    days,
+    months: months || 1,
+    integerMonths: Math.max(1, Math.round(months) || 1),
+    monthsText: monthsText || "شهر واحد",
+    formattedText,
+    shortText: rawFormatted || monthsText || "",
+  };
+}
+
+function getResetDiscountFields(plan, monthsCount = 1, overrideAmounts = null) {
+  const { originalTotal, coachOriginal, branchOriginal } =
+    overrideAmounts || getSubscriptionOriginalAmounts(plan, monthsCount);
+
+  return {
+    is_discount: false,
+    discount_mode: "unified",
+    discount_percentage: 0,
+    discount_amount: 0,
+    discount_reason: "",
+    final_price: originalTotal,
+    coach_final_price: coachOriginal,
+    branch_final_price: branchOriginal,
+    coach_discount_percentage: 0,
+    branch_discount_percentage: 0,
+    coach_paid_amount: coachOriginal,
+    branch_paid_amount: branchOriginal,
+    paid_amount: originalTotal,
+  };
+}
+
+function getUnifiedDiscountFields(originalAmounts, percentageOrPrice, source = "percentage") {
+  const calculation =
+    source === "price"
+      ? calculateDiscountFromFinalPrice(originalAmounts.originalTotal, percentageOrPrice)
+      : calculateDiscountFromPercentage(originalAmounts.originalTotal, percentageOrPrice);
+  const coach = calculateDiscountFromPercentage(
+    originalAmounts.coachOriginal,
+    calculation.discountPercentage,
+  );
+  const branch = calculateDiscountFromPercentage(
+    originalAmounts.branchOriginal,
+    calculation.discountPercentage,
+  );
+
+  return {
+    discount_percentage: calculation.discountPercentage,
+    discount_amount: calculation.discountAmount,
+    final_price: calculation.finalPrice,
+    coach_discount_percentage: calculation.discountPercentage,
+    branch_discount_percentage: calculation.discountPercentage,
+    coach_final_price: coach.finalPrice,
+    branch_final_price: branch.finalPrice,
+    coach_paid_amount: coach.finalPrice,
+    branch_paid_amount: branch.finalPrice,
+    paid_amount: calculation.finalPrice,
+  };
+}
+
+function getSplitDiscountFields(current, originalAmounts, side, value, source = "price") {
+  const original =
+    side === "coach" ? originalAmounts.coachOriginal : originalAmounts.branchOriginal;
+  const calculation =
+    source === "price"
+      ? calculateDiscountFromFinalPrice(original, value)
+      : calculateDiscountFromPercentage(original, value);
+  const otherFinal =
+    Number(side === "coach" ? current.branch_final_price : current.coach_final_price) || 0;
+  const finalPrice = Number((calculation.finalPrice + otherFinal).toFixed(2));
+  const overall = calculateDiscountFromFinalPrice(originalAmounts.originalTotal, finalPrice);
+
+  return {
+    [`${side}_final_price`]: calculation.finalPrice,
+    [`${side}_discount_percentage`]: calculation.discountPercentage,
+    [`${side}_paid_amount`]: calculation.finalPrice,
+    final_price: finalPrice,
+    discount_percentage: overall.discountPercentage,
+    discount_amount: overall.discountAmount,
+    paid_amount: finalPrice,
+  };
+}
+
+function getSplitDiscountFieldsFromPercentages(current, originalAmounts) {
+  const coach = calculateDiscountFromPercentage(
+    originalAmounts.coachOriginal,
+    current.coach_discount_percentage,
+  );
+  const branch = calculateDiscountFromPercentage(
+    originalAmounts.branchOriginal,
+    current.branch_discount_percentage,
+  );
+  const finalPrice = Number((coach.finalPrice + branch.finalPrice).toFixed(2));
+  const overall = calculateDiscountFromFinalPrice(originalAmounts.originalTotal, finalPrice);
+
+  return {
+    coach_final_price: coach.finalPrice,
+    branch_final_price: branch.finalPrice,
+    coach_paid_amount: coach.finalPrice,
+    branch_paid_amount: branch.finalPrice,
+    final_price: finalPrice,
+    paid_amount: finalPrice,
+    discount_percentage: overall.discountPercentage,
+    discount_amount: overall.discountAmount,
+  };
+}
 
 /**
  * Collects and validates the values required to create a member subscription.
@@ -33,6 +185,8 @@ export function SubscriptionCreateForm({
   activityTypesErrorMessage = "",
   activities = [],
   coaches = [],
+  offers = [],
+  isOffersLoading = false,
   onSubmit,
   onCancel,
   isLoading,
@@ -46,9 +200,111 @@ export function SubscriptionCreateForm({
   cancelLabel,
   showAddAnother = true,
 }) {
+  // Check if a plan matches selectedActivityTypeId
+  const isPlanMatchingActivityType = useCallback(
+    (plan) => {
+      if (!selectedActivityTypeId || selectedActivityTypeId === "all") return true;
+      if (
+        Array.isArray(plan.activity_types) &&
+        plan.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+      ) {
+        return true;
+      }
+      if (
+        Array.isArray(plan.activities) &&
+        plan.activities.some(
+          (act) => String(act.activity_type_id) === String(selectedActivityTypeId),
+        )
+      ) {
+        return true;
+      }
+      const fullPlan = plans.find((pl) => String(pl.id) === String(plan.id));
+      if (fullPlan) {
+        if (
+          Array.isArray(fullPlan.activity_types) &&
+          fullPlan.activity_types.some((at) => String(at.id) === String(selectedActivityTypeId))
+        ) {
+          return true;
+        }
+        if (
+          Array.isArray(fullPlan.activities) &&
+          fullPlan.activities.some(
+            (act) => String(act.activity_type_id) === String(selectedActivityTypeId),
+          )
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    [selectedActivityTypeId, plans],
+  );
+
+  // Filter offers by selectedActivityTypeId and availability
+  const availableOffers = useMemo(() => {
+    if (!Array.isArray(offers) || offers.length === 0) return [];
+    return offers.filter((offer) => {
+      if (!offer.is_available) return false;
+      if (selectedActivityTypeId && selectedActivityTypeId !== "all") {
+        const offerPlans = offer.plans || [];
+        return offerPlans.some(isPlanMatchingActivityType);
+      }
+      return true;
+    });
+  }, [offers, selectedActivityTypeId, isPlanMatchingActivityType]);
+
+  // Options for offers dropdown:
+  // For bundle: 1 option for the bundle
+  // For single_choice: expand each eligible activity as a direct offer choice ("نعامل كل فعالية كانها عرض")
+  const offerOptions = useMemo(() => {
+    const options = [{ value: "", label: "بدون عرض (اشتراك فردي اعتيادي)" }];
+
+    availableOffers.forEach((offer) => {
+      const dur = getOfferDurationInfo(offer);
+      const durLabel = dur?.shortText ? ` (${dur.shortText})` : "";
+
+      if (offer.offer_type === "single_choice") {
+        const eligiblePlans = (offer.plans || []).filter(isPlanMatchingActivityType);
+        eligiblePlans.forEach((plan) => {
+          const planName = formatLocalizedName(plan.name) || plan.name || "";
+          const isFull =
+            plan.max_subscribers > 0 && plan.current_subscribers >= plan.max_subscribers;
+
+          const offerTitle = offer.name.startsWith("عرض") ? offer.name : `عرض ${offer.name}`;
+          const displayName = offerTitle.includes(planName)
+            ? offerTitle
+            : `${offerTitle} - ${planName}`;
+
+          options.push({
+            value: `offer_${offer.id}_plan_${plan.id}`,
+            offerId: String(offer.id),
+            planId: String(plan.id),
+            isBundle: false,
+            label: `${displayName}${durLabel} - ${formatMoney(offer.price)}${isFull ? " (⚠️ مكتملة السعة)" : ""}`,
+            disabled: isFull,
+          });
+        });
+      } else {
+        // bundle offer
+        options.push({
+          value: `offer_${offer.id}`,
+          offerId: String(offer.id),
+          planId: null,
+          isBundle: true,
+          label: `${offer.name}${durLabel} - ${formatMoney(offer.price)} (باقة مجمعة)`,
+        });
+      }
+    });
+
+    return options;
+  }, [availableOffers, isPlanMatchingActivityType]);
+
   const [form, setForm] = useState(() => {
     const initialPlan = plans[0] || null;
-    const initialDate = isDailyEntrySubscriptionPlan(initialPlan) ? getLocalDateValue() : "";
+    const initialDate = getLocalDateValue();
+    const initialEndDate = isDailyEntrySubscriptionPlan(initialPlan)
+      ? initialDate
+      : getSubscriptionEndDate(initialDate, 1);
 
     return {
       member_id: initialMemberId
@@ -56,36 +312,203 @@ export function SubscriptionCreateForm({
         : members[0]?.id
           ? String(members[0].id)
           : "",
+      offer_id: "",
       plan_id: initialPlan?.id ? String(initialPlan.id) : "",
-      paid_amount: initialPlan?.base_price ? String(initialPlan.base_price) : "0",
       months_count: "1",
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
       start_date: initialDate,
-      end_date: initialDate,
+      end_date: initialEndDate,
+      ...getResetDiscountFields(initialPlan, 1),
     };
   });
   const [errors, setErrors] = useState({});
   const [submitAction, setSubmitAction] = useState("normal");
-  const selectedPlanObj = plans.find((p) => String(p.id) === String(form.plan_id));
+  const selectedOfferObj = useMemo(() => {
+    return availableOffers.find((o) => String(o.id) === String(form.offer_id));
+  }, [availableOffers, form.offer_id]);
+
+  const isSelectedOfferSingleChoice = selectedOfferObj?.offer_type === "single_choice";
+
+  const selectedOfferDuration = useMemo(() => {
+    if (!selectedOfferObj) return null;
+    return getOfferDurationInfo(selectedOfferObj, form.start_date, form.end_date);
+  }, [selectedOfferObj, form.start_date, form.end_date]);
+
+  const matchingSingleChoiceOffer = useMemo(() => {
+    if (form.offer_id || !form.plan_id) return null;
+    return availableOffers.find((offer) => {
+      if (offer.offer_type !== "single_choice" || !offer.is_available) return false;
+      return (offer.plans || []).some((p) => String(p.id) === String(form.plan_id));
+    });
+  }, [availableOffers, form.offer_id, form.plan_id]);
+
+  const selectedPlanObj = useMemo(() => {
+    if (form.offer_id && isSelectedOfferSingleChoice && selectedOfferObj?.plans) {
+      return (
+        selectedOfferObj.plans.find((p) => String(p.id) === String(form.plan_id)) ||
+        plans.find((p) => String(p.id) === String(form.plan_id))
+      );
+    }
+    return plans.find((p) => String(p.id) === String(form.plan_id));
+  }, [plans, form.plan_id, form.offer_id, isSelectedOfferSingleChoice, selectedOfferObj]);
+
   const selectedActivityType = activityTypes.find(
     (activityType) => String(activityType.id) === String(selectedActivityTypeId),
   );
-  const isDailyEntryPlan = isDailyEntrySubscriptionPlan(selectedPlanObj);
-  const isPrivatePlan = isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
+  const isDailyEntryPlan = !form.offer_id && isDailyEntrySubscriptionPlan(selectedPlanObj);
+  const isPrivatePlan =
+    !form.offer_id && isPrivateSubscriptionPlan(selectedPlanObj, selectedActivityType);
+
+  const originalAmounts = useMemo(() => {
+    if (form.offer_id && selectedOfferObj) {
+      const offerPrice = Number(selectedOfferObj.price) || 0;
+      return {
+        originalTotal: offerPrice,
+        coachOriginal: 0,
+        branchOriginal: offerPrice,
+      };
+    }
+    return getSubscriptionOriginalAmounts(selectedPlanObj, form.months_count);
+  }, [form.offer_id, selectedOfferObj, selectedPlanObj, form.months_count]);
 
   function updateField(field, value) {
     setForm((current) => {
       const nextState = { ...current, [field]: value };
-      if (!isDailyEntryPlan && (field === "start_date" || field === "months_count")) {
-        const startDate = field === "start_date" ? value : current.start_date;
-        const months = field === "months_count" ? value : current.months_count;
-        if (startDate) nextState.end_date = getSubscriptionEndDate(startDate, months);
+      if (field === "start_date") {
+        if (form.offer_id && selectedOfferObj?.duration_days) {
+          nextState.end_date = getEndDateFromDuration(value, selectedOfferObj.duration_days);
+        } else if (!isDailyEntryPlan && value) {
+          nextState.end_date = getSubscriptionEndDate(value, current.months_count);
+        }
+      } else if (field === "months_count" && !isDailyEntryPlan && !form.offer_id) {
+        if (current.start_date) {
+          nextState.end_date = getSubscriptionEndDate(current.start_date, value);
+        }
       }
       return nextState;
     });
     if (errors && errors[field]) setErrors((current) => ({ ...current, [field]: null }));
+  }
+
+  const selectedOfferDropdownValue = useMemo(() => {
+    if (!form.offer_id) return "";
+    if (isSelectedOfferSingleChoice) {
+      if (form.plan_id) {
+        const exact = `offer_${form.offer_id}_plan_${form.plan_id}`;
+        if (offerOptions.some((o) => o.value === exact)) return exact;
+      }
+      const match = offerOptions.find((o) => o.offerId === String(form.offer_id));
+      return match ? match.value : "";
+    }
+    const bundleVal = `offer_${form.offer_id}`;
+    if (offerOptions.some((o) => o.value === bundleVal)) return bundleVal;
+    return "";
+  }, [form.offer_id, form.plan_id, isSelectedOfferSingleChoice, offerOptions]);
+
+  function handleOfferOptionChange(val) {
+    if (!val) {
+      const defaultPlan =
+        plans.find((p) => String(p.id) === String(form.plan_id)) || plans[0] || null;
+      const today = isDailyEntrySubscriptionPlan(defaultPlan) ? getLocalDateValue() : "";
+      const planReset = getResetDiscountFields(defaultPlan, 1);
+      setForm((current) => ({
+        ...current,
+        offer_id: "",
+        plan_id: defaultPlan?.id ? String(defaultPlan.id) : "",
+        months_count: "1",
+        start_date: today || current.start_date,
+        end_date: today || getSubscriptionEndDate(today || current.start_date, 1),
+        ...planReset,
+      }));
+      setErrors((current) => ({
+        ...current,
+        offer_id: null,
+        plan_id: null,
+        paid_amount: null,
+        months_count: null,
+      }));
+      return;
+    }
+
+    let opt = offerOptions.find((o) => o.value === String(val));
+    if (!opt) {
+      opt = offerOptions.find((o) => o.offerId === String(val));
+    }
+    if (!opt) return;
+
+    const selectedOffer = availableOffers.find((o) => String(o.id) === String(opt.offerId));
+    if (!selectedOffer) return;
+
+    const offerPrice = String(selectedOffer.price ?? "0");
+    const offerPriceNum = Number(selectedOffer.price) || 0;
+    const today = getLocalDateValue();
+    const durInfo = getOfferDurationInfo(selectedOffer);
+    const monthsCount = String(durInfo?.integerMonths || 1);
+
+    // Calculate end_date: prefer duration_days over offer's own dates
+    function resolveEndDate(startDate, currentEndDate) {
+      if (selectedOffer.duration_days) {
+        return getEndDateFromDuration(startDate, selectedOffer.duration_days);
+      }
+      return (
+        selectedOffer.end_date ||
+        currentEndDate ||
+        getSubscriptionEndDate(startDate, monthsCount)
+      );
+    }
+
+    const offerDiscountReset = getResetDiscountFields(null, monthsCount, {
+      originalTotal: offerPriceNum,
+      coachOriginal: 0,
+      branchOriginal: offerPriceNum,
+    });
+
+    if (selectedOffer.offer_type === "single_choice") {
+      setForm((current) => {
+        const startDate = selectedOffer.start_date || current.start_date || today;
+        return {
+          ...current,
+          offer_id: String(selectedOffer.id),
+          plan_id: String(opt.planId),
+          paid_amount: offerPrice,
+          months_count: monthsCount,
+          start_date: startDate,
+          end_date: resolveEndDate(startDate, current.end_date),
+          ...offerDiscountReset,
+        };
+      });
+    } else {
+      // bundle
+      const offerPlans = selectedOffer.plans || [];
+      const firstPlan = offerPlans[0];
+      setForm((current) => {
+        const startDate = selectedOffer.start_date || current.start_date || today;
+        return {
+          ...current,
+          offer_id: String(selectedOffer.id),
+          plan_id: firstPlan?.id ? String(firstPlan.id) : current.plan_id || "1",
+          paid_amount: offerPrice,
+          months_count: monthsCount,
+          start_date: startDate,
+          end_date: resolveEndDate(startDate, current.end_date),
+          ...offerDiscountReset,
+        };
+      });
+    }
+
+    setErrors((current) => ({
+      ...current,
+      offer_id: null,
+      plan_id: null,
+      paid_amount: null,
+      months_count: null,
+    }));
+  }
+
+  function handleOfferChange(offerId) {
+    handleOfferOptionChange(offerId);
   }
 
   function handlePlanChange(planId) {
@@ -93,22 +516,34 @@ export function SubscriptionCreateForm({
     const currentPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
     const nextIsDailyEntry = isDailyEntrySubscriptionPlan(nextPlan);
     const currentIsDailyEntry = isDailyEntrySubscriptionPlan(currentPlan);
-    const today = nextIsDailyEntry ? getLocalDateValue() : "";
+    const today = getLocalDateValue();
 
-    setForm((current) => ({
-      ...current,
-      plan_id: planId,
-      paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
-      months_count: nextIsDailyEntry ? "1" : current.months_count,
-      receipt_number: "",
-      coach_receipt_number: "",
-      branch_receipt_number: "",
-      start_date: nextIsDailyEntry ? today : currentIsDailyEntry ? "" : current.start_date,
-      end_date: nextIsDailyEntry ? today : currentIsDailyEntry ? "" : current.end_date,
-    }));
+    setForm((current) => {
+      const startDate = nextIsDailyEntry ? today : current.start_date || today;
+      const monthsCount = nextIsDailyEntry ? "1" : current.months_count;
+
+      return {
+        ...current,
+        offer_id: "",
+        plan_id: planId,
+        ...getResetDiscountFields(nextPlan, monthsCount),
+        months_count: monthsCount,
+        receipt_number: "",
+        coach_receipt_number: "",
+        branch_receipt_number: "",
+        start_date: startDate,
+        end_date:
+          nextIsDailyEntry || currentIsDailyEntry
+            ? nextIsDailyEntry
+              ? today
+              : getSubscriptionEndDate(startDate, monthsCount)
+            : current.end_date || getSubscriptionEndDate(startDate, monthsCount),
+      };
+    });
 
     setErrors((current) => ({
       ...current,
+      offer_id: null,
       plan_id: null,
       paid_amount: null,
       months_count: null,
@@ -123,34 +558,129 @@ export function SubscriptionCreateForm({
   function handleActivityTypeChange(activityTypeId) {
     setForm((current) => ({
       ...current,
+      offer_id: "",
       plan_id: "",
-      paid_amount: "0",
+      ...getResetDiscountFields(null, current.months_count),
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
-      start_date: isDailyEntryPlan ? "" : current.start_date,
-      end_date: isDailyEntryPlan ? "" : current.end_date,
+      start_date: current.start_date || getLocalDateValue(),
+      end_date:
+        current.end_date ||
+        getSubscriptionEndDate(current.start_date || getLocalDateValue(), current.months_count),
     }));
-    setErrors((current) => ({ ...current, plan_id: null, paid_amount: null }));
+    setErrors((current) => ({ ...current, plan_id: null, paid_amount: null, offer_id: null }));
     onActivityTypeChange?.(activityTypeId);
+  }
+
+  function handleMonthsChange(value) {
+    const nextMonths = isDailyEntryPlan ? "1" : value;
+    const nextOriginalAmounts = getSubscriptionOriginalAmounts(selectedPlanObj, nextMonths);
+
+    setForm((current) => ({
+      ...current,
+      months_count: nextMonths,
+      ...(current.is_discount
+        ? current.discount_mode === "split" && isPrivatePlan
+          ? getSplitDiscountFieldsFromPercentages(current, nextOriginalAmounts)
+          : getUnifiedDiscountFields(nextOriginalAmounts, current.discount_percentage, "percentage")
+        : getResetDiscountFields(selectedPlanObj, nextMonths)),
+      end_date:
+        current.start_date && !isDailyEntryPlan
+          ? getSubscriptionEndDate(current.start_date, nextMonths)
+          : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, months_count: null, paid_amount: null }));
+  }
+
+  function toggleDiscount(checked) {
+    setForm((current) => ({
+      ...current,
+      ...getResetDiscountFields(
+        selectedPlanObj,
+        current.months_count,
+        form.offer_id ? originalAmounts : null,
+      ),
+      is_discount: checked,
+    }));
+  }
+
+  function changeDiscountMode(mode) {
+    setForm((current) => ({
+      ...current,
+      discount_mode: mode,
+      ...getUnifiedDiscountFields(originalAmounts, current.discount_percentage, "percentage"),
+    }));
+  }
+
+  function changeUnifiedDiscount(value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getUnifiedDiscountFields(originalAmounts, value, source),
+    }));
+  }
+
+  function changeSplitDiscount(side, value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getSplitDiscountFields(current, originalAmounts, side, value, source),
+    }));
+  }
+
+  function changePrivatePaidAmount(side, value) {
+    setForm((current) => {
+      const normalized = Math.max(0, Number(value) || 0);
+      const other =
+        Number(side === "coach" ? current.branch_paid_amount : current.coach_paid_amount) || 0;
+      return {
+        ...current,
+        [`${side}_paid_amount`]: value,
+        paid_amount: Number((normalized + other).toFixed(2)),
+      };
+    });
   }
 
   function handleSubmit(event) {
     event.preventDefault();
 
+    const isOfferSelected = Boolean(form.offer_id);
     const dailyEntryDate = isDailyEntryPlan ? getLocalDateValue() : "";
+
+    if (isOfferSelected && isSelectedOfferSingleChoice && !form.plan_id) {
+      setErrors((current) => ({
+        ...current,
+        plan_id: "يرجى اختيار الفعالية المراد الاشتراك بها ضمن العرض",
+      }));
+      return;
+    }
+
+    const resolvedPaidAmount =
+      form.paid_amount !== "" && form.paid_amount !== undefined && form.paid_amount !== null
+        ? Number(form.paid_amount)
+        : Number(originalAmounts.originalTotal) || 0;
 
     const validationData = {
       member_id: Number(form.member_id),
-      plan_id: Number(form.plan_id),
-      paid_amount: Number(form.paid_amount) || 0,
+      plan_id: isOfferSelected ? Number(form.plan_id) || 1 : Number(form.plan_id),
+      offer_id: isOfferSelected ? Number(form.offer_id) : undefined,
+      paid_amount: resolvedPaidAmount,
       months_count: isDailyEntryPlan ? 1 : form.months_count,
       receipt_number: form.receipt_number,
       coach_receipt_number: form.coach_receipt_number,
       branch_receipt_number: form.branch_receipt_number,
-      is_private_plan: isPrivatePlan,
+      is_private_plan: isOfferSelected ? false : isPrivatePlan,
       start_date: dailyEntryDate || form.start_date || "",
       end_date: dailyEntryDate || form.end_date || "",
+      // Discount fields
+      is_discount: form.is_discount,
+      discount_percentage: form.discount_percentage,
+      discount_amount: form.discount_amount,
+      discount_reason: form.discount_reason,
+      coach_discount_percentage: form.coach_discount_percentage,
+      branch_discount_percentage: form.branch_discount_percentage,
+      coach_paid_amount: form.coach_paid_amount,
+      branch_paid_amount: form.branch_paid_amount,
+      currency: "SYP",
     };
 
     const result = subscriptionSchema.safeParse(validationData);
@@ -167,6 +697,7 @@ export function SubscriptionCreateForm({
     onSubmit(
       {
         ...result.data,
+        offer_id: isOfferSelected ? Number(form.offer_id) : undefined,
         payment_method: "cash",
         activities: [],
       },
@@ -224,13 +755,10 @@ export function SubscriptionCreateForm({
           buttonClassName="bg-app-card-soft h-11"
           value={selectedActivityTypeId}
           onChange={handleActivityTypeChange}
-          options={[
-            { value: "", label: "الكل" },
-            ...activityTypes.map((activityType) => ({
-              value: String(activityType.id),
-              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
-            })),
-          ]}
+          options={activityTypes.map((activityType) => ({
+            value: String(activityType.id),
+            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+          }))}
           placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
           disabled={isActivityTypesLoading}
         />
@@ -241,102 +769,359 @@ export function SubscriptionCreateForm({
         )}
       </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        خطة الاشتراك
-        {isPlansLoading ? (
-          <div
-            className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
-            role="status"
-          >
-            <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
-            جاري تحميل باقات الاشتراك...
-          </div>
-        ) : (
-          <Dropdown
-            className="mt-2 text-white"
-            buttonClassName="bg-app-card-soft h-11"
-            value={form.plan_id}
-            onChange={handlePlanChange}
-            options={plans.map((p) => ({
-              value: String(p.id),
-              label: formatLocalizedName(p.name) || p.name || "",
-            }))}
-            placeholder="اختر الخطة"
-            disabled={plans.length === 0 || Boolean(plansErrorMessage)}
-            error={errors && errors.plan_id}
-          />
-        )}
-        {plansErrorMessage ? (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {plansErrorMessage}
-          </span>
-        ) : (
-          !isPlansLoading &&
-          plans.length === 0 && (
-            <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
-              {selectedActivityTypeId
-                ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
-                : "لا توجد باقات اشتراك متاحة حالياً"}
+      {/* Offers Dropdown - Appears ONLY when offers are available matching the selected activity type */}
+      {offerOptions.length > 1 && (
+        <div className="rounded-xl border border-app-yellow/40 bg-app-yellow/[0.04] p-4 space-y-3">
+          <label className="block text-right text-sm font-medium text-white">
+            <span className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <span>🎁</span>
+                <span>باقة العروض الترويجية (خصم خاص)</span>
+              </span>
+              <span className="text-xs text-app-yellow font-normal">
+                ({offerOptions.length - 1}{" "}
+                {offerOptions.length - 1 === 1 ? "عرض متاح" : "عروض متاحة"})
+              </span>
             </span>
-          )
-        )}
-      </label>
+            <Dropdown
+              className="mt-2 text-white"
+              buttonClassName="bg-app-card-soft h-11 border-app-yellow/40"
+              value={selectedOfferDropdownValue}
+              onChange={handleOfferOptionChange}
+              options={offerOptions}
+              placeholder="اختر عرض ترويجي"
+            />
+          </label>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        المبلغ المدفوع للاشتراك ({CURRENCY_SYMBOL})
-        <input
-          type="number"
-          min="0"
-          value={form.paid_amount}
-          onChange={(e) => updateField("paid_amount", e.target.value)}
-          aria-invalid={Boolean(errors && errors.paid_amount)}
-          className={`app-input mt-2 h-11 w-full px-3 text-right outline-none bg-app-card-soft text-white ${
-            errors && errors.paid_amount
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          placeholder={selectedPlanObj ? `السعر الأساسي: ${selectedPlanObj.base_price}` : ""}
-          required
-        />
-        {errors && errors.paid_amount && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.paid_amount}
-          </span>
-        )}
-      </label>
+          {/* تفاصيل العرض المختار */}
+          {form.offer_id && selectedOfferObj && (
+            <div className="rounded-xl border border-app-line bg-black/40 p-4 space-y-3 text-right">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-white">
+                    {isSelectedOfferSingleChoice && selectedPlanObj
+                      ? `${selectedOfferObj.name} - ${formatLocalizedName(selectedPlanObj.name) || selectedPlanObj.name}`
+                      : selectedOfferObj.name}
+                  </span>
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-[10px] font-medium ${
+                      isSelectedOfferSingleChoice
+                        ? "bg-purple-500/20 text-purple-300 border border-purple-500/40"
+                        : "bg-blue-500/20 text-blue-300 border border-blue-500/40"
+                    }`}
+                  >
+                    {isSelectedOfferSingleChoice
+                      ? "🏷️ يختار المشترك فعالية واحدة"
+                      : "📦 باقة مجمعة"}
+                  </span>
+                </div>
+                <span className="text-sm font-black text-app-yellow">
+                  {formatMoney(selectedOfferObj.price)}
+                </span>
+              </div>
 
-      <label className="block text-right text-sm text-app-muted-light">
-        عدد الأشهر *
-        <input
-          type="number"
-          min="1"
-          step="1"
-          value={form.months_count}
-          onChange={(event) => updateField("months_count", event.target.value)}
-          disabled={isDailyEntryPlan}
-          aria-invalid={Boolean(errors && errors.months_count)}
-          className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:opacity-60 ${
-            errors && errors.months_count
-              ? "border border-app-red focus:border-app-red"
-              : "focus:border-app-yellow/70"
-          }`}
-          required
-        />
-        {errors && errors.months_count && (
-          <span className="mt-1.5 block text-xs text-app-red" role="alert">
-            {errors.months_count}
-          </span>
-        )}
-      </label>
+              {selectedOfferObj.description && (
+                <p className="text-xs text-app-muted-light leading-relaxed">
+                  {selectedOfferObj.description}
+                </p>
+              )}
+
+              {/* مدة العرض بالأشهر والأيام */}
+              {selectedOfferDuration && (
+                <div className="flex items-center justify-between rounded-lg bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs">
+                  <span className="text-amber-200 flex items-center gap-1.5 font-medium">
+                    <span>⏱️</span>
+                    <span>مدة صلاحية واشتراك العرض:</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <strong className="text-white font-bold text-sm">
+                      {selectedOfferDuration.formattedText}
+                    </strong>
+                    {selectedOfferDuration.days > 0 && (
+                      <span className="text-amber-300/80 text-[11px]">
+                        ({selectedOfferDuration.days} يوم)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {isSelectedOfferSingleChoice ? (
+                <div className="rounded-lg bg-purple-500/10 border border-purple-500/30 p-2.5 text-xs text-purple-200">
+                  💡 تم تطبيق سعر العرض المخفض ({formatMoney(selectedOfferObj.price)}) على فعالية{" "}
+                  <strong className="text-white">
+                    {formatLocalizedName(selectedPlanObj?.name) || selectedPlanObj?.name}
+                  </strong>
+                  {selectedPlanObj?.base_price &&
+                    Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
+                      <span className="ms-1 text-emerald-400 font-semibold">
+                        (توفير{" "}
+                        {formatMoney(
+                          Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price),
+                        )}
+                        )
+                      </span>
+                    )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-xs text-app-muted-light">الفعاليات المشمولة بالباقة:</span>
+                  {(selectedOfferObj.plans || []).map((p) => (
+                    <span
+                      key={p.id}
+                      className="rounded bg-app-card-soft border border-app-line/60 px-2 py-0.5 text-[11px] text-gray-200"
+                    >
+                      ● {p.name} {p.session_count ? `(${p.session_count} حصة)` : ""}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* خطة الاشتراك أو تأكيد العرض */}
+      {form.offer_id && !isSelectedOfferSingleChoice ? (
+        <div className="rounded-xl border border-app-yellow/40 bg-app-yellow/10 p-3.5 text-right text-xs text-app-muted-light space-y-1">
+          <p className="text-white font-medium flex items-center gap-1.5">
+            <span>📦</span>
+            <span>تم اختيار باقة عرض ترويجي مجمعة ({selectedOfferObj?.name})</span>
+          </p>
+          <p className="text-white">
+            سيتم تفعيل جميع خطط وفعاليات هذا العرض تلقائياً لحساب اللاعبة عند تأكيد الاشتراك.
+          </p>
+        </div>
+      ) : form.offer_id && isSelectedOfferSingleChoice ? (
+        <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 text-right text-xs space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-white font-medium flex items-center gap-1.5">
+              <span>🏷️</span>
+              <span>
+                الفعالية المحددة بالعرض:{" "}
+                <strong className="text-purple-200">
+                  {formatLocalizedName(selectedPlanObj?.name) || selectedPlanObj?.name}
+                </strong>
+              </span>
+            </span>
+            <span className="text-app-yellow font-bold text-sm">
+              {formatMoney(selectedOfferObj?.price)}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-purple-500/20 pt-2 text-[11px]">
+            {selectedOfferDuration && (
+              <span className="text-purple-200 flex items-center gap-1">
+                <span>⏱️ مدة الاشتراك:</span>
+                <strong className="text-white font-bold">
+                  {selectedOfferDuration.formattedText}
+                </strong>
+              </span>
+            )}
+            {selectedPlanObj?.base_price && (
+              <span className="text-app-muted-light">
+                السعر الأساسي للفعالية الفردية: {formatMoney(selectedPlanObj.base_price)}
+                {Number(selectedPlanObj.base_price) > Number(selectedOfferObj.price) && (
+                  <span className="text-emerald-400 font-semibold ms-1">
+                    (توفير{" "}
+                    {formatMoney(
+                      Number(selectedPlanObj.base_price) - Number(selectedOfferObj.price),
+                    )}
+                    )
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {matchingSingleChoiceOffer && (
+            <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-right flex items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5 min-w-0">
+                <span className="font-bold text-emerald-300 block truncate">
+                  🏷️ يتوفر عرض مخفض سارٍ على هذه الفعالية!
+                </span>
+                <span className="text-app-muted-light text-[11px] block">
+                  يمكن للاعبة الاستفادة من{" "}
+                  <strong className="text-white">{matchingSingleChoiceOffer.name}</strong> ودفع{" "}
+                  <strong className="text-app-yellow">
+                    {formatMoney(matchingSingleChoiceOffer.price)}
+                  </strong>{" "}
+                  بدلاً من {formatMoney(selectedPlanObj?.base_price)}.
+                </span>
+              </div>
+              <Button
+                type="button"
+                tone="success"
+                className="h-8 px-3 text-xs shrink-0 text-black font-semibold"
+                onClick={() =>
+                  handleOfferOptionChange(
+                    `offer_${matchingSingleChoiceOffer.id}_plan_${form.plan_id}`,
+                  )
+                }
+              >
+                تطبيق العرض
+              </Button>
+            </div>
+          )}
+
+          <label className="block text-right text-sm text-app-muted-light">
+            خطة الاشتراك
+            {isPlansLoading ? (
+              <div
+                className="mt-2 flex h-11 items-center justify-center gap-2 rounded-xl border border-app-line bg-app-card-soft text-xs text-app-muted-light"
+                role="status"
+              >
+                <span className="size-4 animate-spin rounded-full border-2 border-app-muted border-t-app-yellow" />
+                جاري تحميل باقات الاشتراك...
+              </div>
+            ) : (
+              <Dropdown
+                searchable
+                searchPlaceholder="ابحث عن خطة الاشتراك..."
+                className="mt-2 text-white"
+                buttonClassName="bg-app-card-soft h-11"
+                value={form.plan_id}
+                onChange={handlePlanChange}
+                options={plans.map((p) => ({
+                  value: String(p.id),
+                  label: formatLocalizedName(p.name) || p.name || "",
+                }))}
+                placeholder="اختر الخطة"
+                disabled={plans.length === 0 || Boolean(plansErrorMessage)}
+                error={errors && errors.plan_id}
+              />
+            )}
+            {plansErrorMessage ? (
+              <span className="mt-1.5 block text-xs text-app-red" role="alert">
+                {plansErrorMessage}
+              </span>
+            ) : (
+              !isPlansLoading &&
+              plans.length === 0 && (
+                <span className="mt-1.5 block text-xs text-app-muted-light" role="status">
+                  {selectedActivityTypeId
+                    ? "لا توجد باقات اشتراك متاحة لنوع النشاط المحدد"
+                    : "لا توجد باقات اشتراك متاحة حالياً"}
+                </span>
+              )
+            )}
+          </label>
+        </div>
+      )}
+
+      <input type="hidden" name="paid_amount" value={form.paid_amount ?? ""} />
+      {errors && errors.paid_amount && (
+        <span className="block text-right text-xs text-app-red" role="alert">
+          {errors.paid_amount}
+        </span>
+      )}
+
+      {form.offer_id ? (
+        <div className="block text-right text-sm text-app-muted-light">
+          <div className="flex items-center justify-between">
+            <span>مدة الاشتراك بالعرض (عدد الأشهر)</span>
+            <span className="text-xs text-app-yellow">محددة مسبقاً بموجب شروط العرض</span>
+          </div>
+          <div className="mt-2 flex h-11 items-center justify-between rounded-xl border border-app-line bg-app-card-soft px-3 text-white">
+            <span className="font-semibold text-app-yellow flex items-center gap-1.5">
+              <span>⏱️</span>
+              <span>{selectedOfferDuration?.formattedText || `${form.months_count} شهر`}</span>
+            </span>
+            <span className="text-xs text-app-muted-light">
+              {selectedOfferDuration?.days
+                ? `${selectedOfferDuration.days} يوم`
+                : `${form.months_count} شهر`}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <label className="block text-right text-sm text-app-muted-light">
+          عدد الأشهر *
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={form.months_count}
+            onChange={(event) => handleMonthsChange(event.target.value)}
+            disabled={isDailyEntryPlan}
+            aria-invalid={Boolean(errors && errors.months_count)}
+            className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:opacity-60 ${
+              errors && errors.months_count
+                ? "border border-app-red focus:border-app-red"
+                : "focus:border-app-yellow/70"
+            }`}
+            required
+          />
+          {errors && errors.months_count && (
+            <span className="mt-1.5 block text-xs text-app-red" role="alert">
+              {errors.months_count}
+            </span>
+          )}
+        </label>
+      )}
+
+      <SubscriptionDiscountFields
+        form={form}
+        originalTotal={originalAmounts.originalTotal}
+        coachOriginal={originalAmounts.coachOriginal}
+        branchOriginal={originalAmounts.branchOriginal}
+        isPrivatePlan={isPrivatePlan}
+        isOfferSelected={Boolean(form.offer_id)}
+        errors={errors}
+        onToggle={toggleDiscount}
+        onModeChange={changeDiscountMode}
+        onFinalPriceChange={(value) => changeUnifiedDiscount(value, "price")}
+        onPercentageChange={(value) => changeUnifiedDiscount(value, "percentage")}
+        onCoachPercentageChange={(value) => changeSplitDiscount("coach", value, "percentage")}
+        onBranchPercentageChange={(value) => changeSplitDiscount("branch", value, "percentage")}
+        onReasonChange={(value) => updateField("discount_reason", value)}
+      />
+
+      {isPrivatePlan && (
+        <div className="grid gap-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4 sm:grid-cols-2">
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة الكوتش ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.coach_final_price}
+              step="0.01"
+              value={form.coach_paid_amount}
+              onChange={(event) => changePrivatePaidAmount("coach", event.target.value)}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none focus:border-app-yellow/70"
+            />
+          </label>
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة النادي ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.branch_final_price}
+              step="0.01"
+              value={form.branch_paid_amount}
+              onChange={(event) => changePrivatePaidAmount("branch", event.target.value)}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none focus:border-app-yellow/70"
+            />
+          </label>
+          <p className="text-xs text-app-muted-light sm:col-span-2">
+            إجمالي المدفوع:{" "}
+            <span className="font-medium text-app-green">{formatMoney(form.paid_amount)}</span>
+          </p>
+        </div>
+      )}
 
       {isPrivatePlan ? (
         <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj?.coach_price)})
-              </span>
+              {selectedPlanObj && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(selectedPlanObj?.coach_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.coach_receipt_number}
@@ -367,9 +1152,11 @@ export function SubscriptionCreateForm({
 
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(selectedPlanObj?.branch_price)})
-              </span>
+              {selectedPlanObj && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(selectedPlanObj?.branch_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.branch_receipt_number}
@@ -516,21 +1303,70 @@ export function SubscriptionEditForm({
   canEditPaidAmount = false,
 }) {
   const initialReceiptNumbers = getSubscriptionReceiptNumbers(subscription);
-  const [form, setForm] = useState(() => ({
-    member_id: String(subscription?.member_id || subscription?.member?.id || ""),
-    plan_id: String(subscription?.plan_id || subscription?.plan?.id || ""),
-    offer_id: String(subscription?.offer_id || subscription?.offer?.id || ""),
-    months_count: String(subscription?.months_count || 1),
-    start_date: String(subscription?.start_date || "").split("T")[0],
-    end_date: String(subscription?.end_date || "").split("T")[0],
-    status: subscription?.status || "active",
-    paid_amount: String(subscription?.paid_amount ?? 0),
-    receipt_number: String(initialReceiptNumbers.receiptNumber ?? ""),
-    coach_receipt_number: String(initialReceiptNumbers.coachReceiptNumber ?? ""),
-    branch_receipt_number: String(initialReceiptNumbers.branchReceiptNumber ?? ""),
-    notes: subscription?.notes || "",
-    reason: "",
-  }));
+  const initialDiscountSummary = getSubscriptionDiscountSummary(subscription);
+  const initialOriginalAmounts = getSubscriptionOriginalAmounts(
+    subscription?.plan,
+    subscription?.months_count,
+  );
+  const initialSplitPayments = getSubscriptionSplitPaymentAmounts(subscription);
+  const [form, setForm] = useState(() => {
+    const startDate = String(subscription?.start_date || getLocalDateValue()).split("T")[0];
+    const monthsCount = String(subscription?.months_count || 1);
+
+    return {
+      member_id: String(subscription?.member_id || subscription?.member?.id || ""),
+      plan_id: String(subscription?.plan_id || subscription?.plan?.id || ""),
+      offer_id: String(subscription?.offer_id || subscription?.offer?.id || ""),
+      months_count: monthsCount,
+      start_date: startDate,
+      end_date: String(
+        subscription?.end_date || getSubscriptionEndDate(startDate, monthsCount),
+      ).split("T")[0],
+      status: subscription?.status || "active",
+      paid_amount: String(subscription?.paid_amount ?? 0),
+      receipt_number: String(initialReceiptNumbers.receiptNumber ?? ""),
+      coach_receipt_number: String(initialReceiptNumbers.coachReceiptNumber ?? ""),
+      branch_receipt_number: String(initialReceiptNumbers.branchReceiptNumber ?? ""),
+      is_discount: initialDiscountSummary.isDiscount,
+      discount_mode:
+        Number(subscription?.coach_discount_percentage || 0) !==
+        Number(subscription?.branch_discount_percentage || 0)
+          ? "split"
+          : "unified",
+      discount_percentage: initialDiscountSummary.discountPercentage,
+      discount_amount: initialDiscountSummary.discountAmount,
+      discount_reason: subscription?.discount_reason || "",
+      final_price: initialDiscountSummary.finalPrice,
+      coach_discount_percentage: Number(
+        subscription?.coach_discount_percentage ?? initialDiscountSummary.discountPercentage,
+      ),
+      branch_discount_percentage: Number(
+        subscription?.branch_discount_percentage ?? initialDiscountSummary.discountPercentage,
+      ),
+      coach_final_price: Math.max(
+        0,
+        initialOriginalAmounts.coachOriginal -
+          (initialOriginalAmounts.coachOriginal *
+            Number(
+              subscription?.coach_discount_percentage ?? initialDiscountSummary.discountPercentage,
+            )) /
+            100,
+      ),
+      branch_final_price: Math.max(
+        0,
+        initialOriginalAmounts.branchOriginal -
+          (initialOriginalAmounts.branchOriginal *
+            Number(
+              subscription?.branch_discount_percentage ?? initialDiscountSummary.discountPercentage,
+            )) /
+            100,
+      ),
+      coach_paid_amount: initialSplitPayments.coachPaidAmount,
+      branch_paid_amount: initialSplitPayments.branchPaidAmount,
+      notes: subscription?.notes || "",
+      reason: "",
+    };
+  });
   const [errors, setErrors] = useState({});
   const selectedPlan = plans.find((plan) => String(plan.id) === String(form.plan_id));
   const resolvedPlan = selectedPlan || subscription?.plan;
@@ -538,16 +1374,8 @@ export function SubscriptionEditForm({
     (activityType) => String(activityType.id) === String(selectedActivityTypeId),
   );
   const isDailyEntryPlan = isDailyEntrySubscriptionPlan(resolvedPlan);
-  const originalPlanId = subscription?.plan_id || subscription?.plan?.id;
-  const isOriginalPlanSelected = String(form.plan_id) === String(originalPlanId);
   const isPrivatePlan = isPrivateSubscriptionPlan(resolvedPlan, selectedActivityType);
-  const splitPaymentAmounts = getSubscriptionSplitPaymentAmounts(
-    subscription,
-    resolvedPlan,
-    form.paid_amount,
-    isOriginalPlanSelected,
-  );
-
+  const originalAmounts = getSubscriptionOriginalAmounts(resolvedPlan, form.months_count);
   function updateField(field, value) {
     setForm((current) => {
       const nextState = { ...current, [field]: value };
@@ -564,15 +1392,15 @@ export function SubscriptionEditForm({
   function handlePlanChange(planId) {
     const nextPlan = plans.find((plan) => String(plan.id) === String(planId));
     const nextIsDailyEntry = isDailyEntrySubscriptionPlan(nextPlan);
-    const today = nextIsDailyEntry ? getLocalDateValue() : "";
+    const today = getLocalDateValue();
 
     setForm((current) => {
-      const startDate = nextIsDailyEntry ? today : current.start_date;
+      const startDate = nextIsDailyEntry ? today : current.start_date || today;
 
       return {
         ...current,
         plan_id: planId,
-        paid_amount: nextPlan ? String(nextPlan.base_price || "0") : current.paid_amount,
+        ...getResetDiscountFields(nextPlan, current.months_count),
         receipt_number: "",
         coach_receipt_number: "",
         branch_receipt_number: "",
@@ -598,14 +1426,79 @@ export function SubscriptionEditForm({
     setForm((current) => ({
       ...current,
       plan_id: "",
+      ...getResetDiscountFields(null, current.months_count),
       receipt_number: "",
       coach_receipt_number: "",
       branch_receipt_number: "",
-      start_date: isDailyEntryPlan ? "" : current.start_date,
-      end_date: isDailyEntryPlan ? "" : current.end_date,
+      start_date: current.start_date || getLocalDateValue(),
+      end_date:
+        current.end_date ||
+        getSubscriptionEndDate(current.start_date || getLocalDateValue(), current.months_count),
     }));
     setErrors((current) => ({ ...current, plan_id: null }));
     onActivityTypeChange?.(activityTypeId);
+  }
+
+  function handleEditMonthsChange(value) {
+    const nextMonths = isDailyEntryPlan ? "1" : value;
+    const nextOriginalAmounts = getSubscriptionOriginalAmounts(resolvedPlan, nextMonths);
+    setForm((current) => ({
+      ...current,
+      months_count: nextMonths,
+      ...(current.is_discount
+        ? current.discount_mode === "split" && isPrivatePlan
+          ? getSplitDiscountFieldsFromPercentages(current, nextOriginalAmounts)
+          : getUnifiedDiscountFields(nextOriginalAmounts, current.discount_percentage, "percentage")
+        : getResetDiscountFields(resolvedPlan, nextMonths)),
+      end_date:
+        current.start_date && !isDailyEntryPlan
+          ? getSubscriptionEndDate(current.start_date, nextMonths)
+          : current.end_date,
+    }));
+    setErrors((current) => ({ ...current, months_count: null, paid_amount: null }));
+  }
+
+  function toggleEditDiscount(checked) {
+    setForm((current) => ({
+      ...current,
+      ...getResetDiscountFields(resolvedPlan, current.months_count),
+      is_discount: checked,
+    }));
+  }
+
+  function changeEditDiscountMode(mode) {
+    setForm((current) => ({
+      ...current,
+      discount_mode: mode,
+      ...getUnifiedDiscountFields(originalAmounts, current.discount_percentage, "percentage"),
+    }));
+  }
+
+  function changeEditUnifiedDiscount(value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getUnifiedDiscountFields(originalAmounts, value, source),
+    }));
+  }
+
+  function changeEditSplitDiscount(side, value, source) {
+    setForm((current) => ({
+      ...current,
+      ...getSplitDiscountFields(current, originalAmounts, side, value, source),
+    }));
+  }
+
+  function changeEditPrivatePaidAmount(side, value) {
+    setForm((current) => {
+      const normalized = Math.max(0, Number(value) || 0);
+      const other =
+        Number(side === "coach" ? current.branch_paid_amount : current.coach_paid_amount) || 0;
+      return {
+        ...current,
+        [`${side}_paid_amount`]: value,
+        paid_amount: Number((normalized + other).toFixed(2)),
+      };
+    });
   }
 
   function handleSubmit(event) {
@@ -624,10 +1517,21 @@ export function SubscriptionEditForm({
         ? {
             coach_receipt_number: form.coach_receipt_number,
             branch_receipt_number: form.branch_receipt_number,
-            coach_paid_amount: splitPaymentAmounts.coachPaidAmount,
-            branch_paid_amount: splitPaymentAmounts.branchPaidAmount,
+            coach_paid_amount: Number(form.coach_paid_amount) || 0,
+            branch_paid_amount: Number(form.branch_paid_amount) || 0,
           }
         : { receipt_number: form.receipt_number }),
+      is_discount: form.is_discount,
+      discount_percentage: form.is_discount ? Number(form.discount_percentage) || 0 : 0,
+      discount_amount: form.is_discount ? Number(form.discount_amount) || 0 : 0,
+      discount_reason: form.is_discount ? form.discount_reason : "",
+      coach_discount_percentage:
+        isPrivatePlan && form.is_discount ? Number(form.coach_discount_percentage) || 0 : undefined,
+      branch_discount_percentage:
+        isPrivatePlan && form.is_discount
+          ? Number(form.branch_discount_percentage) || 0
+          : undefined,
+      currency: subscription?.currency || subscription?.currency_type || "SYP",
       notes: form.notes.trim(),
       reason: form.reason,
     };
@@ -676,13 +1580,10 @@ export function SubscriptionEditForm({
           buttonClassName="h-11 bg-app-card-soft"
           value={selectedActivityTypeId}
           onChange={handleActivityTypeChange}
-          options={[
-            { value: "", label: "الكل" },
-            ...activityTypes.map((activityType) => ({
-              value: String(activityType.id),
-              label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
-            })),
-          ]}
+          options={activityTypes.map((activityType) => ({
+            value: String(activityType.id),
+            label: formatLocalizedName(activityType.name) || `نوع النشاط #${activityType.id}`,
+          }))}
           placeholder={isActivityTypesLoading ? "جاري تحميل أنواع الأنشطة..." : "اختر نوع النشاط"}
           disabled={isActivityTypesLoading}
         />
@@ -705,6 +1606,8 @@ export function SubscriptionEditForm({
           </div>
         ) : (
           <Dropdown
+            searchable
+            searchPlaceholder="ابحث عن خطة الاشتراك..."
             className="mt-2 text-white"
             buttonClassName="h-11 bg-app-card-soft"
             value={form.plan_id}
@@ -755,7 +1658,7 @@ export function SubscriptionEditForm({
             type="number"
             min="1"
             value={form.months_count}
-            onChange={(event) => updateField("months_count", event.target.value)}
+            onChange={(event) => handleEditMonthsChange(event.target.value)}
             className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none ${errors.months_count ? "border-app-red" : "focus:border-app-yellow/70"}`}
           />
           {errors.months_count && (
@@ -764,14 +1667,63 @@ export function SubscriptionEditForm({
         </label>
       </div>
 
+      <SubscriptionDiscountFields
+        form={form}
+        originalTotal={originalAmounts.originalTotal}
+        coachOriginal={originalAmounts.coachOriginal}
+        branchOriginal={originalAmounts.branchOriginal}
+        isPrivatePlan={isPrivatePlan}
+        errors={errors}
+        onToggle={toggleEditDiscount}
+        onModeChange={changeEditDiscountMode}
+        onFinalPriceChange={(value) => changeEditUnifiedDiscount(value, "price")}
+        onPercentageChange={(value) => changeEditUnifiedDiscount(value, "percentage")}
+        onCoachPercentageChange={(value) => changeEditSplitDiscount("coach", value, "percentage")}
+        onBranchPercentageChange={(value) => changeEditSplitDiscount("branch", value, "percentage")}
+        onReasonChange={(value) => updateField("discount_reason", value)}
+      />
+
+      {isPrivatePlan && (
+        <div className="grid gap-3 rounded-xl border border-app-line bg-app-card-soft/40 p-4 sm:grid-cols-2">
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة الكوتش ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.coach_final_price}
+              step="0.01"
+              value={form.coach_paid_amount}
+              onChange={(event) => changeEditPrivatePaidAmount("coach", event.target.value)}
+              disabled={!canEditPaidAmount}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-app-yellow/70"
+            />
+          </label>
+          <label className="block text-right text-sm text-app-muted-light">
+            دفعة النادي ({CURRENCY_SYMBOL})
+            <input
+              type="number"
+              min="0"
+              max={form.branch_final_price}
+              step="0.01"
+              value={form.branch_paid_amount}
+              onChange={(event) => changeEditPrivatePaidAmount("branch", event.target.value)}
+              disabled={!canEditPaidAmount}
+              className="app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 focus:border-app-yellow/70"
+            />
+          </label>
+        </div>
+      )}
+
       {isPrivatePlan ? (
         <div className="rounded-xl border border-yellow-400/25 bg-yellow-400/[0.04] p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال الكوتش *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(resolvedPlan?.coach_price)})
-              </span>
+              {resolvedPlan && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(resolvedPlan?.coach_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.coach_receipt_number}
@@ -795,9 +1747,11 @@ export function SubscriptionEditForm({
 
             <label className="block text-right text-sm text-app-muted-light">
               رقم إيصال النادي *
-              <span className="ms-1 text-xs text-app-yellow">
-                ({formatMoney(resolvedPlan?.branch_price)})
-              </span>
+              {resolvedPlan && (
+                <span className="ms-1 text-xs text-app-yellow">
+                  ({formatMoney(resolvedPlan?.branch_price)})
+                </span>
+              )}
               <input
                 type="text"
                 value={form.branch_receipt_number}
@@ -885,18 +1839,29 @@ export function SubscriptionEditForm({
             step="0.01"
             value={form.paid_amount}
             onChange={(event) => updateField("paid_amount", event.target.value)}
-            disabled={!canEditPaidAmount}
-            title={!canEditPaidAmount ? "تعديل المبلغ متاح للأدمن فقط" : undefined}
+            max={form.final_price}
+            disabled={isPrivatePlan || !canEditPaidAmount}
+            title={
+              isPrivatePlan
+                ? "إجمالي محسوب من دفعتي الكوتش والنادي"
+                : !canEditPaidAmount
+                  ? "تعديل المبلغ متاح للأدمن فقط"
+                  : undefined
+            }
             className={`app-input mt-2 h-11 w-full bg-app-card-soft px-3 text-right text-white outline-none disabled:cursor-not-allowed disabled:opacity-60 ${errors.paid_amount ? "border-app-red" : "focus:border-app-yellow/70"}`}
           />
           {errors.paid_amount && (
             <span className="mt-1 block text-xs text-app-red">{errors.paid_amount}</span>
           )}
-          {!canEditPaidAmount && (
+          {isPrivatePlan ? (
+            <span className="mt-1.5 block text-xs text-app-muted-light">
+              الإجمالي محسوب تلقائياً من دفعتي الكوتش والنادي.
+            </span>
+          ) : !canEditPaidAmount ? (
             <span className="mt-1.5 block text-xs text-app-muted-light">
               تعديل المبلغ متاح للأدمن فقط.
             </span>
-          )}
+          ) : null}
         </label>
       </div>
 

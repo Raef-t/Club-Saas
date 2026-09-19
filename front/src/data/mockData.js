@@ -50,7 +50,6 @@ export const accountingMenu = [
     children: [
       { title: "إيرادات الاشتراكات", href: "/accounting/revenues" },
       { title: "إيرادات إضافية", href: "/accounting/revenues/additional" },
-      { title: "العروض الترويجية", href: "/accounting/revenues/offers" },
     ],
   },
   { title: "إدارة المصاريف", href: "/accounting/expenses" },
@@ -84,10 +83,6 @@ export const pageMeta = {
   "/accounting/revenues/additional": {
     title: "الإيرادات الإضافية",
     subtitle: "جميع الإيرادات المرتبطة بالخدمات الخارجية",
-  },
-  "/accounting/revenues/offers": {
-    title: "العروض الترويجية",
-    subtitle: "عروض الخصومات والباقات الموسمية",
   },
   "/accounting/expenses": {
     title: "إدارة المصاريف",

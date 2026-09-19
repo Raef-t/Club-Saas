@@ -13,6 +13,97 @@ use Exception;
 
 class SubscriptionService
 {
+    public static function calculateDiscountData(float $originalTotal, float $discountPercentage = 0, ?string $reason = null): array
+    {
+        $originalTotal = round((float) $originalTotal, 2);
+        $discountPercentage = max(0, min(100, (float) $discountPercentage));
+        $hasDiscount = $discountPercentage > 0;
+
+        $discountAmount = $hasDiscount ? round($originalTotal * ($discountPercentage / 100), 2) : 0.0;
+        $discountedTotal = round(max(0, $originalTotal - $discountAmount), 2);
+
+        return [
+            'has_discount' => $hasDiscount,
+            'discount_percentage' => round($discountPercentage, 2),
+            'discount_amount' => round($discountAmount, 2),
+            'discounted_total' => $discountedTotal,
+            'original_total' => $originalTotal,
+            'discount_reason' => $reason,
+        ];
+    }
+
+    public static function calculateSplitDiscountData(float $coachOriginalAmount, float $branchOriginalAmount, float $coachDiscountPct = 0, float $branchDiscountPct = 0): array
+    {
+        $coachOriginalAmount = round((float) $coachOriginalAmount, 2);
+        $branchOriginalAmount = round((float) $branchOriginalAmount, 2);
+        $coachDiscountPct = max(0, min(100, (float) $coachDiscountPct));
+        $branchDiscountPct = max(0, min(100, (float) $branchDiscountPct));
+
+        $coachDiscountData = self::calculateDiscountData($coachOriginalAmount, $coachDiscountPct);
+        $branchDiscountData = self::calculateDiscountData($branchOriginalAmount, $branchDiscountPct);
+
+        return [
+            'coach_original_total' => $coachOriginalAmount,
+            'branch_original_total' => $branchOriginalAmount,
+            'coach_discount_percentage' => $coachDiscountData['discount_percentage'],
+            'branch_discount_percentage' => $branchDiscountData['discount_percentage'],
+            'coach_discount_amount' => $coachDiscountData['discount_amount'],
+            'branch_discount_amount' => $branchDiscountData['discount_amount'],
+            'coach_discounted_total' => $coachDiscountData['discounted_total'],
+            'branch_discounted_total' => $branchDiscountData['discounted_total'],
+            'total_after_discount' => round($coachDiscountData['discounted_total'] + $branchDiscountData['discounted_total'], 2),
+        ];
+    }
+
+    public static function calculateDiscountPercentageFromPrice(float $originalTotal, float $discountedTotal): float
+    {
+        $originalTotal = round((float) $originalTotal, 2);
+        $discountedTotal = round((float) $discountedTotal, 2);
+
+        if ($originalTotal <= 0 || $discountedTotal >= $originalTotal) {
+            return 0.0;
+        }
+
+        $discountAmount = max(0.0, $originalTotal - $discountedTotal);
+        $percentage = ($discountAmount / $originalTotal) * 100.0;
+
+        return round(max(0.0, min(100.0, $percentage)), 2);
+    }
+
+    public static function resolveDiscountOptions(float $baseTotal, array $options): array
+    {
+        $baseTotal = round((float) $baseTotal, 2);
+        $reason = $options['discount_reason'] ?? null;
+        $isExplicitDiscount = isset($options['is_discount']) ? (bool) $options['is_discount'] : null;
+
+        if ($isExplicitDiscount === false) {
+            return self::calculateDiscountData($baseTotal, 0.0, $reason);
+        }
+
+        // 1. If discount_percentage is provided and > 0
+        if (isset($options['discount_percentage']) && is_numeric($options['discount_percentage'])) {
+            $pct = max(0.0, min(100.0, (float) $options['discount_percentage']));
+            return self::calculateDiscountData($baseTotal, $pct, $reason);
+        }
+
+        // 2. If discount_amount is provided and > 0
+        if (isset($options['discount_amount']) && is_numeric($options['discount_amount']) && (float) $options['discount_amount'] > 0) {
+            $amount = min($baseTotal, max(0.0, (float) $options['discount_amount']));
+            $pct = $baseTotal > 0 ? round(($amount / $baseTotal) * 100.0, 2) : 0.0;
+            return self::calculateDiscountData($baseTotal, $pct, $reason);
+        }
+
+        // 3. If discounted_price or final_price is provided and < baseTotal
+        $discountedPrice = $options['discounted_price'] ?? $options['final_price'] ?? null;
+        if ($discountedPrice !== null && is_numeric($discountedPrice)) {
+            $pct = self::calculateDiscountPercentageFromPrice($baseTotal, (float) $discountedPrice);
+            return self::calculateDiscountData($baseTotal, $pct, $reason);
+        }
+
+        // Default: no discount
+        return self::calculateDiscountData($baseTotal, 0.0, $reason);
+    }
+
     protected SubscriptionPlanRepositoryInterface $planRepository;
     protected PlayerSubscriptionRepositoryInterface $subscriptionRepository;
     protected MemberSharedServiceInterface $memberSharedService;
@@ -548,23 +639,20 @@ class SubscriptionService
                     $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
                 } else {
                     $branchSetting = $branchId ? \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first() : null;
-                    if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
-                        $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
-                        $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
-                    } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                    if ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
                         $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
                         $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
                     } else {
-                        $coachCommissionRate = 100.00;
-                        $clubCommissionRate  = 0.00;
+                        $coachCommissionRate = 0.00;
+                        $clubCommissionRate  = 100.00;
                     }
                 }
             }
         }
 
         if ($hasExplicitSplit) {
-            $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-            $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+            $totalCoachPrice  = round((float) ($subscription->plan?->coach_price ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+            $totalBranchPrice = round((float) ($subscription->plan?->branch_price ?? $plan->branch_price ?? 0) * $monthsCount, 2);
             $coachAmount = round($totalCoachPrice * ($coachCommissionRate / 100), 2);
             $clubCutFromCoach = round($totalCoachPrice - $coachAmount, 2);
             $clubAmount  = round($totalBranchPrice + $clubCutFromCoach, 2);
@@ -648,7 +736,7 @@ class SubscriptionService
         $totalAmount = (float) $splitData['total_amount'];
         $clubAmount  = (float) $splitData['club_amount'];
         if ($totalAmount <= 0) {
-            return 0.0;
+            return ($payment->safe_id !== null && !$isCoachPayment) ? $amount : 0.0;
         }
 
         $clubRatio = max(0.0, min(1.0, $clubAmount / $totalAmount));
@@ -741,8 +829,38 @@ class SubscriptionService
                     $endDate = $startDate->copy()->addMonths($monthsCount);
                 }
             }
-            $totalAmount = $plan->base_price;
-            $paidAmount = $options['paid_amount'] ?? $totalAmount;
+            $baseTotalAmount = (float) ($options['original_total_amount'] ?? ($plan->base_price * $monthsCount));
+            $discountReason = $options['discount_reason'] ?? null;
+            $discountData = self::resolveDiscountOptions($baseTotalAmount, $options);
+            $discountPercentage = $discountData['discount_percentage'];
+            $coachDiscountPercentage = isset($options['coach_discount_percentage']) && is_numeric($options['coach_discount_percentage'])
+                ? max(0.0, min(100.0, (float) $options['coach_discount_percentage']))
+                : $discountPercentage;
+            $branchDiscountPercentage = isset($options['branch_discount_percentage']) && is_numeric($options['branch_discount_percentage'])
+                ? max(0.0, min(100.0, (float) $options['branch_discount_percentage']))
+                : $discountPercentage;
+            $isDiscount = $discountData['has_discount'] || $coachDiscountPercentage > 0 || $branchDiscountPercentage > 0;
+
+            $hasExplicitSplit = isset($options['coach_price']) || isset($options['branch_price']) || (!is_null($plan->coach_price) && !is_null($plan->branch_price));
+            if ($hasExplicitSplit) {
+                $coachBasePrice = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                $branchBasePrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
+                $coachDiscountData = self::calculateDiscountData($coachBasePrice, $coachDiscountPercentage, $discountReason);
+                $branchDiscountData = self::calculateDiscountData($branchBasePrice, $branchDiscountPercentage, $discountReason);
+                $totalAmount = round($coachDiscountData['discounted_total'] + $branchDiscountData['discounted_total'], 2);
+                $discountData = [
+                    'has_discount' => $isDiscount,
+                    'discount_percentage' => $discountPercentage,
+                    'discount_amount' => round($coachDiscountData['discount_amount'] + $branchDiscountData['discount_amount'], 2),
+                    'discounted_total' => $totalAmount,
+                    'original_total' => round($coachBasePrice + $branchBasePrice, 2),
+                    'discount_reason' => $discountReason,
+                ];
+            } else {
+                $totalAmount = $discountData['discounted_total'];
+            }
+
+            $paidAmount = isset($options['paid_amount']) ? (float) $options['paid_amount'] : $totalAmount;
 
             if ($paidAmount < $totalAmount) {
                 $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
@@ -772,6 +890,12 @@ class SubscriptionService
                 'notes' => $options['notes'] ?? null,
                 'coach_receipt_number' => $coachReceiptNumber,
                 'branch_receipt_number' => $branchReceiptNumber,
+                'is_discount' => $isDiscount,
+                'discount_percentage' => $discountData['discount_percentage'],
+                'coach_discount_percentage' => $coachDiscountPercentage,
+                'branch_discount_percentage' => $branchDiscountPercentage,
+                'discount_amount' => $discountData['discount_amount'],
+                'discount_reason' => $discountReason,
             ]);
 
             // 5. Create Subscription Items (one item per plan activity)
@@ -851,30 +975,32 @@ class SubscriptionService
                         $clubCommissionRate  = max(0.00, 100.00 - $coachCommissionRate);
                     } else {
                         $branchSetting = \Modules\ClubManager\Models\BranchSetting::where('branch_id', $branchId)->first();
-                        if ($branchSetting && $branchSetting->private_subscription_commission !== null && (float) $branchSetting->private_subscription_commission > 0) {
-                            $clubCommissionRate  = (float) $branchSetting->private_subscription_commission;
-                            $coachCommissionRate = max(0.00, 100.00 - $clubCommissionRate);
-                        } elseif ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
+                        if ($branchSetting && ((float) ($branchSetting->default_coach_commission_percentage ?? 0) > 0 || (float) ($branchSetting->default_club_commission_percentage ?? 0) > 0)) {
                             $coachCommissionRate = (float) ($branchSetting->default_coach_commission_percentage ?? 0);
                             $clubCommissionRate  = (float) ($branchSetting->default_club_commission_percentage ?? max(0.00, 100.00 - $coachCommissionRate));
                         } else {
-                            $coachCommissionRate = 100.00;
-                            $clubCommissionRate  = 0.00;
+                            $coachCommissionRate = 0.00;
+                            $clubCommissionRate  = 100.00;
                         }
                     }
                 }
 
                 if ($hasExplicitSplit) {
-                    // نسبة الكوتش ونسبة النادي تؤخذ من coach_price، بينما branch_price يذهب للنادي كاملاً
-                    $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                    $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                    $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                    $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
 
-                    $coachAmount = round($totalCoachPrice * ($coachCommissionRate / 100), 2);
-                    $clubCutFromCoach = round($totalCoachPrice - $coachAmount, 2);
-                    $clubAmount  = round($totalBranchPrice + $clubCutFromCoach, 2);
+                    $coachDiscountValue = isset($options['coach_discount_percentage']) ? (float) $options['coach_discount_percentage'] : ($discountPercentage > 0 ? (float) $discountPercentage : 0.0);
+                    $branchDiscountValue = isset($options['branch_discount_percentage']) ? (float) $options['branch_discount_percentage'] : ($discountPercentage > 0 ? (float) $discountPercentage : 0.0);
+
+                    $coachNetPrice = self::calculateDiscountData($totalCoachPrice, $coachDiscountValue)['discounted_total'];
+                    $branchNetPrice = self::calculateDiscountData($totalBranchPrice, $branchDiscountValue)['discounted_total'];
+
+                    $coachAmount = round($coachNetPrice * ($coachCommissionRate / 100), 2);
+                    $clubCutFromCoach = round($coachNetPrice - $coachAmount, 2);
+                    $clubAmount = round($branchNetPrice + $clubCutFromCoach, 2);
 
                     $coachPct = $coachCommissionRate;
-                    $clubPct  = $clubCommissionRate;
+                    $clubPct = $clubCommissionRate;
                 } else {
                     $coachPct = $coachCommissionRate;
                     $clubPct  = $clubCommissionRate;
@@ -949,8 +1075,8 @@ class SubscriptionService
                         $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
                         $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
                     } elseif ($hasExplicitSplit) {
-                        $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                        $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                        $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                        $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
                         if ($paidAmount >= ($totalCoachPrice + $totalBranchPrice)) {
                             $coachPaid = $totalCoachPrice;
                             $branchPaid = $paidAmount - $coachPaid;
@@ -1010,12 +1136,12 @@ class SubscriptionService
                     $isDualPayment = !empty($coachReceiptNumber) || (isset($options['coach_paid_amount']) && isset($options['branch_paid_amount'])) || (isset($options['coach_price']) && isset($options['branch_price']));
 
                     if ($isDualPayment) {
-                        if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount']) || isset($options['coach_price']) || isset($options['branch_price'])) {
-                            $coachPaid = (float) ($options['coach_paid_amount'] ?? $options['coach_price'] ?? 0);
-                            $branchPaid = (float) ($options['branch_paid_amount'] ?? $options['branch_price'] ?? 0);
+                        if (isset($options['coach_paid_amount']) || isset($options['branch_paid_amount'])) {
+                            $coachPaid = (float) ($options['coach_paid_amount'] ?? 0);
+                            $branchPaid = (float) ($options['branch_paid_amount'] ?? 0);
                         } elseif ($hasExplicitSplit) {
-                            $totalCoachPrice  = round((float) $plan->coach_price * $monthsCount, 2);
-                            $totalBranchPrice = round((float) $plan->branch_price * $monthsCount, 2);
+                            $totalCoachPrice  = round((float) ($options['coach_price'] ?? $plan->coach_price ?? 0) * $monthsCount, 2);
+                            $totalBranchPrice = round((float) ($options['branch_price'] ?? $plan->branch_price ?? 0) * $monthsCount, 2);
                             if ($paidAmount >= ($totalCoachPrice + $totalBranchPrice)) {
                                 $coachPaid = $totalCoachPrice;
                                 $branchPaid = $paidAmount - $coachPaid;
@@ -1580,7 +1706,7 @@ class SubscriptionService
     }
 
     /**
-     * Subscribe a member to an offer, enrolling them in all included plans.
+     * Subscribe a member to an offer, enrolling them in all included plans (bundle) or a selected plan (single_choice).
      */
     public function subscribeMemberToOffer(int $memberId, int $offerId, array $options = [])
     {
@@ -1590,9 +1716,39 @@ class SubscriptionService
             throw new Exception(__('This offer is no longer active.'));
         }
 
-        return DB::transaction(function () use ($memberId, $offer, $options) {
-            // Lock and check capacity for all plans inside transaction
-            foreach ($offer->plans as $planItem) {
+        if (method_exists($offer, 'isDateValid') && !$offer->isDateValid()) {
+            throw new Exception(__('This offer has expired or is not yet active.'));
+        }
+
+        $isSingleChoice = method_exists($offer, 'isSingleChoice') ? $offer->isSingleChoice() : ($offer->offer_type === 'single_choice');
+
+        if ($isSingleChoice) {
+            $selectedPlanId = $options['plan_id'] ?? null;
+            if (!$selectedPlanId) {
+                if ($offer->plans->count() === 1) {
+                    $selectedPlanId = $offer->plans->first()->id;
+                } else {
+                    throw new Exception(__('Please select a plan for this offer.'));
+                }
+            }
+
+            $matchingPlan = $offer->plans->firstWhere('id', (int) $selectedPlanId);
+            if (!$matchingPlan) {
+                throw new Exception(__('The selected plan does not belong to this offer.'));
+            }
+
+            $plansToEnroll = collect([$matchingPlan]);
+        } else {
+            $plansToEnroll = $offer->plans;
+        }
+
+        if ($plansToEnroll->isEmpty()) {
+            throw new Exception(__('This offer does not have any plans configured.'));
+        }
+
+        return DB::transaction(function () use ($memberId, $offer, $options, $plansToEnroll, $isSingleChoice) {
+            // Lock and check capacity for all plans to enroll inside transaction
+            foreach ($plansToEnroll as $planItem) {
                 $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planItem->id)
                     ->lockForUpdate()
                     ->firstOrFail();
@@ -1612,7 +1768,7 @@ class SubscriptionService
 
             // Fetch member details for financials
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
-            $branchId = $memberDTO->branchId;
+            $branchId = $offer->branch_id ?: ($memberDTO->branchId ?? null);
             if (!$branchId) {
                 throw new Exception(__('Member does not belong to any branch.'));
             }
@@ -1632,14 +1788,34 @@ class SubscriptionService
 
             $createdSubscriptions = collect();
 
-            $monthsCount = max(1, (int) ($options['months_count'] ?? 1));
+            // Calculate effective duration and months count from offer or options
+            $durationDays = !empty($options['duration_days'])
+                ? (int) $options['duration_days']
+                : ($offer->duration_days ? (int) $offer->duration_days : null);
 
-            // Create individual PlayerSubscriptions for each plan in the offer
-            foreach ($offer->plans as $plan) {
-                $endDate = isset($options['end_date']) ? Carbon::parse($options['end_date']) : null;
-                if (!$endDate && !empty($options['duration_days'])) {
-                    $endDate = $startDate->copy()->addDays((int) $options['duration_days']);
+            $endDate = isset($options['end_date']) && !empty($options['end_date']) ? Carbon::parse($options['end_date']) : null;
+            if (!$endDate) {
+                if (!empty($durationDays)) {
+                    $endDate = $startDate->copy()->addDays($durationDays);
+                } elseif (isset($options['months_count'])) {
+                    $endDate = $startDate->copy()->addMonths((int) $options['months_count']);
                 }
+            }
+
+            if (isset($options['months_count'])) {
+                $monthsCount = max(1, (int) $options['months_count']);
+            } elseif (!empty($durationDays)) {
+                $monthsCount = max(1, (int) round($durationDays / 30));
+            } else {
+                $monthsCount = 1;
+            }
+
+            // Create individual PlayerSubscriptions for each plan in the enrollment list
+            foreach ($plansToEnroll as $plan) {
+
+                $subTotal = $isSingleChoice ? $totalAmount : 0;
+                $subPaid = $isSingleChoice ? $paidAmount : 0;
+                $subRemaining = $isSingleChoice ? $remainingAmount : 0;
 
                 $subscription = $this->subscriptionRepository->create([
                     'member_id' => $memberId,
@@ -1647,21 +1823,25 @@ class SubscriptionService
                     'months_count' => $monthsCount,
                     'offer_id' => $offer->id,
                     'currency' => $currency,
-                    'total_amount' => 0, // Zero because it's part of the offer
-                    'paid_amount' => 0,
-                    'remaining_amount' => 0,
+                    'total_amount' => $subTotal,
+                    'paid_amount' => $subPaid,
+                    'remaining_amount' => $subRemaining,
                     'start_date' => $startDate->toDateString(),
                     'end_date' => $endDate ? $endDate->toDateString() : null,
                     'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value,
                     'notes' => $options['notes'] ?? __('Subscribed via offer: :offer', ['offer' => $offer->name]),
                 ]);
 
+                if ($isSingleChoice) {
+                    $invoice->update(['player_subscription_id' => $subscription->id]);
+                }
+
                 // One item per plan activity; activity & coach derived from plan_activities → staff_activity
                 $sessionsAllocated = !is_null($plan->session_count)
                     ? ($plan->session_count * $monthsCount)
                     : null;
 
-                if ($plan->planActivities->isNotEmpty()) {
+                if ($plan->planActivities && $plan->planActivities->isNotEmpty()) {
                     foreach ($plan->planActivities as $planActivity) {
                         $subscription->items()->create([
                             'sessions_allocated' => $sessionsAllocated,
@@ -1769,6 +1949,7 @@ class SubscriptionService
     {
         if ($plan) {
             $plan->increment('current_subscribers');
+            $plan->refresh();
             if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
                 $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
             }
@@ -1785,6 +1966,7 @@ class SubscriptionService
                 $plan->decrement('current_subscribers');
             }
             if ($plan->max_subscribers > 0) {
+                $plan->refresh();
                 $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
                     ? $plan->status->value
                     : $plan->status;
@@ -1866,8 +2048,52 @@ class SubscriptionService
                 $offer = \Modules\SubscriptionManager\Models\Offer::findOrFail($data['offer_id']);
                 $totalAmount = (float) $offer->price;
                 $data['total_amount'] = $totalAmount;
+            } elseif (isset($data['months_count']) && (int) $data['months_count'] !== (int) $subscription->months_count) {
+                $monthsCount = max(1, (int) $data['months_count']);
+                $activePlan = $subscription->plan;
+                if ($activePlan && $activePlan->coach_price !== null && $activePlan->branch_price !== null) {
+                    $totalAmount = round(((float) $activePlan->coach_price + (float) $activePlan->branch_price) * $monthsCount, 2);
+                } elseif ($activePlan) {
+                    $totalAmount = round((float) $activePlan->base_price * $monthsCount, 2);
+                } else {
+                    $totalAmount = $oldTotalAmount;
+                }
+                $data['total_amount'] = $totalAmount;
             } else {
                 $totalAmount = $oldTotalAmount;
+            }
+
+            $activePlan = $planChanged ? $newPlan : $subscription->plan;
+            $effectiveMonthsCount = max(1, (int) ($data['months_count'] ?? $subscription->months_count ?? 1));
+
+            $hasDiscountInput = array_key_exists('is_discount', $data)
+                || array_key_exists('discount_percentage', $data)
+                || array_key_exists('discount_amount', $data)
+                || array_key_exists('discounted_price', $data)
+                || array_key_exists('coach_discount_percentage', $data)
+                || array_key_exists('branch_discount_percentage', $data);
+
+            if ($hasDiscountInput || ($planChanged && $subscription->is_discount)) {
+                $baseTotalAmount = $activePlan ? ((float) $activePlan->base_price * $effectiveMonthsCount) : $totalAmount;
+
+                $discountOptions = array_merge([
+                    'is_discount' => $subscription->is_discount,
+                    'discount_percentage' => $subscription->discount_percentage,
+                    'coach_discount_percentage' => $subscription->coach_discount_percentage,
+                    'branch_discount_percentage' => $subscription->branch_discount_percentage,
+                    'discount_amount' => $subscription->discount_amount,
+                    'discount_reason' => $subscription->discount_reason,
+                ], $data);
+
+                $discountData = self::resolveDiscountOptions($baseTotalAmount, $discountOptions);
+                $totalAmount = $discountData['discounted_total'];
+                $data['total_amount'] = $totalAmount;
+                $data['is_discount'] = $discountData['has_discount'];
+                $data['discount_percentage'] = $discountData['discount_percentage'];
+                $data['discount_amount'] = $discountData['discount_amount'];
+                if (array_key_exists('discount_reason', $discountOptions)) {
+                    $data['discount_reason'] = $discountOptions['discount_reason'];
+                }
             }
 
             // 2. Financials Calculation
@@ -1932,6 +2158,14 @@ class SubscriptionService
 
             // 3. Status determination based on dates and sessions
             $today = now()->toDateString();
+
+            // If start_date or months_count is provided without an explicit end_date, calculate end_date automatically
+            if (!array_key_exists('end_date', $data) && (array_key_exists('start_date', $data) || array_key_exists('months_count', $data))) {
+                $effectiveStartDate = Carbon::parse($data['start_date'] ?? $subscription->start_date);
+                $effectiveMonths = max(1, (int) ($data['months_count'] ?? $subscription->months_count ?? 1));
+                $data['end_date'] = $effectiveStartDate->copy()->addMonths($effectiveMonths)->toDateString();
+            }
+
             $effectiveEndDate = array_key_exists('end_date', $data)
                 ? ($data['end_date'] ? Carbon::parse($data['end_date'])->toDateString() : null)
                 : ($subscription->end_date ? Carbon::parse($subscription->end_date)->toDateString() : null);
@@ -1949,9 +2183,22 @@ class SubscriptionService
                 }
             }
 
-            if (!isset($data['status'])) {
-                if ($isDateExpired || $isSessionsExhausted) {
+            $requestedStatus = $data['status'] ?? $oldStatus;
+
+            if ($isDateExpired || $isSessionsExhausted) {
+                // If date has passed or sessions are exhausted, the subscription cannot remain active.
+                // Preserve administrative statuses ('terminated' or 'frozen') if explicitly set, otherwise enforce FINISHED.
+                if ($requestedStatus !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value
+                    && $requestedStatus !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
                     $data['status'] = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value;
+                }
+            } elseif (!$isDateExpired && !$isSessionsExhausted) {
+                // If date is valid and sessions are not exhausted:
+                // Reactivate to ACTIVE if requested as active or if extending a previously finished subscription
+                if ($requestedStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value
+                    || (!isset($data['status']) && $oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value)
+                    || (isset($data['status']) && $data['status'] === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value && $oldStatus === \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FINISHED->value && (array_key_exists('end_date', $data) || array_key_exists('start_date', $data) || array_key_exists('months_count', $data)))) {
+                    $data['status'] = \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value;
                 }
             }
 

@@ -182,14 +182,24 @@ class CoachActivityResource extends JsonResource
                     $staffActivity = $coach->staffActivities->firstWhere('activity_id', $this->id);
                     if ($staffActivity && $staffActivity->relationLoaded('planActivities')) {
                         foreach ($staffActivity->planActivities as $pa) {
-                            if ($pa->relationLoaded('sessionTemplate') && $pa->sessionTemplate && $pa->sessionTemplate->is_active) {
-                                $sessionTemplates->push($pa->sessionTemplate);
-                            }
-                            if ($pa->relationLoaded('plan') && $pa->plan && $pa->plan->relationLoaded('sessionTemplates')) {
-                                foreach ($pa->plan->sessionTemplates as $st) {
-                                    if ($st->is_active) {
-                                        $st->setRelation('subscriptionPlan', $pa->plan);
-                                        $sessionTemplates->push($st);
+                            $plan = $pa->relationLoaded('plan') ? $pa->plan : null;
+                            $isPlanActive = $plan && (
+                                ($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
+                                    ? $plan->status->value === 'active'
+                                    : $plan->status === 'active') &&
+                                !$plan->isCurrentlySuspended()
+                            );
+
+                            if ($isPlanActive) {
+                                if ($pa->relationLoaded('sessionTemplate') && $pa->sessionTemplate && $pa->sessionTemplate->is_active) {
+                                    $sessionTemplates->push($pa->sessionTemplate);
+                                }
+                                if ($pa->relationLoaded('plan') && $pa->plan && $pa->plan->relationLoaded('sessionTemplates')) {
+                                    foreach ($pa->plan->sessionTemplates as $st) {
+                                        if ($st->is_active) {
+                                            $st->setRelation('subscriptionPlan', $pa->plan);
+                                            $sessionTemplates->push($st);
+                                        }
                                     }
                                 }
                             }
@@ -197,6 +207,10 @@ class CoachActivityResource extends JsonResource
                     }
                 } else {
                     $templates = \Modules\Sports\Models\SportSessionTemplate::where('is_active', true)
+                        ->whereHas('subscriptionPlan', function ($planQ) {
+                            $planQ->where('status', \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value)
+                                  ->notSuspended();
+                        })
                         ->where(function ($query) use ($coach) {
                             $query->whereHas('subscriptionPlan.planActivities.staffActivity', function ($q) use ($coach) {
                                 $q->where('staff_id', $coach->id)

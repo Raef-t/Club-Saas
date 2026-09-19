@@ -5,6 +5,7 @@ import {
   useGetMemberQuery,
   useCreatePlayerMutation,
   useUpdatePlayerMutation,
+  useUpdateMemberPhotoMutation,
   useDeleteMemberMutation,
 } from "@/lib/api/membersApi";
 import { useGetBranchesQuery } from "@/lib/api/branchesApi";
@@ -30,6 +31,12 @@ function getBranchesArray(response) {
 
 function getPlansArray(response) {
   return Array.isArray(response?.data) ? response.data : [];
+}
+
+export function createMemberPhotoFormData(photo) {
+  const formData = new FormData();
+  if (photo instanceof File) formData.append("photo", photo);
+  return formData;
 }
 
 /**
@@ -84,6 +91,7 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
 
   const [createPlayer, { isLoading: isCreating }] = useCreatePlayerMutation();
   const [updatePlayer, { isLoading: isUpdating }] = useUpdatePlayerMutation();
+  const [updateMemberPhoto, { isLoading: isUpdatingPhoto }] = useUpdateMemberPhotoMutation();
   const [deleteMember, { isLoading: isDeleting }] = useDeleteMemberMutation();
   const [createPlayerSubscription] = useCreatePlayerSubscriptionMutation();
 
@@ -197,13 +205,29 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
   async function handleCreate(values) {
     setFormError("");
     try {
-      const { plans: _plansPayload, ...memberDetails } = values;
+      const { plans: _plansPayload, photo, ...memberDetails } = values;
 
       const memberResult = await createPlayer(memberDetails).unwrap();
 
       const memberId = memberResult?.data?.member?.id || memberResult?.data?.id || memberResult?.id;
       if (!memberId) {
         throw new Error("لم يتم الحصول على معرف العضو الجديد");
+      }
+
+      if (photo instanceof File) {
+        try {
+          await updateMemberPhoto({
+            id: memberId,
+            body: createMemberPhotoFormData(photo),
+          }).unwrap();
+        } catch (photoError) {
+          console.error("Create member photo error:", photoError);
+          toast.warning(
+            "تم تسجيل اللاعب، لكن تعذر رفع صورته. يمكن إعادة المحاولة من صفحة التعديل.",
+          );
+          closeDrawer();
+          return memberResult;
+        }
       }
 
       toast.success("تم تسجيل اللاعب العضو بنجاح!");
@@ -225,7 +249,23 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     if (!selectedMemberId) return false;
     setFormError("");
     try {
-      await updatePlayer({ id: selectedMemberId, body: values }).unwrap();
+      const { photo, ...memberDetails } = values;
+      await updatePlayer({ id: selectedMemberId, body: memberDetails }).unwrap();
+
+      if (photo instanceof File) {
+        try {
+          await updateMemberPhoto({
+            id: selectedMemberId,
+            body: createMemberPhotoFormData(photo),
+          }).unwrap();
+        } catch (photoError) {
+          console.error("Update member photo error:", photoError);
+          toast.warning("تم حفظ بيانات اللاعب، لكن تعذر رفع الصورة.");
+          closeDrawer();
+          return true;
+        }
+      }
+
       toast.success("تم تعديل بيانات اللاعب بنجاح!");
       closeDrawer();
       return true;
@@ -294,8 +334,8 @@ export function useMembers({ selectedMemberId: initialSelectedMemberId = null, i
     totalResults,
     stats,
     selectedMember,
-    isCreating,
-    isUpdating,
+    isCreating: isCreating || isUpdatingPhoto,
+    isUpdating: isUpdating || isUpdatingPhoto,
     isDeleting,
     handleCreate,
     handleUpdate,

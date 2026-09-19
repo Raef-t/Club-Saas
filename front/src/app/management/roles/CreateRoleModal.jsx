@@ -3,16 +3,23 @@
 import { useEffect, useState } from "react";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import ToggleSwitch from "@/components/ui/ToggleSwitch";
 import { validateRoleName } from "./roleUtils";
 
 export default function CreateRoleModal({ open, onClose, onSubmit, isLoading }) {
   const [name, setName] = useState("");
+  const [nameAr, setNameAr] = useState("");
+  const [isVisible, setIsVisible] = useState(true);
   const [error, setError] = useState("");
+  const [nameArError, setNameArError] = useState("");
 
   useEffect(() => {
     if (open) {
       setName("");
+      setNameAr("");
+      setIsVisible(true);
       setError("");
+      setNameArError("");
     }
   }, [open]);
 
@@ -25,8 +32,19 @@ export default function CreateRoleModal({ open, onClose, onSubmit, isLoading }) 
       return;
     }
 
+    const normalizedNameAr = nameAr.trim();
+    if (normalizedNameAr.length < 2) {
+      setNameArError("الاسم العربي مطلوب ويجب أن يكون حرفين على الأقل.");
+      return;
+    }
+
     setError("");
-    await onSubmit(normalizedName);
+    setNameArError("");
+    await onSubmit({
+      name: normalizedName,
+      name_ar: normalizedNameAr,
+      is_visible: isVisible,
+    });
   }
 
   return (
@@ -66,6 +84,47 @@ export default function CreateRoleModal({ open, onClose, onSubmit, isLoading }) 
             </p>
           )}
         </label>
+
+        <label className="block text-right">
+          <span className="mb-2 block text-sm font-medium text-app-text">
+            الاسم العربي للدور
+            <span className="text-app-red"> *</span>
+          </span>
+          <input
+            type="text"
+            dir="rtl"
+            autoComplete="off"
+            value={nameAr}
+            onChange={(event) => {
+              setNameAr(event.target.value);
+              if (nameArError) setNameArError("");
+            }}
+            className="app-input h-11 w-full px-3 text-right text-sm text-app-text outline-none transition focus:border-app-yellow/70"
+            placeholder="مثال: مشرف الاستقبال"
+            aria-invalid={Boolean(nameArError)}
+            aria-describedby="role-name-ar-error"
+            disabled={isLoading}
+          />
+          {nameArError && (
+            <p id="role-name-ar-error" className="mt-2 text-xs text-app-red">
+              {nameArError}
+            </p>
+          )}
+        </label>
+
+        <div className="flex items-center justify-between rounded-lg border border-app-line bg-app-card-soft/55 px-4 py-3">
+          <div className="text-right">
+            <p className="text-sm font-medium text-app-text">إظهار الدور</p>
+            <p className="mt-0.5 text-xs text-app-muted-light">
+              يظهر الدور ضمن خيارات تعيين المستخدمين.
+            </p>
+          </div>
+          <ToggleSwitch
+            checked={isVisible}
+            onChange={(event) => setIsVisible(event.target.checked)}
+            disabled={isLoading}
+          />
+        </div>
 
         <div className="flex gap-3 border-t border-app-line pt-4">
           <Button type="submit" className="flex-1" loading={isLoading}>

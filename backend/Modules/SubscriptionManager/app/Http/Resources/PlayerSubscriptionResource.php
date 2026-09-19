@@ -8,20 +8,40 @@ class PlayerSubscriptionResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $member = $this->member;
+        if (!$member && !empty($this->member_id)) {
+            $member = \Modules\MemberManager\Models\Member::with(['person.user', 'person.contacts'])->find($this->member_id);
+        }
+
         return [
             'id' => $this->id,
             'branch_id' => $this->plan ? $this->plan->branch_id : null,
-            'member' => $this->resolveMemberData($this->member),
+            'member' => $this->resolveMemberData($member),
             'plan' => new SubscriptionPlanResource($this->whenLoaded('plan')),
+            'offer_id' => $this->offer_id,
+            'offer' => $this->relationLoaded('offer') && $this->offer ? [
+                'id' => $this->offer->id,
+                'name' => $this->offer->name,
+                'offer_type' => $this->offer->offer_type,
+                'duration_days' => $this->offer->duration_days,
+            ] : null,
             'months_count' => $this->months_count ?? 1,
+            'duration_days' => $this->duration_days ? (int) $this->duration_days : ($this->start_date && $this->end_date ? (int) \Illuminate\Support\Carbon::parse($this->start_date)->diffInDays(\Illuminate\Support\Carbon::parse($this->end_date)) : null),
             'start_date' => $this->start_date ? (\Illuminate\Support\Carbon::parse($this->start_date)->format('Y-m-d')) : null,
             'end_date' => $this->end_date ? (\Illuminate\Support\Carbon::parse($this->end_date)->format('Y-m-d')) : null,
             'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->value : $this->status,
             'status_label' => $this->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus ? $this->status->label() : $this->status,
             'is_expiring_soon' => method_exists($this->resource, 'isExpiringSoon') ? $this->isExpiringSoon() : false,
             'total_amount' => $this->total_amount,
+            'original_total_amount' => round((float) $this->total_amount + (float) ($this->discount_amount ?? 0), 2),
             'paid_amount' => $this->paid_amount,
             'remaining_amount' => $this->remaining_amount,
+            'is_discount' => (bool) ($this->is_discount ?? false),
+            'discount_percentage' => $this->discount_percentage ?? 0,
+            'coach_discount_percentage' => $this->coach_discount_percentage ?? 0,
+            'branch_discount_percentage' => $this->branch_discount_percentage ?? 0,
+            'discount_amount' => $this->discount_amount ?? 0,
+            'discount_reason' => $this->discount_reason,
             'currency' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
             'currency_type' => $this->currency ?? ($this->plan?->currency ?? 'SYP'),
             'notes' => $this->notes,
@@ -104,32 +124,61 @@ class PlayerSubscriptionResource extends JsonResource
 
         if ($member instanceof \Modules\Core\DTOs\MemberDTO) {
             $person = $member->person;
+            $username = $member->username ?? $person?->username ?? null;
+            $customUsername = $member->customUsername ?? $person?->customUsername ?? null;
+
+            if ($username === null && !empty($member->personId)) {
+                $user = \Modules\Authentication\Models\User::where('person_id', $member->personId)->first();
+                $username = $user?->username ?? null;
+                $customUsername = $user?->custom_username ?? null;
+            }
+
             return [
                 'id' => $member->id,
                 'member_number' => $member->memberNumber,
                 'membership_status' => $member->status,
                 'status' => $member->status,
                 'is_active' => $member->isActive,
+                'username' => $username,
+                'custom_username' => $customUsername,
+                'custom_user_name' => $customUsername,
+                'generated_username' => $username,
                 'person' => $person ? [
                     'full_name' => $person->fullName,
                     'email' => $person->email,
                     'phone' => $person->mobile1,
+                    'username' => $username,
+                    'custom_username' => $customUsername,
+                    'custom_user_name' => $customUsername,
+                    'generated_username' => $username,
                 ] : null,
             ];
         }
 
         $person = $member->person;
         $status = $member->membership_status ?? ($member->status ?? null);
+        $user = $person?->user ?? (!empty($member->person_id) ? \Modules\Authentication\Models\User::where('person_id', $member->person_id)->first() : null);
+        $username = $user?->username ?? null;
+        $customUsername = $user?->custom_username ?? null;
+
         return [
             'id' => $member->id,
             'member_number' => $member->member_number ?? ($member->memberNumber ?? null),
             'membership_status' => $status,
             'status' => $status,
             'is_active' => $member->is_active ?? ($status === 'active'),
+            'username' => $username,
+            'custom_username' => $customUsername,
+            'custom_user_name' => $customUsername,
+            'generated_username' => $username,
             'person' => $person ? [
                 'full_name' => $person->full_name ?? ($person->fullName ?? null),
                 'email' => $person->email,
                 'phone' => $person->contacts?->first()?->phone_number ?? ($person->mobile1 ?? null),
+                'username' => $username,
+                'custom_username' => $customUsername,
+                'custom_user_name' => $customUsername,
+                'generated_username' => $username,
             ] : null,
         ];
     }

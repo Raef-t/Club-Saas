@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LoginForm from "./LoginForm";
 
 const replace = vi.fn();
@@ -14,11 +14,16 @@ vi.mock("@/components/common/BrandLogo", () => ({
 }));
 
 describe("LoginForm", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_PASSWORD_HASH_SECRET_KEY", "oid900=rjfreipwhefdk");
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
     replace.mockReset();
     refresh.mockReset();
+    vi.unstubAllEnvs();
   });
 
   it("submits credentials without client-side validation and displays backend errors", async () => {
@@ -52,7 +57,7 @@ describe("LoginForm", () => {
         method: "POST",
         body: JSON.stringify({
           username: "تجربة",
-          password: "1",
+          password: "14d13db470da41ed4b8de24e3f04e097efe6d8f739201f343ffcb7662cf50eae",
           fcm_token: "fcm_token_string_here",
         }),
       }),

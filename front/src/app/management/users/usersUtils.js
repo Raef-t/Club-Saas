@@ -186,3 +186,61 @@ export function createUserStats(users, { roleFilter, setRoleFilter } = {}) {
     },
   ];
 }
+
+export function isSuperAdminUser(user) {
+  const roles = getUserRoles(user).map((role) =>
+    typeof role === "object" && role?.name ? role.name : String(role || ""),
+  );
+  return roles.includes("super_admin");
+}
+
+export function getUserAccountStatus(user) {
+  const isActive = Boolean(user?.is_active ?? true);
+  return {
+    isActive,
+    label: isActive ? "نشط" : "موقوف",
+    className: isActive
+      ? "bg-[rgba(19,172,73,0.16)] text-app-green"
+      : "bg-[rgba(228,0,0,0.16)] text-app-red",
+  };
+}
+
+export function canToggleUserStatus(targetUser, currentUser, canTogglePermission = true) {
+  if (!canTogglePermission) {
+    return {
+      allowed: false,
+      reason: "ليس لديك صلاحية لتعديل حالة الحساب.",
+    };
+  }
+
+  const currentUserId = currentUser?.id ?? currentUser?.user?.id;
+  const isSelf = Boolean(
+    currentUserId !== undefined &&
+      currentUserId !== null &&
+      targetUser?.id !== undefined &&
+      targetUser?.id !== null &&
+      String(currentUserId) === String(targetUser.id),
+  );
+
+  const isActive = Boolean(targetUser?.is_active ?? true);
+
+  if (isSelf && isActive) {
+    return {
+      allowed: false,
+      reason: "لا يمكنك تعطيل حسابك الشخصي.",
+    };
+  }
+
+  if (isSuperAdminUser(targetUser) && isActive) {
+    return {
+      allowed: false,
+      reason: "لا يمكن تعطيل حساب مدير النظام (super_admin).",
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: null,
+  };
+}
+

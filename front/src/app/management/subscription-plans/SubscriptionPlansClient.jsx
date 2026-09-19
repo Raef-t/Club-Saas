@@ -185,7 +185,7 @@ function PlanActivitiesFields({ items, activities, branchId, errors, onChange })
   );
 }
 
-const TABLE_GRID_COLUMNS = "minmax(220px,1fr) 118px 100px 96px 112px 96px 136px";
+const TABLE_GRID_COLUMNS = "48px minmax(220px,1fr) 118px 100px 96px 112px 96px 136px";
 
 const initialForm = {
   branch_id: "",
@@ -1115,6 +1115,13 @@ export default function SubscriptionPlansClient({ initialData }) {
 
   const columns = useMemo(
     () => [
+      {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
       {
         key: "name",
         label: "الفعالية",

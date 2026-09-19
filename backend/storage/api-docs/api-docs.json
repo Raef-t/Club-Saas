@@ -5387,7 +5387,7 @@
                     "Authentication"
                 ],
                 "summary": "🔑 تغيير كلمة المرور وتعيين اسم المستخدِم المخصص (اختياري)",
-                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي أو لمستخدم آخر بتمرير user_id، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
+                "description": "تغيير كلمة المرور الخاصة بالمستخدم الحالي، مع إمكانية تمرير custom_username (اختيارياً) لتعيين اسم مستخدم فريد في نفس الطلب.",
                 "operationId": "adee7bb230546c3fae464b3ec1f457b6",
                 "requestBody": {
                     "description": "بيانات تغيير كلمة المرور وتحديث اسم المستخدم المخصص",
@@ -5400,21 +5400,15 @@
                                     "new_password_confirmation"
                                 ],
                                 "properties": {
-                                    "user_id": {
-                                        "description": "معرف المستخدم (في حال تعديل كلمة سر مستخدم آخر)",
-                                        "type": "integer",
-                                        "example": 15,
-                                        "nullable": true
-                                    },
                                     "new_password": {
-                                        "description": "كلمة المرور الجديدة",
+                                        "description": "كلمة المرور الجديدة (يجب ألا تكون كلمة المرور الافتراضية 12345678)",
                                         "type": "string",
-                                        "example": "12345678"
+                                        "example": "NewSecret@2026"
                                     },
                                     "new_password_confirmation": {
                                         "description": "تأكيد كلمة المرور الجديدة",
                                         "type": "string",
-                                        "example": "12345678"
+                                        "example": "NewSecret@2026"
                                     },
                                     "custom_username": {
                                         "description": "اسم المستخدم المخصص الفريد (اختياري)",
@@ -22698,6 +22692,12 @@
                                             "type": "integer",
                                             "example": 1
                                         }
+                                    },
+                                    "delete_photo": {
+                                        "description": "حذف صورة المدرب (true لحذف الصورة الحالية)",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -22907,6 +22907,12 @@
                                         "description": "صورة المدرب (اتركه فارغاً لحذف الصورة)",
                                         "type": "string",
                                         "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "delete_photo": {
+                                        "description": "حدد true لحذف الصورة الحالية",
+                                        "type": "boolean",
+                                        "example": false,
                                         "nullable": true
                                     }
                                 },
@@ -27519,6 +27525,14 @@
                                                         "example": "اشتراك سباحة + لياقة بدنية بسعر مخفض",
                                                         "nullable": true
                                                     },
+                                                    "offer_type": {
+                                                        "type": "string",
+                                                        "example": "bundle",
+                                                        "enum": [
+                                                            "bundle",
+                                                            "single_choice"
+                                                        ]
+                                                    },
                                                     "price": {
                                                         "type": "number",
                                                         "format": "float",
@@ -27632,8 +27646,17 @@
                                         "example": "خصومات حصرية لمشتركي النادي",
                                         "nullable": true
                                     },
+                                    "offer_type": {
+                                        "description": "نوع العرض (bundle للباقة المجمعة، single_choice لاختيار فعالية واحدة)",
+                                        "type": "string",
+                                        "example": "bundle",
+                                        "enum": [
+                                            "bundle",
+                                            "single_choice"
+                                        ]
+                                    },
                                     "price": {
-                                        "description": "(مطلوب) السعر الإجمالي",
+                                        "description": "(مطلوب) السعر الإجمالي أو سعر الفعالية الواحدة المشمولة",
                                         "type": "number",
                                         "format": "float",
                                         "example": 1200
@@ -27935,6 +27958,14 @@
                                     "description": {
                                         "type": "string",
                                         "example": "وصف العرض بعد التعديل"
+                                    },
+                                    "offer_type": {
+                                        "type": "string",
+                                        "example": "single_choice",
+                                        "enum": [
+                                            "bundle",
+                                            "single_choice"
+                                        ]
                                     },
                                     "price": {
                                         "type": "number",
@@ -28421,6 +28452,12 @@
                                         "description": "(مطلوب) معرف اللاعب",
                                         "type": "integer",
                                         "example": 5
+                                    },
+                                    "plan_id": {
+                                        "description": "(اختياري/مطلوب في حال كان العرض single_choice) معرف الخطة المختارة",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     },
                                     "paid_amount": {
                                         "description": "(مطلوب) المبلغ المدفوع",
@@ -29440,6 +29477,46 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "is_discount": {
+                                        "description": "هل الاشتراك مشمول بحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري، تحسب تلقائياً إذا تم إدخال السعر بعد الحسم)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع/النادي (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "قيمة مبلغ الحسم المقطوع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "حسم خاص لمشتركة قديمة",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -29820,6 +29897,46 @@
                                         "description": "رقم إيصال دفعة النادي/الفرع للاشتراك الخاص (اختياري)",
                                         "type": "string",
                                         "example": "REC-CLUB-006",
+                                        "nullable": true
+                                    },
+                                    "is_discount": {
+                                        "description": "تفعيل أو إلغاء الحسم (اختياري)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "discount_percentage": {
+                                        "description": "نسبة الحسم من 0 إلى 100% (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "coach_discount_percentage": {
+                                        "description": "نسبة حسم حصة الكوتش (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "branch_discount_percentage": {
+                                        "description": "نسبة حسم حصة الفرع (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 20,
+                                        "nullable": true
+                                    },
+                                    "discount_amount": {
+                                        "description": "مبلغ الحسم (اختياري)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 60000,
+                                        "nullable": true
+                                    },
+                                    "discount_reason": {
+                                        "description": "سبب الحسم (اختياري)",
+                                        "type": "string",
+                                        "example": "تعديل سبب الحسم",
                                         "nullable": true
                                     },
                                     "notes": {

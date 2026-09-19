@@ -9,12 +9,57 @@ class OfferResource extends JsonResource
     public function toArray($request)
     {
         $plans = $this->relationLoaded('plans') ? $this->plans : $this->plans()->get();
+        $offerType = $this->offer_type ?? 'bundle';
+        $isBundle = $offerType === 'bundle';
         $availableSlots = null;
+        $isCapacityAvailable = true;
+        $isDateValid = method_exists($this->resource, 'isDateValid') ? $this->isDateValid() : true;
 
         if ($plans && $plans->isNotEmpty()) {
-            $limitedPlans = $plans->filter(fn($p) => (int) $p->max_subscribers > 0);
-            if ($limitedPlans->isNotEmpty()) {
-                $availableSlots = (int) $limitedPlans->min(fn($p) => max(0, (int) $p->max_subscribers - (int) $p->current_subscribers));
+            if ($isBundle) {
+                $hasFullPlan = false;
+                $limitedSlots = [];
+                foreach ($plans as $p) {
+                    $max = (int) $p->max_subscribers;
+                    $current = method_exists($p, 'getCurrentSubscribersCount') ? $p->getCurrentSubscribersCount() : (int) $p->current_subscribers;
+                    if ($max > 0) {
+                        $remaining = max(0, $max - $current);
+                        $limitedSlots[] = $remaining;
+                        if ($remaining <= 0) {
+                            $hasFullPlan = true;
+                        }
+                    }
+                }
+                if ($hasFullPlan) {
+                    $isCapacityAvailable = false;
+                    $availableSlots = 0;
+                } elseif (!empty($limitedSlots)) {
+                    $availableSlots = min($limitedSlots);
+                }
+            } else {
+                $totalAvailableSlots = 0;
+                $hasLimitedPlan = false;
+                $hasAvailablePlan = false;
+
+                foreach ($plans as $p) {
+                    $max = (int) $p->max_subscribers;
+                    $current = method_exists($p, 'getCurrentSubscribersCount') ? $p->getCurrentSubscribersCount() : (int) $p->current_subscribers;
+                    if ($max > 0) {
+                        $hasLimitedPlan = true;
+                        $remaining = max(0, $max - $current);
+                        $totalAvailableSlots += $remaining;
+                        if ($remaining > 0) {
+                            $hasAvailablePlan = true;
+                        }
+                    } else {
+                        $hasAvailablePlan = true;
+                    }
+                }
+
+                $isCapacityAvailable = $hasAvailablePlan;
+                if ($hasLimitedPlan) {
+                    $availableSlots = $totalAvailableSlots;
+                }
             }
         }
 
@@ -23,12 +68,23 @@ class OfferResource extends JsonResource
             'branch_id'       => $this->branch_id,
             'name'            => $this->name,
             'description'     => $this->description,
+            'offer_type'      => $offerType,
             'price'           => (float) $this->price,
+            'duration_days'   => $this->duration_days ? (int) $this->duration_days : null,
+            'duration_months' => $this->duration_months ?? ($this->duration_days ? round($this->duration_days / 30, 1) : null),
+            'duration_formatted' => $this->duration_formatted ?? ($this->duration_days ? "{$this->duration_days} يوم" : null),
             'start_date'      => $this->start_date ? $this->start_date->format('Y-m-d') : null,
             'end_date'        => $this->end_date ? $this->end_date->format('Y-m-d') : null,
             'is_active'       => (bool) $this->is_active,
             'available_slots' => $availableSlots,
-            'is_available'    => (bool) $this->is_active && ($availableSlots === null || $availableSlots > 0),
+            'is_available'    => (bool) $this->is_active && $isDateValid && $isCapacityAvailable,
+            'active_subscribers_count' => $this->relationLoaded('subscriptions')
+                ? $this->subscriptions->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)->count()
+                : $this->subscriptions()->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)->count(),
+            'branch'          => $this->relationLoaded('branch') && $this->branch ? [
+                'id'   => $this->branch->id,
+                'name' => $this->branch->name,
+            ] : null,
             'plans'           => SubscriptionPlanResource::collection($this->whenLoaded('plans')),
             'created_at'      => $this->created_at,
             'updated_at'      => $this->updated_at,

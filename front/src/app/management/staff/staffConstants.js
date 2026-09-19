@@ -1,5 +1,5 @@
 export const STAFF_TABLE_GRID =
-  "minmax(180px,1.35fr) 130px minmax(130px,1fr) 140px 130px 100px 100px";
+  "48px minmax(180px,1.35fr) 130px minmax(130px,1fr) 140px 130px 100px 100px";
 
 export const STAFF_ROLE_LABELS = {
   admin: "مدير النظام",

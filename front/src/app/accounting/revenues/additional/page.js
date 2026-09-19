@@ -2,14 +2,16 @@ import StatsGrid from "@/components/ui/StatsGrid";
 import Tabs from "@/components/ui/Tabs";
 import DataTable from "@/components/ui/DataTable";
 import { additionalRevenueColumns, additionalRevenues, revenueStats } from "@/data/mockData";
+import { verifyPageAccess } from "@/lib/server/auth";
 
 const tabs = [
   { title: "إيرادات الاشتراكات", href: "/accounting/revenues" },
   { title: "إيرادات إضافية", href: "/accounting/revenues/additional" },
-  { title: "العروض الترويجية", href: "/accounting/revenues/offers" },
 ];
 
-export default function AdditionalRevenuesPage() {
+export default async function AdditionalRevenuesPage() {
+  await verifyPageAccess("/accounting/revenues/additional");
+
   return (
     <div className="space-y-6">
       <StatsGrid items={revenueStats} />

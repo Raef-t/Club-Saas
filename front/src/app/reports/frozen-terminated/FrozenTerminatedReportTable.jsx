@@ -26,6 +26,14 @@ export default function FrozenTerminatedReportTable({ rows, summary, isLoading, 
 
   const columns = [
     {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
+    {
       key: "accountName",
       label: "اسم الحساب",
       width: "130px",

@@ -17,7 +17,7 @@ import {
 } from "@/components/icons/Icons";
 import CreateRoleModal from "./CreateRoleModal";
 import EditRoleModal from "./EditRoleModal";
-import { getRolePresentation } from "./roleUtils";
+import { getRolePresentation, isProtectedRole } from "./roleUtils";
 import { useRoles } from "./useRoles";
 import { usePermissions } from "@/lib/PermissionContext";
 
@@ -34,6 +34,7 @@ const TONE_CLASSES = {
 function RoleCard({ role, onEdit, onDelete, canView, canDelete, canUpdate }) {
   const presentation = getRolePresentation(role);
   const permissionCount = Number(role.permissions_count ?? role.permissions?.length ?? 0);
+  const isProtected = isProtectedRole(role);
 
   return (
     <article className="card-shell group flex min-h-64 flex-col rounded-2xl p-5 transition hover:-translate-y-0.5 hover:border-app-yellow/35">
@@ -43,7 +44,7 @@ function RoleCard({ role, onEdit, onDelete, canView, canDelete, canUpdate }) {
         >
           <SettingsIcon className="size-6" />
         </div>
-        {role.is_protected ? (
+        {isProtected ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-app-blue/25 bg-app-blue/10 px-2.5 py-1 text-[11px] text-app-blue">
             <SealCheckIcon className="size-3.5" />
             دور محمي
@@ -71,7 +72,7 @@ function RoleCard({ role, onEdit, onDelete, canView, canDelete, canUpdate }) {
           </span>
         </div>
         <div className="flex gap-2">
-          {canUpdate && !role.is_protected && (
+          {canUpdate && !isProtected && (
             <button
               type="button"
               onClick={() => onEdit(role)}
@@ -96,9 +97,9 @@ function RoleCard({ role, onEdit, onDelete, canView, canDelete, canUpdate }) {
             <button
               type="button"
               onClick={() => onDelete(role)}
-              disabled={role.is_protected}
+              disabled={isProtected}
               className="grid size-9 place-items-center rounded-lg border border-app-line bg-app-card-soft text-app-red transition hover:border-app-red/60 hover:bg-app-red/10 disabled:cursor-not-allowed disabled:opacity-35"
-              title={role.is_protected ? "لا يمكن حذف دور محمي" : "حذف الدور"}
+              title={isProtected ? "لا يمكن حذف دور محمي" : "حذف الدور"}
               aria-label={`حذف ${presentation.label}`}
             >
               <TrashIcon className="size-4" />

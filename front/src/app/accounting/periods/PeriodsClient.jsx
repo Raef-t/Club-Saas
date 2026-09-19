@@ -74,6 +74,7 @@ export default function PeriodsClient({ initialPeriods = [] }) {
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">اسم الفترة</th>
                   <th className="p-3">تاريخ البداية</th>
                   <th className="p-3">تاريخ النهاية</th>
@@ -82,7 +83,7 @@ export default function PeriodsClient({ initialPeriods = [] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {filteredPeriods.map((period) => {
+                {filteredPeriods.map((period, idx) => {
                   const statusInfo = PERIOD_STATUSES[period.status] || {
                     label: period.status,
                     color: "text-app-text",
@@ -90,6 +91,7 @@ export default function PeriodsClient({ initialPeriods = [] }) {
 
                   return (
                     <tr key={period.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-medium text-app-text">{period.name}</td>
                       <td className="p-3 font-mono text-app-muted">{period.start_date}</td>
                       <td className="p-3 font-mono text-app-muted">{period.end_date}</td>

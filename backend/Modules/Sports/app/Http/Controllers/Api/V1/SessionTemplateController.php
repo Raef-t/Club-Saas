@@ -138,10 +138,25 @@ class SessionTemplateController extends BaseController
 
         $sessions = SportSessionTemplate::active()
             ->whereHas('subscriptionPlan', function ($query) use ($branchId) {
-                $query->where('status', '!=', SubscriptionPlanStatus::INACTIVE);
+                $query->where('status', SubscriptionPlanStatus::ACTIVE->value)
+                    ->notSuspended();
                 if (!empty($branchId)) {
                     $query->where('branch_id', $branchId);
                 }
+                $query->where(function ($subQ) {
+                    $subQ->whereDoesntHave('planActivities')
+                        ->orWhereHas('planActivities', function ($paQ) {
+                            $paQ->whereHas('staffActivity.activity', function ($actQ) {
+                                $actQ->where('is_active', true);
+                            })->where(function ($staffQ) {
+                                $staffQ->whereDoesntHave('staffActivity.staff')
+                                    ->orWhereHas('staffActivity.staff', function ($s) {
+                                        $s->where('is_active', true)
+                                          ->where('work_status', 'active');
+                                    });
+                            });
+                        });
+                });
             })
             ->with([
                 'facility',

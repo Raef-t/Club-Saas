@@ -179,6 +179,13 @@ export default function CoachesClient({ initialData }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "المدرب",
         align: "start",

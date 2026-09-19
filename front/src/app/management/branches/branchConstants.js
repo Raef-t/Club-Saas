@@ -1,4 +1,4 @@
-export const BRANCH_TABLE_COLUMNS = "minmax(180px,1.2fr) 120px 180px 140px 110px 110px";
+export const BRANCH_TABLE_COLUMNS = "48px minmax(180px,1.2fr) 120px 180px 140px 110px 110px";
 
 export const BRANCH_GENDER_OPTIONS = [
   { value: "mixed", label: "مختلط" },
