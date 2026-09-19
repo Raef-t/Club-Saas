@@ -273,7 +273,9 @@ export default function PlayerProfileClient({
 
         {activeTab === "plans" && <PlayerPlansTab branchId={playerBranchId} />}
 
-        {activeTab === "coaches" && <PlayerCoachesTab branchId={playerBranchId} />}
+        {activeTab === "coaches" && (
+          <PlayerCoachesTab branchId={playerBranchId} branches={initialBranches} />
+        )}
 
         {/* Subscription Details Modal */}
         <Modal

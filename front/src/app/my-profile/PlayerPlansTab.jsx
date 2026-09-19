@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { useGetSubscriptionPlansQuery } from "@/lib/api/subscriptionPlansApi";
 import { useGetActivityTypesQuery } from "@/lib/api/activitiesApi";
-import { CURRENCY_SYMBOL } from "@/lib/utils";
 
 export default function PlayerPlansTab({ branchId }) {
   const [selectedActivityType, setSelectedActivityType] = useState("الكل");
@@ -147,7 +146,6 @@ export default function PlayerPlansTab({ branchId }) {
               typeof plan.name === "object"
                 ? plan.name.ar || plan.name.en
                 : plan.name || "باقة رياضية";
-            const price = Number(plan.price || plan.base_price || 0).toLocaleString("ar");
             const duration = plan.duration_days
               ? `${plan.duration_days} يوم`
               : plan.duration_months
@@ -173,11 +171,6 @@ export default function PlayerPlansTab({ branchId }) {
                     <span className="shrink-0 rounded-full bg-app-yellow/15 px-2.5 py-0.5 text-xs font-semibold text-app-yellow">
                       {duration}
                     </span>
-                  </div>
-
-                  <div className="mt-3 flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-app-yellow">{price}</span>
-                    <span className="text-xs text-app-muted-light">{CURRENCY_SYMBOL || "ل.س"}</span>
                   </div>
 
                   <div className="mt-4 space-y-2 border-t border-app-line/50 pt-3 text-xs text-app-muted-light">
