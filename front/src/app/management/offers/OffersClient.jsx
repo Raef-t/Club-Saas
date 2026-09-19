@@ -20,7 +20,7 @@ import OfferDetailsDrawer from "./_components/OfferDetailsDrawer";
 import OffersToolbar from "./_components/OffersToolbar";
 import { filterOffers, getOffersCollection, getPlanCapacity } from "./_lib/offerPresentation";
 
-const TABLE_GRID_COLUMNS = "minmax(180px,1.2fr) minmax(260px,2fr) 110px 120px 105px 110px";
+const TABLE_GRID_COLUMNS = "48px minmax(180px,1.2fr) minmax(260px,2fr) 110px 120px 105px 110px";
 
 export default function OffersClient() {
   const toast = useToast();
@@ -123,6 +123,13 @@ export default function OffersClient() {
   // DataTable columns definition متطابق مع جدول الفعاليات وبدون تاريخ
   const columns = useMemo(
     () => [
+      {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
       {
         key: "name",
         label: "العرض الترويجي",

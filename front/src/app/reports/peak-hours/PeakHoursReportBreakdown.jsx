@@ -30,6 +30,14 @@ function HourRanking({ title, items, tone }) {
 
 export default function PeakHoursReportBreakdown({ report, isLoading }) {
   const dailyColumns = [
+    {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
     { key: "dayName", label: "اليوم", width: "1fr" },
     {
       key: "totalCheckIns",

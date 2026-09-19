@@ -107,6 +107,7 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">اسم العضو / اللاعب</th>
                   <th className="p-3">الباقة / الخطة</th>
                   <th className="p-3">تاريخ البداية</th>
@@ -118,7 +119,7 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {filteredSubscriptions.map((sub) => {
+                {filteredSubscriptions.map((sub, idx) => {
                   const playerName =
                     sub.player?.person?.full_name ||
                     `${sub.player?.person?.first_name || ""} ${sub.player?.person?.last_name || ""}`.trim() ||
@@ -131,6 +132,7 @@ export default function SubscriptionsAccountingClient({ initialSubscriptions = [
 
                   return (
                     <tr key={sub.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-medium text-app-text">{playerName}</td>
                       <td className="p-3 text-app-muted-light">{sub.plan?.name || "باقة عامة"}</td>
                       <td className="p-3 font-mono text-app-muted">{sub.start_date || "-"}</td>

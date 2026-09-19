@@ -43,6 +43,14 @@ export default function ShiftAttendanceReportTable({
 }) {
   const columns = [
     {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
+    {
       key: "shiftName",
       label: "اسم الوردية",
       width: "minmax(120px, 1.3fr)",

@@ -32,14 +32,15 @@ function buildMetricsHtml(metrics) {
  * Creates the printable table for one report.
  */
 function buildTableHtml(report) {
-  const header = report.columns
+  const header = `<th>#</th>` + report.columns
     .map((column) => `<th>${escapeReportHtml(column.label)}</th>`)
     .join("");
   const body = report.rows.length
     ? report.rows
         .map(
-          (row) => `
+          (row, rowIndex) => `
             <tr>
+              <td style="text-align: center; width: 40px;">${rowIndex + 1}</td>
               ${report.columns
                 .map((column) => `<td>${escapeReportHtml(row[column.key])}</td>`)
                 .join("")}
@@ -47,7 +48,7 @@ function buildTableHtml(report) {
           `,
         )
         .join("")
-    : `<tr><td class="empty" colspan="${report.columns.length}">${escapeReportHtml(
+    : `<tr><td class="empty" colspan="${report.columns.length + 1}">${escapeReportHtml(
         report.emptyMessage,
       )}</td></tr>`;
 

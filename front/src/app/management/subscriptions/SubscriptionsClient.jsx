@@ -134,8 +134,10 @@ export default function SubscriptionsClient({ initialData }) {
             typeof plan.name === "string" ? plan.name : plan.name?.ar || plan.name?.en || "-";
 
           return (
-            <div className="min-w-0 text-center">
-              <p className="truncate font-medium text-app-text">{planName}</p>
+            <div className="min-w-0 max-w-[220px] text-center">
+              <p className="font-medium text-app-text whitespace-normal break-words leading-relaxed">
+                {planName}
+              </p>
               <p className="mt-1 text-[11px] text-app-muted-light">
                 {plan.session_count ? `${plan.session_count} جلسة` : "مفتوح"}
               </p>

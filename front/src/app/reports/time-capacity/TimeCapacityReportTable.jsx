@@ -29,6 +29,14 @@ function UtilizationCell({ value }) {
 
 export default function TimeCapacityReportTable({ rows, isLoading }) {
   const columns = [
+    {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
     { key: "activityName", label: "النشاط", width: "minmax(160px,1.2fr)" },
     { key: "coachName", label: "الكوتش", width: "minmax(150px,1fr)" },
     { key: "planName", label: "الخطة", width: "minmax(170px,1.25fr)" },
@@ -88,7 +96,7 @@ export default function TimeCapacityReportTable({ rows, isLoading }) {
       isLoading={isLoading}
       pageSize={10}
       pageSizeOptions={[10, 20, 50, 100]}
-      minWidth="1380px"
+      minWidth="1430px"
       desktopScrollable
       emptyMessage="لا توجد حصص أو خطط مطابقة للفلاتر المختارة."
     />

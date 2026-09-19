@@ -23,6 +23,14 @@ export default function HolidaysSettingsTab({
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        width: "48px",
+        sortable: false,
+      },
+      {
         key: "type",
         label: "نوع العطلة / الإجازة",
         align: "center",

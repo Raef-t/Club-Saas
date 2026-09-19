@@ -188,6 +188,7 @@ export default function JournalsClient({
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">رقم السند</th>
                   <th className="p-3">التاريخ</th>
                   <th className="p-3">النوع</th>
@@ -199,7 +200,7 @@ export default function JournalsClient({
                 </tr>
               </thead>
               <tbody className="divide-y divide-app-line/20 text-app-text text-xs">
-                {journals.map((journal) => {
+                {journals.map((journal, idx) => {
                   const typeInfo = JOURNAL_TYPES[journal.type] || { label: journal.type, badge: "bg-app-card" };
                   const statusInfo = JOURNAL_STATUSES[journal.status] || { label: journal.status, color: "bg-app-card" };
 
@@ -208,6 +209,7 @@ export default function JournalsClient({
 
                   return (
                     <tr key={journal.id} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-mono font-bold text-app-yellow">
                         {journal.number || `#${journal.id}`}
                       </td>

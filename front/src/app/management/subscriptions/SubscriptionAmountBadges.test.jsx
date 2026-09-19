@@ -1,11 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import SubscriptionAmountBadges from "./SubscriptionAmountBadges";
 
 describe("subscription amount badges", () => {
   afterEach(() => cleanup());
 
-  it("always shows the net price and paid amount as separate badges", () => {
+  it("shows the net price without the label and displays paid amount in tooltip", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -16,13 +16,21 @@ describe("subscription amount badges", () => {
       />,
     );
 
-    expect(screen.getByText("الصافي:")).toBeInTheDocument();
-    expect(screen.getByText("المدفوع:")).toBeInTheDocument();
-    expect(screen.getByTitle("الصافي: 750 ل.س")).toBeInTheDocument();
-    expect(screen.getByTitle("المدفوع: 500 ل.س")).toBeInTheDocument();
+    expect(screen.queryByText("الصافي:")).not.toBeInTheDocument();
+    expect(screen.queryByText("المدفوع:")).not.toBeInTheDocument();
+    expect(screen.getByText("750 ل.س")).toBeInTheDocument();
+
+    const trigger = screen.getByTestId("app-tooltip-trigger");
+    fireEvent.mouseEnter(trigger);
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
+    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("750 ل.س");
+    expect(tooltip).toHaveTextContent("المدفوع:");
+    expect(tooltip).toHaveTextContent("500 ل.س");
   });
 
-  it("keeps the discount context while showing both current amounts", () => {
+  it("keeps the discount context while showing amount and details in tooltip", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -38,11 +46,21 @@ describe("subscription amount badges", () => {
     );
 
     expect(screen.getByText("حسم 20%")).toHaveAttribute("title", "حسم خاص");
-    expect(screen.getByTitle("الصافي: 800 ل.س")).toBeInTheDocument();
-    expect(screen.getByTitle("المدفوع: 600 ل.س")).toBeInTheDocument();
+    expect(screen.getByText("800 ل.س")).toBeInTheDocument();
+
+    const trigger = screen.getByTestId("app-tooltip-trigger");
+    fireEvent.mouseEnter(trigger);
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
+    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("800 ل.س");
+    expect(tooltip).toHaveTextContent("المدفوع:");
+    expect(tooltip).toHaveTextContent("600 ل.س");
+    expect(tooltip).toHaveTextContent("حسم 20%");
+    expect(tooltip).toHaveTextContent("حسم خاص");
   });
 
-  it("separates the coach and club prices for private subscriptions", () => {
+  it("includes coach and club prices in the tooltip for private subscriptions", () => {
     render(
       <SubscriptionAmountBadges
         subscription={{
@@ -59,8 +77,20 @@ describe("subscription amount badges", () => {
       />,
     );
 
-    expect(screen.getByLabelText("تفصيل سعر الكوتش والنادي")).toBeInTheDocument();
-    expect(screen.getByTitle("سعر الكوتش: 400 ل.س")).toBeInTheDocument();
-    expect(screen.getByTitle("سعر النادي: 300 ل.س")).toBeInTheDocument();
+    expect(screen.queryByText("سعر الكوتش:")).not.toBeInTheDocument();
+    expect(screen.queryByText("سعر النادي:")).not.toBeInTheDocument();
+
+    const trigger = screen.getByTestId("app-tooltip-trigger");
+    fireEvent.mouseEnter(trigger);
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip).toHaveTextContent("تفاصيل المبلغ");
+    expect(tooltip).toHaveTextContent("الصافي:");
+    expect(tooltip).toHaveTextContent("700 ل.س");
+    expect(tooltip).toHaveTextContent("المدفوع:");
+    expect(tooltip).toHaveTextContent("700 ل.س");
+    expect(tooltip).toHaveTextContent("سعر الكوتش:");
+    expect(tooltip).toHaveTextContent("400 ل.س");
+    expect(tooltip).toHaveTextContent("سعر النادي:");
+    expect(tooltip).toHaveTextContent("300 ل.س");
   });
 });

@@ -5,6 +5,14 @@ import DataTable from "@/components/ui/DataTable";
 export default function CoachSubscriptionsReportTable({ rows, isLoading }) {
   const columns = [
     {
+      key: "rowNumber",
+      label: "#",
+      type: "rowNumber",
+      align: "center",
+      width: "48px",
+      sortable: false,
+    },
+    {
       key: "coachName",
       label: "اسم الكوتش",
       width: "minmax(180px,1.2fr)",
@@ -63,7 +71,7 @@ export default function CoachSubscriptionsReportTable({ rows, isLoading }) {
       isLoading={isLoading}
       pageSize={10}
       pageSizeOptions={[10, 20, 50, 100]}
-      minWidth="760px"
+      minWidth="810px"
       desktopScrollable
       emptyMessage="لا توجد بيانات لكوتشات الحصص الجماعية ضمن الفرع المختار."
     />

@@ -102,6 +102,13 @@ export default function AppVersionsTable({
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "version_number",
         label: "الإصدار",
         align: "start",
@@ -220,7 +227,7 @@ export default function AppVersionsTable({
       columns={columns}
       rows={versions}
       minWidth="980px"
-      tableColumns="minmax(240px,1.7fr) .75fr .75fr .9fr .8fr 1fr .65fr"
+      tableColumns="48px minmax(240px,1.7fr) .75fr .75fr .9fr .8fr 1fr .65fr"
       defaultSortColumn="created_at"
       defaultSortDirection="desc"
       pagination={false}

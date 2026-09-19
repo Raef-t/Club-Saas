@@ -24,6 +24,13 @@ export default function BranchesTable({ state }) {
   const columns = useMemo(
     () => [
       {
+        key: "rowNumber",
+        label: "#",
+        type: "rowNumber",
+        align: "center",
+        sortable: false,
+      },
+      {
         key: "name",
         label: "اسم الفرع",
         align: "center",

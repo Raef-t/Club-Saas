@@ -139,6 +139,7 @@ function TrialBalanceView({ data = {} }) {
             <table className="w-full text-right text-sm">
               <thead className="border-b border-app-line/40 text-xs text-app-muted">
                 <tr>
+                  <th className="p-3 w-12 text-center">#</th>
                   <th className="p-3">الكود</th>
                   <th className="p-3">اسم الحساب</th>
                   <th className="p-3">النوع</th>
@@ -153,6 +154,7 @@ function TrialBalanceView({ data = {} }) {
 
                   return (
                     <tr key={row.code || idx} className="hover:bg-app-card-soft/40 transition">
+                      <td className="p-3 text-center font-mono text-app-muted-light">{idx + 1}</td>
                       <td className="p-3 font-mono font-bold text-app-yellow">{row.code}</td>
                       <td className="p-3 font-medium">{row.name}</td>
                       <td className="p-3 text-app-muted">{row.type}</td>
@@ -168,7 +170,7 @@ function TrialBalanceView({ data = {} }) {
               </tbody>
               <tfoot className="bg-app-card-soft font-bold border-t border-app-line/40 text-xs">
                 <tr>
-                  <td colSpan={3} className="p-3 text-app-text">المجموع الإجمالي العام:</td>
+                  <td colSpan={4} className="p-3 text-app-text">المجموع الإجمالي العام:</td>
                   <td className="p-3 text-left font-mono text-emerald-400">${totalDebit.toLocaleString()}</td>
                   <td className="p-3 text-left font-mono text-rose-400">${totalCredit.toLocaleString()}</td>
                 </tr>
