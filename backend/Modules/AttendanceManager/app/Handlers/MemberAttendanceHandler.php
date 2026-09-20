@@ -34,17 +34,52 @@ class MemberAttendanceHandler implements AttendanceHandlerInterface
             // ── 0. Lock member row to prevent concurrent check-in ───────────────────
             DB::table('members')->where('id', $entityId)->lockForUpdate()->first();
 
-            // ── 1. No double check-in ───────────────────────────────────────────────
-            $open = $this->findOpenAttendance($entityId);
-            if ($open) {
-                throw new Exception(__('Member is already checked in.'));
-            }
-
             $checkInTimestamp = $checkInAt ? Carbon::parse($checkInAt) : now();
             $checkInDate = $checkInTimestamp->toDateString();
 
             /** @var \Modules\AttendanceManager\Services\SessionDeductionService $sessionDeductionService */
             $sessionDeductionService = app(\Modules\AttendanceManager\Services\SessionDeductionService::class);
+
+            // ── 1. Check existing open attendance ──────────────────────────────────
+            $open = $this->findOpenAttendance($entityId);
+            if ($open) {
+                // Member has an active visit: do NOT create a new Attendance record.
+                // Deduct session for the new activity on the same attendance record.
+
+                if (empty($subscriptionIds)) {
+                    $subscriptionIds = $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate(
+                        memberId: $entityId,
+                        dateString: $checkInDate,
+                        excludeAttendanceId: $open->id
+                    );
+                }
+
+                // Verify none of the requested subscriptions were already consumed in this attendance
+                $alreadyConsumedIds = DB::table('attendance_consumptions')
+                    ->where('attendance_id', $open->id)
+                    ->whereIn('player_subscription_id', $subscriptionIds)
+                    ->whereNull('deleted_at')
+                    ->pluck('player_subscription_id')
+                    ->toArray();
+
+                if (!empty($alreadyConsumedIds)) {
+                    throw new Exception(__('Member is already checked in for this subscription. (تم تسجيل الحضور وخصم الجلسة لهذا الاشتراك مسبقاً في الدخول الحالي)'));
+                }
+
+                // Deduct sessions for the new subscription(s)
+                $sessionDeductionService->deductMultipleSessions($open->id, $subscriptionIds, $notes);
+
+                // Preserve locker: if open attendance already had a locker, do not overwrite or duplicate
+                if (!$open->locker_id && $lockerId) {
+                    $open->update(['locker_id' => $lockerId]);
+                }
+
+                if ($notes && $open->notes !== $notes) {
+                    $open->update(['notes' => $notes]);
+                }
+
+                return $open->fresh();
+            }
 
             // ── 2. Validate member subscription & session availability ───────────────
             if (empty($subscriptionIds)) {

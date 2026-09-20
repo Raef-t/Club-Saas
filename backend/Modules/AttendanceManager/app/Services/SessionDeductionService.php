@@ -52,10 +52,11 @@ class SessionDeductionService
      *
      * @param int $memberId
      * @param string $dateString
+     * @param int|null $excludeAttendanceId
      * @return int[]
      * @throws Exception
      */
-    public function getAvailableSubscriptionsForMemberOnDate(int $memberId, string $dateString): array
+    public function getAvailableSubscriptionsForMemberOnDate(int $memberId, string $dateString, ?int $excludeAttendanceId = null): array
     {
         $checkDate = \Carbon\Carbon::parse($dateString)->startOfDay();
         $targetDate = $checkDate->toDateString();
@@ -185,7 +186,19 @@ class SessionDeductionService
             }
         }
 
+        if ($excludeAttendanceId) {
+            $consumedInThisAttendance = DB::table('attendance_consumptions')
+                ->where('attendance_id', $excludeAttendanceId)
+                ->whereNull('deleted_at')
+                ->pluck('player_subscription_id')
+                ->toArray();
+            $availableSubIds = array_values(array_diff($availableSubIds, $consumedInThisAttendance));
+        }
+
         if (empty($availableSubIds)) {
+            if ($excludeAttendanceId && !empty($consumedInThisAttendance)) {
+                throw new Exception(__('اللاعب مسجل في كافة فعالياته المتاحة لليوم في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'));
+            }
             throw new Exception(__('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم.'));
         }
 
@@ -283,7 +296,7 @@ class SessionDeductionService
             $clubId = $branch ? $branch->club_id : 1;
 
             // Auto-add the general (عام) subscription when deducting from a private (خاص) subscription
-            $subscriptionIds = $this->enrichWithGeneralSubscription($attendance->attendable_id, $subscriptionIds);
+            $subscriptionIds = $this->enrichWithGeneralSubscription($attendance->attendable_id, $subscriptionIds, $attendanceId);
 
             $attendanceTimestamp = $attendance->check_in_at ?: now();
             $effectiveReason = $reason ?? $attendance->notes;
@@ -514,11 +527,12 @@ class SessionDeductionService
      * subscription, this helper finds the member's active "general training" (تدريب عام, activity_type_id=4)
      * subscription and appends it to the list so both are deducted together.
      *
-     * @param int   $memberId
-     * @param int[] $subscriptionIds
+     * @param int      $memberId
+     * @param int[]    $subscriptionIds
+     * @param int|null $attendanceId
      * @return int[]
      */
-    private function enrichWithGeneralSubscription(int $memberId, array $subscriptionIds): array
+    private function enrichWithGeneralSubscription(int $memberId, array $subscriptionIds, ?int $attendanceId = null): array
     {
         // PRIVATE activity type id
         $privateTypeId = 5;
@@ -562,7 +576,18 @@ class SessionDeductionService
                 ->value('ps.id');
 
             if ($generalSubId) {
-                $subscriptionIds[] = $generalSubId;
+                $alreadyInAttendance = false;
+                if ($attendanceId) {
+                    $alreadyInAttendance = DB::table('attendance_consumptions')
+                        ->where('attendance_id', $attendanceId)
+                        ->where('player_subscription_id', $generalSubId)
+                        ->whereNull('deleted_at')
+                        ->exists();
+                }
+
+                if (!$alreadyInAttendance) {
+                    $subscriptionIds[] = $generalSubId;
+                }
             }
         }
 

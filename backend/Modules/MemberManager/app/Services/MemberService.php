@@ -106,6 +106,116 @@ class MemberService
             });
         }
 
+        // 8. Filter by availability for attendance today (Case 1: Hide players who have no available activities to register attendance today)
+        if (!empty($filters['available_for_attendance']) || !empty($filters['eligible_for_attendance'])) {
+            $today = now()->toDateString();
+            $dayOfWeek = (int) now()->dayOfWeek;
+
+            $query->where(function ($mq) use ($today, $dayOfWeek) {
+                $mq->whereExists(function ($subQ) use ($today, $dayOfWeek) {
+                    $subQ->select(DB::raw(1))
+                        ->from('player_subscriptions as ps')
+                        ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
+                        ->whereColumn('ps.member_id', 'members.id')
+                        ->where('ps.status', 'active')
+                        ->whereNull('ps.deleted_at')
+                        ->whereNull('sp.deleted_at')
+                        ->where(function ($planStatusQ) {
+                            $planStatusQ->whereNull('sp.status')
+                                        ->orWhere('sp.status', '!=', 'inactive');
+                        })
+                        ->where(function ($startQ) use ($today) {
+                            $startQ->whereNull('ps.start_date')
+                                   ->orWhereDate('ps.start_date', '<=', $today);
+                        })
+                        ->where(function ($endQ) use ($today) {
+                            $endQ->whereNull('ps.end_date')
+                                 ->orWhereDate('ps.end_date', '>=', $today);
+                        })
+                        ->whereNotExists(function ($freezeQ) use ($today) {
+                            $freezeQ->select(DB::raw(1))
+                                ->from('subscription_freezes as sf')
+                                ->whereColumn('sf.player_subscription_id', 'ps.id')
+                                ->whereNull('sf.deleted_at')
+                                ->whereDate('sf.freeze_start_date', '<=', $today)
+                                ->whereDate('sf.freeze_end_date', '>=', $today);
+                        })
+                        ->whereNotExists(function ($suspQ) use ($today) {
+                            $suspQ->select(DB::raw(1))
+                                ->from('subscription_plan_suspensions as sps')
+                                ->whereColumn('sps.plan_id', 'ps.plan_id')
+                                ->whereNull('sps.deleted_at')
+                                ->where('sps.status', '!=', 'cancelled')
+                                ->whereDate('sps.suspend_start_date', '<=', $today)
+                                ->where(function ($dateQ) use ($today) {
+                                    $dateQ->where(function ($actualQ) use ($today) {
+                                        $actualQ->whereNotNull('sps.actual_end_date')
+                                                ->whereDate('sps.actual_end_date', '>=', $today);
+                                    })->orWhere(function ($endQ) use ($today) {
+                                        $endQ->whereNull('sps.actual_end_date')
+                                             ->whereDate('sps.suspend_end_date', '>=', $today);
+                                    });
+                                });
+                        })
+                        ->where(function ($sessionQ) use ($dayOfWeek, $today) {
+                            $sessionQ->whereNotExists(function ($noTmplQ) {
+                                $noTmplQ->select(DB::raw(1))
+                                    ->from('sport_session_templates as sst_all')
+                                    ->whereColumn('sst_all.plan_id', 'ps.plan_id')
+                                    ->where('sst_all.is_active', true)
+                                    ->whereNull('sst_all.deleted_at');
+                            })
+                            ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $today) {
+                                $hasTmplQ->select(DB::raw(1))
+                                    ->from('sport_session_templates as sst_today')
+                                    ->whereColumn('sst_today.plan_id', 'ps.plan_id')
+                                    ->where('sst_today.is_active', true)
+                                    ->where('sst_today.day_of_week', $dayOfWeek)
+                                    ->whereNull('sst_today.deleted_at')
+                                    ->whereNotExists(function ($excQ) use ($today) {
+                                        $excQ->select(DB::raw(1))
+                                            ->from('session_exceptions as se')
+                                            ->whereColumn('se.sport_session_template_id', 'sst_today.id')
+                                            ->whereDate('se.date', $today)
+                                            ->whereIn('se.status', ['cancelled', 'canceled'])
+                                            ->whereNull('se.deleted_at');
+                                    });
+                            });
+                        })
+                        ->where(function ($itemQ) {
+                            $itemQ->whereNotExists(function ($limitedQ) {
+                                $limitedQ->select(DB::raw(1))
+                                    ->from('player_subscription_items as psi_lim')
+                                    ->whereColumn('psi_lim.player_subscription_id', 'ps.id')
+                                    ->whereNull('psi_lim.deleted_at');
+                            })
+                            ->orWhereExists(function ($availQ) {
+                                $availQ->select(DB::raw(1))
+                                    ->from('player_subscription_items as psi_avail')
+                                    ->whereColumn('psi_avail.player_subscription_id', 'ps.id')
+                                    ->whereNull('psi_avail.deleted_at')
+                                    ->where(function ($unlQ) {
+                                        $unlQ->where('psi_avail.is_unlimited', true)
+                                             ->orWhereColumn('psi_avail.sessions_allocated', '>', 'psi_avail.sessions_consumed');
+                                    });
+                            });
+                        })
+                        ->whereNotExists(function ($attQ) {
+                            $attQ->select(DB::raw(1))
+                                ->from('attendances as att')
+                                ->join('attendance_consumptions as ac', 'ac.attendance_id', '=', 'att.id')
+                                ->where('att.attendable_type', 'member')
+                                ->whereColumn('att.attendable_id', 'ps.member_id')
+                                ->where('att.status', 'checked_in')
+                                ->whereNull('att.check_out_at')
+                                ->whereNull('att.deleted_at')
+                                ->whereNull('ac.deleted_at')
+                                ->whereColumn('ac.player_subscription_id', 'ps.id');
+                        });
+                });
+            });
+        }
+
         $query->with([
             'person.contacts',
             'person.user',

@@ -38,6 +38,8 @@ class OffScheduleAttendanceOverrideTest extends TestCase
     {
         parent::setUp();
 
+        \Carbon\Carbon::setTestNow('2026-08-16 10:00:00');
+
         $person = Person::create([
             'full_name' => 'Admin Test User',
             'gender' => 'female',
