@@ -335,7 +335,11 @@ class CoachService
 
                 // Update Person Contact
                 if (isset($data['phone_number']) || isset($data['country_code'])) {
-                    $contact = $person->contacts()->where('name', 'Personal')->first();
+                    $contact = $person->contacts()->where(function ($q) {
+                        $q->where('relation', 'self')
+                          ->orWhere('name', 'Personal');
+                    })->first() ?? $person->contacts()->first();
+
                     if ($contact) {
                         $contactData = [];
                         if (isset($data['phone_number'])) $contactData['phone_number'] = $data['phone_number'];

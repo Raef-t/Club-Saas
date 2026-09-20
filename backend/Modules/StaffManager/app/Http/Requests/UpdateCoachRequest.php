@@ -13,6 +13,12 @@ class UpdateCoachRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        if ($this->has('branch_id') && !$this->has('branch_ids')) {
+            $this->merge([
+                'branch_ids' => is_array($this->branch_id) ? $this->branch_id : [$this->branch_id]
+            ]);
+        }
+
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
                 'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',')
@@ -114,9 +120,39 @@ class UpdateCoachRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $coachId = $this->route('id') ?? $this->route('coach');
+            $coach = \Modules\StaffManager\Models\Staff::with(['person', 'branches'])->find($coachId);
+            $gender = $this->has('gender') ? $this->input('gender') : $coach?->person?->gender;
+
+            if ($gender) {
+                $branchIds = $this->has('branch_ids')
+                    ? $this->input('branch_ids', [])
+                    : ($coach ? $coach->branches->pluck('id')->toArray() : []);
+
+                if (!empty($branchIds) && is_array($branchIds)) {
+                    $branches = \Modules\ClubManager\Models\Branch::whereIn('id', $branchIds)->get();
+                    foreach ($branches as $branch) {
+                        if ($branch->gender_restriction && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $gender) {
+                            $branchName = $branch->name;
+                            if (is_string($branchName)) {
+                                $decoded = json_decode($branchName, true);
+                                if (is_array($decoded)) {
+                                    $branchName = $decoded['ar'] ?? ($decoded['en'] ?? reset($decoded));
+                                }
+                            } elseif (is_array($branchName)) {
+                                $branchName = $branchName['ar'] ?? ($branchName['en'] ?? reset($branchName));
+                            }
+
+                            $msg = $branch->gender_restriction === 'female'
+                                ? "الفرع ({$branchName}) مخصص للإناث فقط، لا يمكن تعيين مدرب ذكر."
+                                : "الفرع ({$branchName}) مخصص للذكور فقط، لا يمكن تعيين مدربة أنثى.";
+                            $validator->errors()->add('gender', $msg);
+                            break;
+                        }
+                    }
+                }
+            }
 
             if ($this->has('activity_ids') && is_array($this->activity_ids) && $coachId) {
-                $coach = \Modules\StaffManager\Models\Staff::find($coachId);
                 if ($coach) {
                     $newActivityIds = array_map('intval', $this->activity_ids);
                     $currentActivities = $coach->activities()->get();
@@ -156,7 +192,6 @@ class UpdateCoachRequest extends FormRequest
                 if ($this->has('activity_ids')) {
                     $activityIds = $this->activity_ids;
                 } else {
-                    $coach = \Modules\StaffManager\Models\Staff::find($coachId);
                     $activityIds = $coach ? $coach->activities()->pluck('activities.id')->toArray() : [];
                 }
 
