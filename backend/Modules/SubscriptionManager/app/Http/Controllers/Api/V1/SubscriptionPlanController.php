@@ -68,6 +68,16 @@ class SubscriptionPlanController extends BaseController
                     )
                 ),
                 new OA\Property(
+                    property: 'stats',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'total_plans', type: 'integer', example: 25),
+                        new OA\Property(property: 'active_plans', type: 'integer', example: 18),
+                        new OA\Property(property: 'inactive_plans', type: 'integer', example: 7),
+                        new OA\Property(property: 'max_sessions_per_week', type: 'integer', example: 5),
+                    ]
+                ),
+                new OA\Property(
                     property: 'meta',
                     type: 'object',
                     properties: [
@@ -120,6 +130,17 @@ class SubscriptionPlanController extends BaseController
             'activeSuspension.coach.person'
         ]);
         
+        $user = $request->user();
+        $targetBranchId = null;
+        if ($user && $user->hasRole('player')) {
+            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
+            if ($member && $member->branch_id) {
+                $targetBranchId = $member->branch_id;
+            }
+        } elseif ($request->has('branch_id')) {
+            $targetBranchId = $request->branch_id;
+        }
+
         if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('status', 'active')
@@ -128,13 +149,16 @@ class SubscriptionPlanController extends BaseController
                       ->notSuspended();
             } elseif ($request->status === 'inactive') {
                 $query->where(function ($q) {
-                    $q->where('status', 'inactive')
+                    $q->where('status', '!=', 'active')
                       ->orWhereHas('planActivities.staffActivity.activity', function ($sub) {
                           $sub->where('is_active', false);
                       })
                       ->orWhereHas('planActivities.staffActivity.staff', function ($sub) {
                           $sub->where('is_active', false)
                               ->orWhere('work_status', '!=', 'active');
+                      })
+                      ->orWhereHas('suspensions', function ($sub) {
+                          $sub->whereIn('status', ['active', 'scheduled']);
                       });
                 });
             } else {
@@ -148,14 +172,8 @@ class SubscriptionPlanController extends BaseController
                   ->notSuspended();
         }
 
-        $user = $request->user();
-        if ($user && $user->hasRole('player')) {
-            $member = $user->person?->member ?? \Modules\MemberManager\Models\Member::where('person_id', $user->person_id)->first();
-            if ($member && $member->branch_id) {
-                $query->where('branch_id', $member->branch_id);
-            }
-        } elseif ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+        if ($targetBranchId) {
+            $query->where('branch_id', $targetBranchId);
         }
 
         if ($request->has('gender')) {
@@ -221,16 +239,51 @@ class SubscriptionPlanController extends BaseController
             $query->orderBy('id', 'asc');
         }
 
+        // Calculate aggregate statistics for subscription plans
+        $statsQuery = \Modules\SubscriptionManager\Models\SubscriptionPlan::query();
+        if ($targetBranchId) {
+            $statsQuery->where('branch_id', $targetBranchId);
+        }
+
+        $totalPlans = (clone $statsQuery)->count();
+        $activePlans = (clone $statsQuery)
+            ->where('status', 'active')
+            ->activeActivities()
+            ->activeCoaches()
+            ->notSuspended()
+            ->count();
+        $inactivePlans = max(0, $totalPlans - $activePlans);
+        $maxSessionsPerWeek = (int) ((clone $statsQuery)->max('sessions_per_week') ?? 0);
+
+        $stats = [
+            'total_plans'           => $totalPlans,
+            'active_plans'          => $activePlans,
+            'inactive_plans'        => $inactivePlans,
+            'max_sessions_per_week' => $maxSessionsPerWeek,
+        ];
+
         // Pagination: default is paginated (per_page default 15), unless per_page=all
         if ($request->input('per_page') === 'all' || $request->boolean('all') || $request->input('paginate') === 'false') {
             $plans = $query->get();
-        } else {
-            $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
-            $plans = $query->paginate($perPage);
+            $resourceCollection = SubscriptionPlanResource::collection($plans);
+            $responseData = [
+                'data'  => $resourceCollection->resolve(),
+                'stats' => $stats,
+            ];
+            return $this->successResponse(
+                $responseData,
+                __('Subscription plans retrieved successfully')
+            );
         }
 
+        $perPage = min(max((int) $request->input('per_page', 15), 1), 100);
+        $plans = $query->paginate($perPage);
+        $resourceCollection = SubscriptionPlanResource::collection($plans);
+        $responseData = $resourceCollection->response()->getData(true);
+        $responseData['stats'] = $stats;
+
         return $this->successResponse(
-            SubscriptionPlanResource::collection($plans),
+            $responseData,
             __('Subscription plans retrieved successfully')
         );
     }
