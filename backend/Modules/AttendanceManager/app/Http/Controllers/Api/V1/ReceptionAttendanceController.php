@@ -135,7 +135,43 @@ class ReceptionAttendanceController extends BaseController
             $todayString = $carbonDate->toDateString();
             $dayOfWeek = (int) $carbonDate->dayOfWeek;
 
-            // 1. Fetch member's active lockers
+            // 1. Check if member has an active open attendance session
+            $openAttendance = DB::table('attendances')
+                ->where('attendable_type', 'member')
+                ->where('attendable_id', $memberId)
+                ->where('status', 'checked_in')
+                ->whereNull('check_out_at')
+                ->whereNull('deleted_at')
+                ->latest('check_in_at')
+                ->first();
+
+            $alreadyConsumedSubIds = [];
+            $currentLocker = null;
+            $hasLockerInCurrentAttendance = false;
+
+            if ($openAttendance) {
+                $alreadyConsumedSubIds = DB::table('attendance_consumptions')
+                    ->where('attendance_id', $openAttendance->id)
+                    ->whereNull('deleted_at')
+                    ->pluck('player_subscription_id')
+                    ->toArray();
+
+                if ($openAttendance->locker_id) {
+                    $hasLockerInCurrentAttendance = true;
+                    $lockerRow = DB::table('lockers')->where('id', $openAttendance->locker_id)->first();
+                    if ($lockerRow) {
+                        $currentLocker = [
+                            'id'            => $lockerRow->id,
+                            'locker_id'     => $lockerRow->id,
+                            'locker_number' => $lockerRow->locker_number,
+                            'branch_id'     => $lockerRow->branch_id,
+                            'key_number'    => $lockerRow->key_number ?? null,
+                        ];
+                    }
+                }
+            }
+
+            // 1.5. Fetch member's active lockers
             $lockerSelectColumns = [
                 'lr.id as reservation_id',
                 'lr.locker_id',
@@ -265,8 +301,33 @@ class ReceptionAttendanceController extends BaseController
                 return $this->errorResponse(__('لا توجد اشتراكات نشطة لهذا المشترك.'), 404);
             }
 
+            // Exclude subscriptions already consumed in current open attendance
+            $remainingSubscriptions = $subscriptions;
+            if ($openAttendance && !empty($alreadyConsumedSubIds)) {
+                $remainingSubscriptions = $subscriptions->reject(function ($sub) use ($alreadyConsumedSubIds) {
+                    return in_array($sub->player_subscription_id, $alreadyConsumedSubIds);
+                })->values();
+
+                if ($remainingSubscriptions->isEmpty()) {
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => __('اللاعب مسجل في كافة فعالياته المتاحة لليوم في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
+                        'data'    => [],
+                        'meta'    => [
+                            'is_currently_checked_in'           => true,
+                            'current_attendance_id'             => $openAttendance->id,
+                            'all_today_activities_attended'    => true,
+                            'has_current_locker'                => $hasLockerInCurrentAttendance,
+                            'show_locker_selection'             => false,
+                            'current_locker'                    => $currentLocker,
+                            'already_consumed_subscription_ids' => $alreadyConsumedSubIds,
+                        ]
+                    ], 200);
+                }
+            }
+
             // Attach items (session breakdown per activity) and today's sessions for each subscription
-            $transformedSubscriptions = $subscriptions->map(function ($sub) use ($activeLockers, $dayOfWeek, $todayString) {
+            $transformedSubscriptions = $remainingSubscriptions->map(function ($sub) use ($activeLockers, $dayOfWeek, $todayString, $openAttendance, $hasLockerInCurrentAttendance, $currentLocker) {
                 $sub->plan_name = json_decode($sub->plan_name, true) ?? $sub->plan_name;
 
                 // Fetch raw subscription items
@@ -392,6 +453,13 @@ class ReceptionAttendanceController extends BaseController
                 // Attach general active lockers
                 $sub->active_lockers = $activeLockers;
 
+                // Attach current attendance & locker state
+                $sub->is_currently_checked_in = (bool) $openAttendance;
+                $sub->current_attendance_id = $openAttendance?->id;
+                $sub->has_locker_in_current_attendance = $hasLockerInCurrentAttendance;
+                $sub->show_locker_selection = !$hasLockerInCurrentAttendance;
+                $sub->current_locker = $currentLocker;
+
                 return $sub;
             });
 
@@ -409,10 +477,40 @@ class ReceptionAttendanceController extends BaseController
             })->values();
 
             if ($filteredSubscriptions->isEmpty()) {
+                if ($openAttendance && !empty($alreadyConsumedSubIds)) {
+                    return response()->json([
+                        'status'  => 'success',
+                        'message' => __('اللاعب مسجل في كافة فعالياته المتاحة لليوم في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
+                        'data'    => [],
+                        'meta'    => [
+                            'is_currently_checked_in'           => true,
+                            'current_attendance_id'             => $openAttendance->id,
+                            'all_today_activities_attended'    => true,
+                            'has_current_locker'                => $hasLockerInCurrentAttendance,
+                            'show_locker_selection'             => false,
+                            'current_locker'                    => $currentLocker,
+                            'already_consumed_subscription_ids' => $alreadyConsumedSubIds,
+                        ]
+                    ], 200);
+                }
+
                 return $this->errorResponse(__('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم.'), 404);
             }
 
-            return $this->successResponse($filteredSubscriptions, __('Subscriptions retrieved successfully'));
+            return response()->json([
+                'status'  => 'success',
+                'message' => __('Subscriptions retrieved successfully'),
+                'data'    => $filteredSubscriptions,
+                'meta'    => [
+                    'is_currently_checked_in'           => (bool) $openAttendance,
+                    'current_attendance_id'             => $openAttendance?->id,
+                    'all_today_activities_attended'    => false,
+                    'has_current_locker'                => $hasLockerInCurrentAttendance,
+                    'show_locker_selection'             => !$hasLockerInCurrentAttendance,
+                    'current_locker'                    => $currentLocker,
+                    'already_consumed_subscription_ids' => $alreadyConsumedSubIds,
+                ]
+            ], 200);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
         }
@@ -606,8 +704,13 @@ class ReceptionAttendanceController extends BaseController
             // 1. Resolve subscription IDs: explicit or auto-detect for member today
             $subscriptionIds = $request->input('player_subscription_ids');
             if (empty($subscriptionIds)) {
+                $openAttendance = $attendanceService->findOpen('member', $memberId);
                 $targetDate = $checkInAt ? \Carbon\Carbon::parse($checkInAt)->toDateString() : now()->toDateString();
-                $subscriptionIds = $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate($memberId, $targetDate);
+                $subscriptionIds = $sessionDeductionService->getAvailableSubscriptionsForMemberOnDate(
+                    $memberId,
+                    $targetDate,
+                    $openAttendance?->id
+                );
             }
 
             // 2. Perform check-in and atomic session deduction
