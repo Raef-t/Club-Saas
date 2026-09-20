@@ -5,7 +5,10 @@ namespace Modules\SubscriptionManager\Services;
 use Modules\SubscriptionManager\Repositories\SubscriptionPlanRepositoryInterface;
 use Modules\SubscriptionManager\Repositories\PlayerSubscriptionRepositoryInterface;
 use Modules\SubscriptionManager\Models\PlayerSubscription;
+use Modules\SubscriptionManager\Models\SubscriptionPlan;
 use Modules\SubscriptionManager\Models\Payment;
+use Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus;
+use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
 use Modules\Core\Contracts\MemberSharedServiceInterface;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -800,13 +803,6 @@ class SubscriptionService
                 throw new Exception(__('Cannot subscribe to this plan because its assigned coach is currently inactive or suspended.'));
             }
 
-            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                throw new Exception(__('This subscription plan has reached its maximum capacity.'));
-            }
-
-            $this->incrementPlanSubscribers($plan);
-
-
             // 2. Fetch Member Profile & Branch
             $memberDTO = $this->memberSharedService->getMemberById($memberId);
             if (!$memberDTO) {
@@ -829,6 +825,15 @@ class SubscriptionService
                     $endDate = $startDate->copy()->addMonths($monthsCount);
                 }
             }
+
+            if ($plan->max_subscribers > 0) {
+                $concurrentSubscribers = $this->getMaxConcurrentSubscribersInRange($plan, $startDate, $endDate);
+                if ($concurrentSubscribers >= $plan->max_subscribers) {
+                    throw new Exception(__('This subscription plan has reached its maximum capacity.'));
+                }
+            }
+
+            $this->incrementPlanSubscribers($plan);
             $baseTotalAmount = (float) ($options['original_total_amount'] ?? ($plan->base_price * $monthsCount));
             $discountReason = $options['discount_reason'] ?? null;
             $discountData = self::resolveDiscountOptions($baseTotalAmount, $options);
@@ -1558,26 +1563,22 @@ class SubscriptionService
     {
         $subscription = $this->subscriptionRepository->find($subscriptionId);
 
-        if ($subscription->status->value !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::FROZEN->value) {
+        $statusValue = $subscription->status instanceof PlayerSubscriptionStatus
+            ? $subscription->status->value
+            : $subscription->status;
+
+        if ($statusValue !== PlayerSubscriptionStatus::FROZEN->value) {
             throw new Exception(__('Subscription is not frozen.'));
         }
 
         return DB::transaction(function () use ($subscription) {
-            if ($subscription->plan_id) {
-                $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $subscription->plan_id)
-                    ->lockForUpdate()
-                    ->first();
-                if ($plan && $plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                    throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
-                }
-            }
-
             // Find the active freeze
             $activeFreeze = $subscription->freezes()
                 ->whereNull('actual_end_date')
                 ->latest()
                 ->first();
 
+            $newEndDate = null;
             if ($activeFreeze) {
                 $freezeDays = Carbon::parse($activeFreeze->freeze_start_date)->diffInDays(now());
                 $activeFreeze->update(['actual_end_date' => now()]);
@@ -1588,8 +1589,21 @@ class SubscriptionService
                 }
             }
 
-            $subscription->update(['status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value]);
-            // $this->incrementPlanSubscribers($subscription->plan);
+            if ($subscription->plan_id) {
+                $plan = SubscriptionPlan::where('id', $subscription->plan_id)
+                    ->lockForUpdate()
+                    ->first();
+                if ($plan && $plan->max_subscribers > 0) {
+                    $startDate = Carbon::now();
+                    $unfreezeEndDate = $newEndDate ? Carbon::parse($newEndDate) : ($subscription->end_date ? Carbon::parse($subscription->end_date) : Carbon::now()->addMonth());
+                    $concurrent = $this->getMaxConcurrentSubscribersInRange($plan, $startDate, $unfreezeEndDate, $subscription->id);
+                    if ($concurrent >= $plan->max_subscribers) {
+                        throw new Exception(__('لا يمكن فك التجميد لأن الخطة ممتلئة بالكامل حالياً.'));
+                    }
+                }
+            }
+
+            $subscription->update(['status' => PlayerSubscriptionStatus::ACTIVE->value]);
 
             $subscription->member = $this->memberSharedService->getMemberById($subscription->member_id);
 
@@ -1747,20 +1761,33 @@ class SubscriptionService
         }
 
         return DB::transaction(function () use ($memberId, $offer, $options, $plansToEnroll, $isSingleChoice) {
+            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
+            $durationDays = $offer->duration_days;
+            $durationMonths = $offer->duration_months;
+            $endDate = null;
+            if ($durationDays) {
+                $endDate = $startDate->copy()->addDays((int) $durationDays);
+            } elseif ($durationMonths) {
+                $endDate = $startDate->copy()->addMonths((int) $durationMonths);
+            } else {
+                $endDate = $startDate->copy()->addMonth();
+            }
+
             // Lock and check capacity for all plans to enroll inside transaction
             foreach ($plansToEnroll as $planItem) {
                 $plan = \Modules\SubscriptionManager\Models\SubscriptionPlan::where('id', $planItem->id)
                     ->lockForUpdate()
                     ->firstOrFail();
 
-                if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                    throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
+                if ($plan->max_subscribers > 0) {
+                    $concurrent = $this->getMaxConcurrentSubscribersInRange($plan, $startDate, $endDate);
+                    if ($concurrent >= $plan->max_subscribers) {
+                        throw new Exception(__('The plan :plan within this offer has reached its maximum capacity. Offer cannot be purchased.', ['plan' => $plan->name]));
+                    }
                 }
 
                 $this->incrementPlanSubscribers($plan);
             }
-
-            $startDate = isset($options['start_date']) ? Carbon::parse($options['start_date']) : now();
 
             $totalAmount = (float) $offer->price;
             $paidAmount = isset($options['paid_amount']) ? (float) $options['paid_amount'] : $totalAmount;
@@ -1943,37 +1970,77 @@ class SubscriptionService
     }
 
     /**
-     * Increment plan subscribers and mark as completed if full.
+     * Get the peak / maximum concurrent subscribers count for a plan in a given date range.
      */
-    public function incrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
+    public function getMaxConcurrentSubscribersInRange(SubscriptionPlan $plan, Carbon $startDate, ?Carbon $endDate = null, ?int $excludeSubscriptionId = null): int
+    {
+        $startStr = $startDate->toDateString();
+        $endStr = $endDate ? $endDate->toDateString() : '9999-12-31';
+
+        $overlappingSubs = PlayerSubscription::where('plan_id', $plan->id)
+            ->where('status', PlayerSubscriptionStatus::ACTIVE->value)
+            ->when($excludeSubscriptionId, fn($q) => $q->where('id', '!=', $excludeSubscriptionId))
+            ->where('start_date', '<=', $endStr)
+            ->where(function ($q) use ($startStr) {
+                $q->whereNull('end_date')
+                  ->orWhere('end_date', '>=', $startStr);
+            })
+            ->get(['id', 'start_date', 'end_date']);
+
+        if ($overlappingSubs->isEmpty()) {
+            return 0;
+        }
+
+        if ($plan->max_subscribers <= 0 || $overlappingSubs->count() < $plan->max_subscribers) {
+            return $overlappingSubs->count();
+        }
+
+        // Check critical points (start_date of target range and start_dates of all overlapping subscriptions within the range)
+        $criticalDates = collect([$startStr]);
+        foreach ($overlappingSubs as $sub) {
+            $subStart = Carbon::parse($sub->start_date)->toDateString();
+            if ($subStart >= $startStr && $subStart <= $endStr) {
+                $criticalDates->push($subStart);
+            }
+        }
+        $criticalDates = $criticalDates->unique();
+
+        $maxConcurrent = 0;
+        foreach ($criticalDates as $checkDate) {
+            $concurrentOnDate = $overlappingSubs->filter(function ($sub) use ($checkDate) {
+                $s = Carbon::parse($sub->start_date)->toDateString();
+                $e = $sub->end_date ? Carbon::parse($sub->end_date)->toDateString() : null;
+                return $s <= $checkDate && ($e === null || $e >= $checkDate);
+            })->count();
+
+            if ($concurrentOnDate > $maxConcurrent) {
+                $maxConcurrent = $concurrentOnDate;
+            }
+        }
+
+        return $maxConcurrent;
+    }
+
+    /**
+     * Increment plan subscribers count.
+     */
+    public function incrementPlanSubscribers(?SubscriptionPlan $plan)
     {
         if ($plan) {
             $plan->increment('current_subscribers');
             $plan->refresh();
-            if ($plan->max_subscribers > 0 && $plan->current_subscribers >= $plan->max_subscribers) {
-                $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value]);
-            }
         }
     }
 
     /**
-     * Decrement plan subscribers and mark as active if space opens up from completed state.
+     * Decrement plan subscribers count.
      */
-    public function decrementPlanSubscribers(?\Modules\SubscriptionManager\Models\SubscriptionPlan $plan)
+    public function decrementPlanSubscribers(?SubscriptionPlan $plan)
     {
         if ($plan) {
             if ($plan->current_subscribers > 0) {
                 $plan->decrement('current_subscribers');
-            }
-            if ($plan->max_subscribers > 0) {
                 $plan->refresh();
-                $statusValue = $plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus
-                    ? $plan->status->value
-                    : $plan->status;
-
-                if ($statusValue === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::COMPLETED->value && $plan->current_subscribers < $plan->max_subscribers) {
-                    $plan->update(['status' => \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE->value]);
-                }
             }
         }
     }
@@ -2019,12 +2086,23 @@ class SubscriptionService
             if ($planChanged) {
                 $oldPlan = $subscription->plan;
                 $newPlan = \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities.staffActivity.activity.activityType', 'planActivities.staffActivity.staff'])->findOrFail($data['plan_id']);
+                
+                $monthsCount = max(1, (int) ($data['months_count'] ?? $subscription->months_count ?? 1));
+                $effectiveStart = Carbon::parse($data['start_date'] ?? $subscription->start_date);
+                $effectiveEnd = isset($data['end_date']) && !empty($data['end_date']) ? Carbon::parse($data['end_date']) : $effectiveStart->copy()->addMonths($monthsCount);
+
+                if ($newPlan->max_subscribers > 0) {
+                    $concurrent = $this->getMaxConcurrentSubscribersInRange($newPlan, $effectiveStart, $effectiveEnd, $subscription->id);
+                    if ($concurrent >= $newPlan->max_subscribers) {
+                        throw new Exception(__('This subscription plan has reached its maximum capacity.'));
+                    }
+                }
+
                 if ($oldPlan) {
                     $this->decrementPlanSubscribers($oldPlan);
                 }
                 $this->incrementPlanSubscribers($newPlan);
 
-                $monthsCount = max(1, (int) ($data['months_count'] ?? $subscription->months_count ?? 1));
                 $totalAmount = (float) $newPlan->base_price * $monthsCount;
                 $data['total_amount'] = $totalAmount;
 

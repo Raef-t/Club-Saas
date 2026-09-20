@@ -56,9 +56,94 @@ class PersonService implements PersonServiceInterface, PersonSharedServiceInterf
         if ($person) {
             $person->update($dto->toArray());
 
-            // Note: Currently not fully updating contacts on updatePerson to avoid duplicates. 
-            // The frontend should ideally call a specific contacts API, or we overwrite them here.
-            // For now, we will leave contacts update manual or via dedicated endpoints.
+            // 1. Update/Create Primary Contact (mobile1 / country_code)
+            if ($dto->mobile1 !== null || $dto->mobile1CountryCode !== null) {
+                $primaryContact = $person->contacts()
+                    ->where(function ($q) {
+                        $q->where('relation', 'self')
+                          ->orWhere('name', 'Personal');
+                    })
+                    ->first() ?? $person->contacts()->first();
+
+                if ($primaryContact) {
+                    $contactData = [];
+                    if ($dto->mobile1 !== null) {
+                        $contactData['phone_number'] = $dto->mobile1;
+                    }
+                    if ($dto->mobile1CountryCode !== null) {
+                        $contactData['country_code'] = $dto->mobile1CountryCode;
+                    }
+                    $primaryContact->update($contactData);
+                } elseif ($dto->mobile1 !== null && $dto->mobile1 !== '') {
+                    $person->contacts()->create([
+                        'name'         => 'Personal',
+                        'relation'     => 'self',
+                        'phone_number' => $dto->mobile1,
+                        'country_code' => $dto->mobile1CountryCode,
+                    ]);
+                }
+            }
+
+            // 2. Update/Create Secondary Mobile (mobile2)
+            if ($dto->mobile2 !== null || $dto->mobile2CountryCode !== null) {
+                $secondaryContact = $person->contacts()->where('name', 'Secondary Mobile')->first();
+                if ($secondaryContact) {
+                    $contactData = [];
+                    if ($dto->mobile2 !== null) {
+                        $contactData['phone_number'] = $dto->mobile2;
+                    }
+                    if ($dto->mobile2CountryCode !== null) {
+                        $contactData['country_code'] = $dto->mobile2CountryCode;
+                    }
+                    $secondaryContact->update($contactData);
+                } elseif ($dto->mobile2 !== null && $dto->mobile2 !== '') {
+                    $person->contacts()->create([
+                        'name'         => 'Secondary Mobile',
+                        'relation'     => 'self',
+                        'phone_number' => $dto->mobile2,
+                        'country_code' => $dto->mobile2CountryCode,
+                    ]);
+                }
+            }
+
+            // 3. Update/Create Landline
+            if ($dto->landline !== null) {
+                $landlineContact = $person->contacts()->where('name', 'Landline')->first();
+                if ($landlineContact) {
+                    $landlineContact->update(['phone_number' => $dto->landline]);
+                } elseif ($dto->landline !== '') {
+                    $person->contacts()->create([
+                        'name'         => 'Landline',
+                        'relation'     => 'self',
+                        'phone_number' => $dto->landline,
+                    ]);
+                }
+            }
+
+            // 4. Update/Create Emergency Contact
+            if ($dto->emergencyContactPhone !== null) {
+                $emergencyContact = $person->contacts()->where('relation', 'emergency')->first();
+                if ($emergencyContact) {
+                    $emergencyData = ['phone_number' => $dto->emergencyContactPhone];
+                    if ($dto->emergencyContactName !== null) {
+                        $emergencyData['name'] = $dto->emergencyContactName;
+                    }
+                    if ($dto->emergencyContactCountryCode !== null) {
+                        $emergencyData['country_code'] = $dto->emergencyContactCountryCode;
+                    }
+                    $emergencyContact->update($emergencyData);
+                } elseif ($dto->emergencyContactPhone !== '') {
+                    $person->contacts()->create([
+                        'name'         => $dto->emergencyContactName ?? 'Emergency Contact',
+                        'relation'     => 'emergency',
+                        'phone_number' => $dto->emergencyContactPhone,
+                        'country_code' => $dto->emergencyContactCountryCode,
+                    ]);
+                }
+            }
+
+            $person->refresh();
+            $person->load('contacts');
 
             return $this->mapToDTO($person);
         }

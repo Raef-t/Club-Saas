@@ -94,12 +94,23 @@ class SubscriptionPlan extends Model
         return $query->where('status', 'active');
     }
 
-    public function scopeAvailable($query)
+    public function scopeAvailable($query, ?string $targetDate = null)
     {
-        return $query->where(function ($q) {
+        $date = $targetDate ? \Carbon\Carbon::parse($targetDate)->toDateString() : now()->toDateString();
+
+        return $query->where(function ($q) use ($date) {
             $q->whereNull('max_subscribers')
               ->orWhere('max_subscribers', 0)
-              ->orWhereColumn('current_subscribers', '<', 'max_subscribers');
+              ->orWhere(function ($subQ) use ($date) {
+                  $subQ->whereRaw('(
+                      SELECT COUNT(*) FROM player_subscriptions 
+                      WHERE player_subscriptions.plan_id = subscription_plans.id 
+                      AND player_subscriptions.deleted_at IS NULL
+                      AND player_subscriptions.status = ?
+                      AND player_subscriptions.start_date <= ?
+                      AND (player_subscriptions.end_date IS NULL OR player_subscriptions.end_date >= ?)
+                  ) < subscription_plans.max_subscribers', [\Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value, $date, $date]);
+              });
         });
     }
 
@@ -446,21 +457,42 @@ class SubscriptionPlan extends Model
     /**
      * Get the dynamically calculated count of active subscribers from player_subscriptions.
      */
-    public function getCurrentSubscribersCount(): int
+    public function getCurrentSubscribersCount(?\Carbon\Carbon $date = null): int
     {
+        $targetDate = $date ? $date->toDateString() : now()->toDateString();
+
         if (array_key_exists('active_subscribers_count', $this->attributes)) {
             return (int) $this->attributes['active_subscribers_count'];
         }
 
         if ($this->relationLoaded('playerSubscriptions')) {
             return $this->playerSubscriptions
-                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+                ->filter(function ($sub) use ($targetDate) {
+                    $status = $sub->status instanceof \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus
+                        ? $sub->status->value
+                        : $sub->status;
+                    if ($status !== \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value) {
+                        return false;
+                    }
+                    if (!empty($sub->start_date) && \Carbon\Carbon::parse($sub->start_date)->toDateString() > $targetDate) {
+                        return false;
+                    }
+                    if (!empty($sub->end_date) && \Carbon\Carbon::parse($sub->end_date)->toDateString() < $targetDate) {
+                        return false;
+                    }
+                    return true;
+                })
                 ->count();
         }
 
         if ($this->exists) {
             return $this->playerSubscriptions()
-                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE)
+                ->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                ->whereDate('start_date', '<=', $targetDate)
+                ->where(function ($q) use ($targetDate) {
+                    $q->whereNull('end_date')
+                      ->orWhereDate('end_date', '>=', $targetDate);
+                })
                 ->count();
         }
 

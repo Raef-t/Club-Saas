@@ -23,6 +23,10 @@ class UpdateSubscriptionPlanRequest extends FormRequest
             $merge['session_count'] = (int) $this->input('sessions_per_week') * 4;
         }
 
+        if ($this->has('is_active') && !$this->has('status')) {
+            $merge['status'] = filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN) ? 'active' : 'inactive';
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }
@@ -79,8 +83,14 @@ class UpdateSubscriptionPlanRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $planId = $this->route('subscription_plan') ?? $this->route('id');
-            $plan = is_numeric($planId) ? \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities.staffActivity'])->find($planId) : null;
+            $routeParam = $this->route('subscription_plan') ?? $this->route('id');
+            $plan = $routeParam instanceof \Modules\SubscriptionManager\Models\SubscriptionPlan
+                ? $routeParam
+                : (is_numeric($routeParam) ? \Modules\SubscriptionManager\Models\SubscriptionPlan::with(['planActivities.staffActivity'])->find($routeParam) : null);
+            $planId = $plan?->id ?? (is_numeric($routeParam) ? (int) $routeParam : null);
+
+            $targetStatus = $this->input('status') ?? ($plan?->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $plan->status->value : $plan?->status);
+            $isPlanActive = ($targetStatus !== 'inactive');
 
             // 1. Group Activity Restriction
             if ($this->has('activities') && is_array($this->activities)) {
@@ -136,10 +146,11 @@ class UpdateSubscriptionPlanRequest extends FormRequest
                 $conflictError = $conflictService->validateTemplates(
                     $this->session_templates,
                     $branchId,
-                    $plan?->id, // ignorePlanId
-                    null,       // ignoreTemplateId
+                    $planId, // ignorePlanId
+                    null,    // ignoreTemplateId
                     $coachIds,
-                    $isGroup
+                    $isGroup,
+                    $isPlanActive
                 );
 
                 if ($conflictError) {
