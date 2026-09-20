@@ -294,20 +294,25 @@ class SessionTemplateController extends BaseController
         $isGroup = $plan ? $plan->isGroupSessionPlan() : false;
         $coachIds = $plan ? $plan->planActivities->pluck('staffActivity.staff_id')->filter()->unique()->toArray() : [];
 
-        $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
-        $conflictError = $conflictService->checkSingleTemplateConflict(
-            $data,
-            $branchId,
-            null,
-            null,
-            $coachIds,
-            $isGroup
-        );
+        $isPlanActive = $plan ? (($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $plan->status->value : $plan->status) !== 'inactive') : true;
+        $isTemplateActive = !isset($data['is_active']) || filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
 
-        if ($conflictError) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'start_time' => [$conflictError]
-            ]);
+        if ($isPlanActive && $isTemplateActive) {
+            $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
+            $conflictError = $conflictService->checkSingleTemplateConflict(
+                $data,
+                $branchId,
+                $plan?->id,
+                null,
+                $coachIds,
+                $isGroup
+            );
+
+            if ($conflictError) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => [$conflictError]
+                ]);
+            }
         }
 
         $template = SportSessionTemplate::create($data);
@@ -403,20 +408,25 @@ class SessionTemplateController extends BaseController
             'end_time' => $checkEnd,
         ];
 
-        $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
-        $conflictError = $conflictService->checkSingleTemplateConflict(
-            $checkTemplate,
-            $branchId,
-            null,
-            $id,
-            $coachIds,
-            $isGroup
-        );
+        $isPlanActive = $plan ? (($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $plan->status->value : $plan->status) !== 'inactive') : true;
+        $isTemplateActive = array_key_exists('is_active', $data) ? filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN) : (bool) $template->is_active;
 
-        if ($conflictError) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'start_time' => [$conflictError]
-            ]);
+        if ($isPlanActive && $isTemplateActive) {
+            $conflictService = app(\Modules\Sports\Services\SessionConflictService::class);
+            $conflictError = $conflictService->checkSingleTemplateConflict(
+                $checkTemplate,
+                $branchId,
+                $plan?->id,
+                $id,
+                $coachIds,
+                $isGroup
+            );
+
+            if ($conflictError) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'start_time' => [$conflictError]
+                ]);
+            }
         }
 
         $template->update($data);

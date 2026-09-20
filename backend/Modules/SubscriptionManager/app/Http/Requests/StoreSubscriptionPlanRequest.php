@@ -63,6 +63,10 @@ class StoreSubscriptionPlanRequest extends FormRequest
             }
         }
 
+        if ($this->has('is_active') && !$this->has('status')) {
+            $merge['status'] = filter_var($this->is_active, FILTER_VALIDATE_BOOLEAN) ? 'active' : 'inactive';
+        }
+
         if (!empty($merge)) {
             $this->merge($merge);
         }
@@ -169,13 +173,16 @@ class StoreSubscriptionPlanRequest extends FormRequest
                     }
                 }
 
+                $isPlanActive = ($this->input('status', 'active') !== 'inactive');
+
                 $conflictError = $conflictService->validateTemplates(
                     $this->session_templates,
                     $branchId,
                     null, // ignorePlanId
                     null, // ignoreTemplateId
                     $coachIds,
-                    $isGroup
+                    $isGroup,
+                    $isPlanActive
                 );
 
                 if ($conflictError) {

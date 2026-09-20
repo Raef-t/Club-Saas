@@ -42,7 +42,16 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
                 $plan->planActivities()->createMany($activities);
             }
             if (isset($data['session_templates']) && is_array($data['session_templates'])) {
-                $plan->sessionTemplates()->createMany($data['session_templates']);
+                $isPlanActive = ($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus 
+                    ? $plan->status->value 
+                    : $plan->status) !== 'inactive';
+                $templates = array_map(function ($tmpl) use ($isPlanActive) {
+                    if (!isset($tmpl['is_active'])) {
+                        $tmpl['is_active'] = $isPlanActive;
+                    }
+                    return $tmpl;
+                }, $data['session_templates']);
+                $plan->sessionTemplates()->createMany($templates);
             }
 
             // Post-creation check
@@ -86,7 +95,21 @@ class EloquentSubscriptionPlanRepository implements SubscriptionPlanRepositoryIn
             }
             if (isset($data['session_templates']) && is_array($data['session_templates'])) {
                 $plan->sessionTemplates()->delete();
-                $plan->sessionTemplates()->createMany($data['session_templates']);
+                $isPlanActive = ($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus 
+                    ? $plan->status->value 
+                    : $plan->status) !== 'inactive';
+                $templates = array_map(function ($tmpl) use ($isPlanActive) {
+                    if (!isset($tmpl['is_active'])) {
+                        $tmpl['is_active'] = $isPlanActive;
+                    }
+                    return $tmpl;
+                }, $data['session_templates']);
+                $plan->sessionTemplates()->createMany($templates);
+            } elseif (isset($data['status'])) {
+                $isPlanActive = ($plan->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus 
+                    ? $plan->status->value 
+                    : $plan->status) !== 'inactive';
+                $plan->sessionTemplates()->update(['is_active' => $isPlanActive]);
             }
 
             // Post-update check
