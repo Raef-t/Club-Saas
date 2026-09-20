@@ -20,6 +20,12 @@ class StoreStaffRequest extends FormRequest
             ]);
         }
 
+        if ($this->has('branch_id') && !$this->has('branch_ids')) {
+            $this->merge([
+                'branch_ids' => is_array($this->branch_id) ? $this->branch_id : [$this->branch_id]
+            ]);
+        }
+
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
                 'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',') 
@@ -38,7 +44,7 @@ class StoreStaffRequest extends FormRequest
             'full_name' => 'nullable|string|max:200',
             'country_code' => 'nullable|string|max:5',
             'phone_number' => 'required|string',
-            'gender' => 'nullable|in:male,female',
+            'gender' => 'required|in:male,female',
             'dob' => 'nullable|date',
             'national_id' => 'nullable|string|max:50',
             'social_status' => 'nullable|string|max:50',
@@ -98,5 +104,36 @@ class StoreStaffRequest extends FormRequest
             'username' => 'nullable|string|max:100|unique:authentication_users,username',
             'password' => 'nullable|string|min:6',
         ];
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $branchIds = $this->input('branch_ids', []);
+            if (!empty($branchIds) && is_array($branchIds) && $this->filled('gender')) {
+                $gender = $this->input('gender');
+                $branches = \Modules\ClubManager\Models\Branch::whereIn('id', $branchIds)->get();
+
+                foreach ($branches as $branch) {
+                    if ($branch->gender_restriction && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $gender) {
+                        $branchName = $branch->name;
+                        if (is_string($branchName)) {
+                            $decoded = json_decode($branchName, true);
+                            if (is_array($decoded)) {
+                                $branchName = $decoded['ar'] ?? ($decoded['en'] ?? reset($decoded));
+                            }
+                        } elseif (is_array($branchName)) {
+                            $branchName = $branchName['ar'] ?? ($branchName['en'] ?? reset($branchName));
+                        }
+
+                        $msg = $branch->gender_restriction === 'female'
+                            ? "الفرع ({$branchName}) مخصص للإناث فقط، لا يمكن إضافة موظف ذكر."
+                            : "الفرع ({$branchName}) مخصص للذكور فقط، لا يمكن إضافة موظفة أنثى.";
+                        $validator->errors()->add('gender', $msg);
+                        break;
+                    }
+                }
+            }
+        });
     }
 }

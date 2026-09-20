@@ -13,6 +13,12 @@ class StoreCoachRequest extends FormRequest
 
     protected function prepareForValidation()
     {
+        if ($this->has('branch_id') && !$this->has('branch_ids')) {
+            $this->merge([
+                'branch_ids' => is_array($this->branch_id) ? $this->branch_id : [$this->branch_id]
+            ]);
+        }
+
         if ($this->has('branch_ids') && !is_array($this->branch_ids)) {
             $this->merge([
                 'branch_ids' => is_string($this->branch_ids) && str_contains($this->branch_ids, ',')
@@ -53,7 +59,7 @@ class StoreCoachRequest extends FormRequest
             // Person Fields
             'first_name'              => ['required', 'string', 'max:255'],
             'last_name'               => ['required', 'string', 'max:255'],
-            'gender'                  => ['nullable', 'string', 'in:male,female'],
+            'gender'                  => ['required', 'string', 'in:male,female'],
             'age'                     => ['nullable', 'integer', 'min:18', 'max:100'],
             'dob'                     => ['nullable', 'date'],
             'phone_number'            => ['nullable', 'string', 'max:20'],
@@ -89,6 +95,32 @@ class StoreCoachRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            $branchIds = $this->input('branch_ids', []);
+            if (!empty($branchIds) && is_array($branchIds) && $this->filled('gender')) {
+                $gender = $this->input('gender');
+                $branches = \Modules\ClubManager\Models\Branch::whereIn('id', $branchIds)->get();
+
+                foreach ($branches as $branch) {
+                    if ($branch->gender_restriction && $branch->gender_restriction !== 'mixed' && $branch->gender_restriction !== $gender) {
+                        $branchName = $branch->name;
+                        if (is_string($branchName)) {
+                            $decoded = json_decode($branchName, true);
+                            if (is_array($decoded)) {
+                                $branchName = $decoded['ar'] ?? ($decoded['en'] ?? reset($decoded));
+                            }
+                        } elseif (is_array($branchName)) {
+                            $branchName = $branchName['ar'] ?? ($branchName['en'] ?? reset($branchName));
+                        }
+
+                        $msg = $branch->gender_restriction === 'female'
+                            ? "الفرع ({$branchName}) مخصص للإناث فقط، لا يمكن إضافة مدرب ذكر."
+                            : "الفرع ({$branchName}) مخصص للذكور فقط، لا يمكن إضافة مدربة أنثى.";
+                        $validator->errors()->add('gender', $msg);
+                        break;
+                    }
+                }
+            }
+
             if ($this->has('shifts') && !empty($this->shifts)) {
                 if (!$this->has('activity_ids') || empty($this->activity_ids)) {
                     $validator->errors()->add('shifts', 'لا يمكن تحديد شفتات بدون تحديد أنشطة للمدرب.');

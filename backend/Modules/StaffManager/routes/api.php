@@ -38,7 +38,7 @@ Route::middleware(['auth:sanctum', 'check.permission'])->prefix('v1')->group(fun
         Route::get('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'index']);
         Route::post('/', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'store']);
         Route::get('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'show']);
-        Route::patch('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'update']);
+        Route::match(['put', 'patch'], '/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'update']);
         Route::post('/{id}/photo', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'updatePhoto']);
         Route::post('/{id}/schedule', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'setSchedule']);
         Route::delete('/{id}', [\Modules\StaffManager\Http\Controllers\Api\V1\CoachController::class, 'destroy']);
