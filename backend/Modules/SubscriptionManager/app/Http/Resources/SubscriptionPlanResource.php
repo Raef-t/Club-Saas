@@ -2,12 +2,33 @@
 
 namespace Modules\SubscriptionManager\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\SubscriptionManager\Enums\SubscriptionPlanStatus;
+use Modules\SubscriptionManager\Models\SubscriptionPlan;
 
+/**
+ * @mixin SubscriptionPlan
+ * @property-read SubscriptionPlan $resource
+ */
 class SubscriptionPlanResource extends JsonResource
 {
     public function toArray($request): array
     {
+        $targetDate = $request && ($request->filled('date') || $request->filled('target_date'))
+            ? Carbon::parse($request->input('date') ?? $request->input('target_date'))
+            : null;
+
+        $currentSubscribers = method_exists($this->resource, 'getCurrentSubscribersCount')
+            ? $this->resource->getCurrentSubscribersCount($targetDate)
+            : (int) ($this->resource->current_subscribers ?? $this->current_subscribers ?? 0);
+
+        $isPlanActive = $this->status instanceof SubscriptionPlanStatus
+            ? $this->status === SubscriptionPlanStatus::ACTIVE
+            : $this->status === 'active';
+
+        $isAvailable = $isPlanActive && ($this->max_subscribers == 0 || $currentSubscribers < (int) $this->max_subscribers);
+
         return [
             'id' => $this->id,
             'branch_id' => $this->branch_id,
@@ -21,12 +42,12 @@ class SubscriptionPlanResource extends JsonResource
             'currency' => $this->currency ?? 'SYP',
             'currency_type' => $this->currency ?? 'SYP',
             'max_subscribers' => $this->max_subscribers,
-            'current_subscribers' => method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers,
+            'current_subscribers' => $currentSubscribers,
             'is_unlimited_subscribers' => (bool) ($this->is_unlimited_subscribers ?? ($this->max_subscribers == 0)),
-            'is_available' => ($this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status === \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus::ACTIVE : $this->status === 'active') && ($this->max_subscribers == 0 || (int) (method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers) < (int) $this->max_subscribers),
-            'available_slots' => $this->max_subscribers > 0 ? max(0, (int) $this->max_subscribers - (int) (method_exists($this->resource, 'getCurrentSubscribersCount') ? $this->getCurrentSubscribersCount() : $this->current_subscribers)) : null,
+            'is_available' => $isAvailable,
+            'available_slots' => $this->max_subscribers > 0 ? max(0, (int) $this->max_subscribers - $currentSubscribers) : null,
             'gender_restriction' => $this->gender_restriction,
-            'status' => $this->status instanceof \Modules\SubscriptionManager\Enums\SubscriptionPlanStatus ? $this->status->value : $this->status,
+            'status' => $this->status instanceof SubscriptionPlanStatus ? $this->status->value : $this->status,
             'is_private_equipment' => (bool) (method_exists($this->resource, 'isPrivateEquipmentPlan') ? $this->isPrivateEquipmentPlan() : false),
             'is_session_based' => (bool) (method_exists($this->resource, 'isGroupSessionPlan') ? $this->isGroupSessionPlan() : false),
             'reason' => $this->reason,

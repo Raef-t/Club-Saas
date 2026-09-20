@@ -103,9 +103,15 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function index(\Illuminate\Http\Request $request)
     {
+        $targetDate = $request->filled('date') ? \Carbon\Carbon::parse($request->date)->toDateString() : ($request->filled('target_date') ? \Carbon\Carbon::parse($request->target_date)->toDateString() : now()->toDateString());
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::withCount([
-            'playerSubscriptions as active_subscribers_count' => function ($q) {
-                $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
+            'playerSubscriptions as active_subscribers_count' => function ($q) use ($targetDate) {
+                $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                  ->whereDate('start_date', '<=', $targetDate)
+                  ->where(function ($subQ) use ($targetDate) {
+                      $subQ->whereNull('end_date')
+                           ->orWhereDate('end_date', '>=', $targetDate);
+                  });
             }
         ])->with([
             'planActivities.staffActivity.activity.activityType',
@@ -279,14 +285,20 @@ class SubscriptionPlanController extends BaseController
     #[OA\Response(response: 401, description: '❌ غير مصرح', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Unauthenticated.')]))]
     public function registrationPlans(\Illuminate\Http\Request $request)
     {
+        $targetDate = $request->filled('date') ? \Carbon\Carbon::parse($request->date)->toDateString() : ($request->filled('target_date') ? \Carbon\Carbon::parse($request->target_date)->toDateString() : now()->toDateString());
         // Get active plans that have available capacity, and eager load their activities
         $query = \Modules\SubscriptionManager\Models\SubscriptionPlan::active()
-            ->available()
+            ->available($targetDate)
             ->activeActivities()
             ->notSuspended()
             ->withCount([
-                'playerSubscriptions as active_subscribers_count' => function ($q) {
-                    $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE);
+                'playerSubscriptions as active_subscribers_count' => function ($q) use ($targetDate) {
+                    $q->where('status', \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::ACTIVE->value)
+                      ->whereDate('start_date', '<=', $targetDate)
+                      ->where(function ($subQ) use ($targetDate) {
+                          $subQ->whereNull('end_date')
+                               ->orWhereDate('end_date', '>=', $targetDate);
+                      });
                 }
             ])
             ->with([
