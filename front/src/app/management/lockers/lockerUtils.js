@@ -190,6 +190,10 @@ export function createLockerReleasePayload(locker, values = {}) {
     payload.refund_amount = Number(values.refund_amount);
   }
 
+  if (isRefund && values.safe_id !== "" && values.safe_id != null) {
+    payload.safe_id = Number(values.safe_id);
+  }
+
   return payload;
 }
 

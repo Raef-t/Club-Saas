@@ -426,9 +426,9 @@ class LockerService
         });
     }
 
-    public function releaseLocker(int $lockerId, ?string $reason = null, bool $isRefund = false, ?float $refundAmount = null)
+    public function releaseLocker(int $lockerId, ?string $reason = null, bool $isRefund = false, ?float $refundAmount = null, ?int $safeId = null)
     {
-        return DB::transaction(function () use ($lockerId, $reason, $isRefund, $refundAmount) {
+        return DB::transaction(function () use ($lockerId, $reason, $isRefund, $refundAmount, $safeId) {
             $locker = \Modules\ClubManager\Models\Locker::where('id', $lockerId)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -457,11 +457,13 @@ class LockerService
                 }
 
                 $calculatedRefundAmount = null;
+                $resolvedSafeId = $safeId;
+                $firstRes = $activeReservations->first();
+
                 if ($isRefund) {
                     if ($refundAmount !== null && $refundAmount !== '') {
                         $calculatedRefundAmount = floatval($refundAmount);
                     } else {
-                        $firstRes = $activeReservations->first();
                         $paidTotal = 0;
 
                         if (!empty($firstRes->invoice_id)) {
@@ -482,6 +484,32 @@ class LockerService
 
                         $calculatedRefundAmount = $paidTotal > 0 ? floatval($paidTotal) : floatval($firstRes->price ?? 0);
                     }
+
+                    // Resolve safe_id if not provided: prioritize default_safe_id
+                    if (!$resolvedSafeId) {
+                        $resolvedSafeId = DB::table('acc_branch_settings')
+                            ->where('branch_id', $locker->branch_id)
+                            ->value('default_safe_id');
+                    }
+
+                    if (!$resolvedSafeId && !empty($firstRes->invoice_id)) {
+                        $resolvedSafeId = DB::table('payments')
+                            ->where('invoice_id', $firstRes->invoice_id)
+                            ->whereNotNull('safe_id')
+                            ->where('status', 'completed')
+                            ->latest('id')
+                            ->value('safe_id');
+                    }
+
+                    if (!$resolvedSafeId) {
+                        $resolvedSafeId = DB::table('acc_safes')
+                            ->where('branch_id', $locker->branch_id)
+                            ->where('currency', 'SYP')
+                            ->value('id')
+                            ?? DB::table('acc_safes')
+                                ->where('branch_id', $locker->branch_id)
+                                ->value('id');
+                    }
                 }
 
                 $todayDate = now()->toDateString();
@@ -494,9 +522,22 @@ class LockerService
                         'reason' => $reason,
                         'is_refund' => $isRefund,
                         'refund_amount' => $calculatedRefundAmount,
+                        'refund_safe_id' => $resolvedSafeId,
                         'end_date' => DB::raw("COALESCE(end_date, '{$todayDate}')"),
                         'updated_at' => now(),
                     ]);
+
+                // Dispatch refund event for accounting
+                if ($isRefund && $calculatedRefundAmount > 0) {
+                    $updatedRes = DB::table('locker_reservations')->where('id', $firstRes->id)->first();
+                    event(new \Modules\SubscriptionManager\Events\LockerReservationRefunded(
+                        $updatedRes,
+                        $resolvedSafeId,
+                        $calculatedRefundAmount,
+                        $reason,
+                        $lockerId
+                    ));
+                }
             }
 
             $this->repository->update($lockerId, ['status' => 'available']);

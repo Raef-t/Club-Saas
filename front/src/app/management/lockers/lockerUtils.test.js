@@ -101,11 +101,13 @@ describe("locker utilities", () => {
         reason: "  طلب المشترك إنهاء الحجز واستعادة الأمانة  ",
         is_refund: true,
         refund_amount: "35",
+        safe_id: "5",
       }),
     ).toEqual({
       reason: "طلب المشترك إنهاء الحجز واستعادة الأمانة",
       is_refund: true,
       refund_amount: 35,
+      safe_id: 5,
     });
     expect(
       createLockerReleasePayload(locker, {

@@ -577,7 +577,8 @@ class LockerController extends BaseController
             properties: [
                 new OA\Property(property: 'reason', type: 'string', description: 'سبب فك الحجز (إجباري إذا لم ينتهِ تاريخ نهاية الحجز بعد)', example: 'طلب المشترك إنهاء الحجز واستعادة الأمانة'),
                 new OA\Property(property: 'is_refund', type: 'boolean', description: 'هل تم طلب استرجاع المبلغ للمشترك؟', example: true),
-                new OA\Property(property: 'refund_amount', type: 'number', format: 'float', nullable: true, description: 'مبلغ الاسترجاع (اختياري - إذا لم يُرسل يحتسب كامل المبلغ المدفوع من الفاتورة)', example: 35.00)
+                new OA\Property(property: 'refund_amount', type: 'number', format: 'float', nullable: true, description: 'مبلغ الاسترجاع (اختياري - إذا لم يُرسل يحتسب كامل المبلغ المدفوع من الفاتورة)', example: 35.00),
+                new OA\Property(property: 'safe_id', type: 'integer', nullable: true, description: 'معرف الصندوق المالي الذي سيتم إرجاع المبلغ منه (اختياري - إن لم يحدد يُستخدم صندوق الحجز الأصلي أو الصندوق الافتراضي)', example: 1)
             ]
         )
     )]
@@ -605,13 +606,15 @@ class LockerController extends BaseController
         try {
             $isRefund = $request->boolean('is_refund');
             $refundAmount = $request->input('refund_amount');
+            $safeId = $request->input('safe_id');
             $reason = $request->input('reason');
 
             $this->lockerService->releaseLocker(
                 $locker,
                 $reason,
                 $isRefund,
-                $refundAmount !== null && $refundAmount !== '' ? floatval($refundAmount) : null
+                $refundAmount !== null && $refundAmount !== '' ? floatval($refundAmount) : null,
+                $safeId !== null && $safeId !== '' ? intval($safeId) : null
             );
             return $this->successResponse(null, __('Locker released successfully.'));
         } catch (\Illuminate\Validation\ValidationException $e) {

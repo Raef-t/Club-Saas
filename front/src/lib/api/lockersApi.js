@@ -58,7 +58,7 @@ export const lockersApi = createBackendApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Lockers"],
+      invalidatesTags: ["Lockers", "AccSafes", "AccJournals"],
     }),
     releaseLockerReservation: builder.mutation({
       query: (request) => {
@@ -70,7 +70,7 @@ export const lockersApi = createBackendApi({
           body,
         };
       },
-      invalidatesTags: ["Lockers"],
+      invalidatesTags: ["Lockers", "AccSafes", "AccJournals"],
     }),
   }),
 });

@@ -15,6 +15,9 @@ class EventServiceProvider extends ServiceProvider
         \Modules\SubscriptionManager\Events\SubscriptionPaymentRecorded::class => [
             \Modules\Accounting\Listeners\RecordSubscriptionPayment::class,
         ],
+        \Modules\SubscriptionManager\Events\LockerReservationRefunded::class => [
+            \Modules\Accounting\Listeners\RecordLockerReservationRefund::class,
+        ],
     ];
 
     /**

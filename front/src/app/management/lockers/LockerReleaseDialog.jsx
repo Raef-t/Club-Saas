@@ -94,22 +94,28 @@ export default function LockerReleaseDialog({ locker, onClose, onConfirm, isLoad
             </p>
 
             {isRefund && (
-              <Field
-                label="قيمة المبلغ المعاد"
-                name="refund_amount"
-                type="number"
-                value={refundAmount}
-                onChange={(event) => {
-                  setRefundAmount(event.target.value);
-                  if (refundAmountError) setRefundAmountError("");
-                }}
-                error={refundAmountError}
-                min="0.01"
-                step="0.01"
-                placeholder="اتركه فارغًا لإعادة كامل المبلغ"
-                required={false}
-                disabled={isLoading}
-              />
+              <>
+                <Field
+                  label="قيمة المبلغ المعاد"
+                  name="refund_amount"
+                  type="number"
+                  value={refundAmount}
+                  onChange={(event) => {
+                    setRefundAmount(event.target.value);
+                    if (refundAmountError) setRefundAmountError("");
+                  }}
+                  error={refundAmountError}
+                  min="0.01"
+                  step="0.01"
+                  placeholder="اتركه فارغًا لإعادة كامل المبلغ"
+                  required={false}
+                  disabled={isLoading}
+                />
+
+                <p className="text-xs leading-5 text-app-muted-light">
+                  سيتم صرف المبلغ من الصندوق الافتراضي للفرع وتوليد سند صرف (PV) وتخفيض رصيد الصندوق آلياً في المحاسبة.
+                </p>
+              </>
             )}
           </div>
         )}

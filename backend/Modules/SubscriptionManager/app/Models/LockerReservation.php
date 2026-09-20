@@ -21,6 +21,7 @@ class LockerReservation extends Model
         'reason',
         'is_refund',
         'refund_amount',
+        'refund_safe_id',
     ];
 
     protected $casts = [
@@ -29,6 +30,7 @@ class LockerReservation extends Model
         'price' => 'decimal:2',
         'is_refund' => 'boolean',
         'refund_amount' => 'decimal:2',
+        'refund_safe_id' => 'integer',
     ];
 
     // Assuming member relation
@@ -51,6 +53,11 @@ class LockerReservation extends Model
     public function locker()
     {
         return $this->belongsTo(\Modules\ClubManager\Models\Locker::class, 'locker_id');
+    }
+
+    public function refundSafe()
+    {
+        return $this->belongsTo(\Modules\Accounting\Models\AccSafe::class, 'refund_safe_id');
     }
 
     /**
