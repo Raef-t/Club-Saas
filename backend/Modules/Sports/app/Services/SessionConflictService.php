@@ -21,6 +21,7 @@ class SessionConflictService
      * @param int|null $ignoreTemplateId
      * @param array $coachIds
      * @param bool $isGroupSession
+     * @param bool $isPlanActive
      * @return string|null Error message if conflict found, or null if valid.
      */
     public function validateTemplates(
@@ -29,12 +30,18 @@ class SessionConflictService
         ?int $ignorePlanId = null,
         ?int $ignoreTemplateId = null,
         array $coachIds = [],
-        bool $isGroupSession = false
+        bool $isGroupSession = false,
+        bool $isPlanActive = true
     ): ?string {
         // 1. Internal overlap check within the submitted templates
         $internalError = $this->validateInternalOverlap($templates);
         if ($internalError) {
             return $internalError;
+        }
+
+        // If the plan is inactive, external conflicts (facility, branch group, coach) do not apply.
+        if (!$isPlanActive) {
+            return null;
         }
 
         // 2. Check each template against database records
@@ -124,6 +131,10 @@ class SessionConflictService
                 ->whereNull('deleted_at')
                 ->when($ignoreTemplateId, fn($q) => $q->where('id', '!=', $ignoreTemplateId))
                 ->when($ignorePlanId, fn($q) => $q->where('plan_id', '!=', $ignorePlanId))
+                ->whereHas('subscriptionPlan', function ($pq) {
+                    $pq->where('status', '!=', 'inactive')
+                       ->whereNull('deleted_at');
+                })
                 ->exists();
 
             if ($facilityConflict) {
@@ -177,6 +188,10 @@ class SessionConflictService
                 ->whereNull('deleted_at')
                 ->when($ignoreTemplateId, fn($q) => $q->where('id', '!=', $ignoreTemplateId))
                 ->when($ignorePlanId, fn($q) => $q->where('plan_id', '!=', $ignorePlanId))
+                ->whereHas('subscriptionPlan', function ($pq) {
+                    $pq->where('status', '!=', 'inactive')
+                       ->whereNull('deleted_at');
+                })
                 ->whereHas('subscriptionPlan.planActivities.staffActivity', function ($sq) use ($cleanCoachIds) {
                     $sq->whereIn('staff_id', $cleanCoachIds)
                        ->whereNull('deleted_at');
