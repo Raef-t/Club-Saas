@@ -174,29 +174,52 @@ class AttendanceSessionDayFilterTest extends TestCase
         $subSunday = $this->createPlayerSubscription($sundayPlan);
         $subMonday = $this->createPlayerSubscription($mondayPlan);
 
-        // 2026-08-16 is a Sunday (dayOfWeek = 0)
+        // 2026-08-16 is a Sunday (dayOfWeek = 0) -> ALL registered activities are returned!
         $sundayResponse = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-16");
         $sundayResponse->assertStatus(200);
-        $sundayData = $sundayResponse->json('data');
+        $sundayData = collect($sundayResponse->json('data'));
 
-        $this->assertCount(1, $sundayData);
-        $this->assertEquals($subSunday->id, $sundayData[0]['player_subscription_id']);
-        $this->assertNotEmpty($sundayData[0]['today_sessions']);
-        $this->assertEquals('16:00', $sundayData[0]['today_sessions'][0]['start_time']);
+        $this->assertCount(2, $sundayData);
+        $sundayItem = $sundayData->firstWhere('player_subscription_id', $subSunday->id);
+        $mondayItem = $sundayData->firstWhere('player_subscription_id', $subMonday->id);
 
-        // 2026-08-17 is a Monday (dayOfWeek = 1)
+        $this->assertNotNull($sundayItem);
+        $this->assertNotNull($mondayItem);
+        $this->assertTrue($sundayItem['is_today_scheduled']);
+        $this->assertNotEmpty($sundayItem['today_sessions']);
+        $this->assertEquals('16:00', $sundayItem['today_sessions'][0]['start_time']);
+
+        $this->assertFalse($mondayItem['is_today_scheduled']);
+        $this->assertEmpty($mondayItem['today_sessions']);
+        $this->assertTrue($mondayItem['requires_override_reason']);
+        $this->assertEquals('different_day', $mondayItem['off_schedule_reason_type']);
+
+        // 2026-08-17 is a Monday (dayOfWeek = 1) -> ALL registered activities returned, with Monday scheduled today
         $mondayResponse = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-17");
         $mondayResponse->assertStatus(200);
-        $mondayData = $mondayResponse->json('data');
+        $mondayData = collect($mondayResponse->json('data'));
 
-        $this->assertCount(1, $mondayData);
-        $this->assertEquals($subMonday->id, $mondayData[0]['player_subscription_id']);
-        $this->assertNotEmpty($mondayData[0]['today_sessions']);
-        $this->assertEquals('18:00', $mondayData[0]['today_sessions'][0]['start_time']);
+        $this->assertCount(2, $mondayData);
+        $mondayItemOnMonday = $mondayData->firstWhere('player_subscription_id', $subMonday->id);
+        $sundayItemOnMonday = $mondayData->firstWhere('player_subscription_id', $subSunday->id);
 
-        // 2026-08-18 is a Tuesday (dayOfWeek = 2) -> neither plan has sessions on Tuesday
+        $this->assertTrue($mondayItemOnMonday['is_today_scheduled']);
+        $this->assertNotEmpty($mondayItemOnMonday['today_sessions']);
+        $this->assertFalse($sundayItemOnMonday['is_today_scheduled']);
+        $this->assertTrue($sundayItemOnMonday['requires_override_reason']);
+        $this->assertEquals('different_day', $sundayItemOnMonday['off_schedule_reason_type']);
+
+        // 2026-08-18 is a Tuesday (dayOfWeek = 2) -> Both activities returned, both require override reason because of different day
         $tuesdayResponse = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-18");
-        $tuesdayResponse->assertStatus(404);
+        $tuesdayResponse->assertStatus(200);
+        $tuesdayData = collect($tuesdayResponse->json('data'));
+        $this->assertCount(2, $tuesdayData);
+        $this->assertFalse($tuesdayData[0]['is_today_scheduled']);
+        $this->assertTrue($tuesdayData[0]['requires_override_reason']);
+        $this->assertEquals('different_day', $tuesdayData[0]['off_schedule_reason_type']);
+        $this->assertFalse($tuesdayData[1]['is_today_scheduled']);
+        $this->assertTrue($tuesdayData[1]['requires_override_reason']);
+        $this->assertEquals('different_day', $tuesdayData[1]['off_schedule_reason_type']);
     }
 
     public function test_open_gym_plan_without_session_templates_is_returned_on_any_day(): void
@@ -316,12 +339,18 @@ class AttendanceSessionDayFilterTest extends TestCase
         ]);
 
         $response = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-16");
-        $response->assertStatus(404);
+        $response->assertStatus(200);
+        $this->assertFalse($response->json('data.0.is_today_scheduled'));
+        $this->assertEmpty($response->json('data.0.today_sessions'));
+        $this->assertTrue($response->json('data.0.requires_override_reason'));
+        $this->assertEquals('different_day', $response->json('data.0.off_schedule_reason_type'));
 
-        // But next Sunday 2026-08-23 is not cancelled, so it should be returned!
+        // But next Sunday 2026-08-23 is not cancelled, so today_sessions is present!
         $responseNextSunday = $this->getJson("/api/v1/reception/members/{$this->member->id}/subscriptions?date=2026-08-23");
         $responseNextSunday->assertStatus(200);
         $this->assertEquals($sub->id, $responseNextSunday->json('data.0.player_subscription_id'));
+        $this->assertTrue($responseNextSunday->json('data.0.is_today_scheduled'));
+        $this->assertNotEmpty($responseNextSunday->json('data.0.today_sessions'));
     }
 
     public function test_frozen_subscription_and_suspended_plan_are_excluded(): void

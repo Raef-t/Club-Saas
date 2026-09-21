@@ -30,8 +30,8 @@ class ReceptionAttendanceController extends BaseController
 
     #[OA\Get(
         path: '/v1/reception/members/{memberId}/subscriptions',
-        summary: '📋 اشتراكات اللاعب النشطة المتاحة اليوم (للاستقبال)',
-        description: 'يعرض اشتراكات اللاعب النشطة التي تحتوي على جلسات مجدولة لهذا اليوم (أو اشتراكات الدخول العام/المفتوح) مع تفاصيل الجلسات المتبقية وجلسات اليوم، مع استبعاد الاشتراكات غير المبدوءة، المنتهية، المجمدة، الموقوفة، المحذوفة، أو منتهية الرصيد. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب عند تسجيل الحضور.',
+        summary: '📋 جميع فعاليات واشتراكات اللاعب المسجل بها (لتسجيل الحضور في الاستقبال)',
+        description: 'يعرض كافة الفعاليات والاشتراكات النشطة التي سجل فيها اللاعب مع تفاصيل الجلسات المتبقية، الجدول الأسبوعي الكامل (all_sessions)، وجلسات اليوم (today_sessions). يوضح لكل اشتراك ما إذا كان الحضور في نفس اليوم والوقت المجدول (is_on_schedule) أو يتطلب إدخال سبب التجاوز (requires_override_reason: true عند الحضور بغير يوم different_day أو بغير وقت different_time).',
         tags: ['Reception'],
         security: [['bearerAuth' => []]]
     )]
@@ -88,19 +88,36 @@ class ReceptionAttendanceController extends BaseController
                         'total_sessions_allocated' => 24,
                         'total_sessions_consumed' => 8,
                         'total_sessions_remaining' => 16,
+                        'all_sessions' => [
+                            [
+                                'session_template_id' => 101,
+                                'day_of_week' => 1,
+                                'day_name' => 'الإثنين',
+                                'start_time' => '16:00:00',
+                                'end_time' => '17:30:00',
+                                'formatted_time' => '04:00 PM - 05:30 PM',
+                                'facility_id' => 2,
+                                'facility_name' => 'المسبح الأولمبي'
+                            ]
+                        ],
                         'today_sessions' => [
                             [
                                 'session_template_id' => 101,
-                                'day_of_week' => 3,
+                                'day_of_week' => 1,
+                                'day_name' => 'الإثنين',
                                 'start_time' => '16:00:00',
                                 'end_time' => '17:30:00',
+                                'formatted_time' => '04:00 PM - 05:30 PM',
                                 'facility_id' => 2,
                                 'facility_name' => 'المسبح الأولمبي'
                             ]
                         ],
                         'has_scheduled_sessions' => true,
+                        'is_today_scheduled' => true,
                         'is_on_schedule' => true,
                         'requires_override_reason' => false,
+                        'off_schedule_reason_type' => null,
+                        'schedule_notes' => null,
                         'active_lockers' => [
                             [
                                 'reservation_id' => 1,
@@ -119,11 +136,11 @@ class ReceptionAttendanceController extends BaseController
     )]
     #[OA\Response(
         response: 404,
-        description: '❌ لا توجد اشتراكات نشطة أو لا توجد جلسات مجدولة اليوم',
+        description: '❌ لا توجد اشتراكات نشطة أو لا توجد جلسات متبقية',
         content: new OA\JsonContent(
             example: [
                 'status' => 'error',
-                'message' => 'لا توجد جلسات مجدولة لهذا المشترك اليوم.'
+                'message' => 'لا توجد جلسات متبقية لهذا المشترك.'
             ]
         )
     )]
@@ -238,33 +255,6 @@ class ReceptionAttendanceController extends BaseController
                             });
                         });
                 })
-                ->where(function ($sessionQ) use ($dayOfWeek, $todayString) {
-                    // Case 1: Plan has NO session templates defined (open gym / equipment / daily entry)
-                    $sessionQ->whereNotExists(function ($noTmplQ) {
-                        $noTmplQ->select(DB::raw(1))
-                            ->from('sport_session_templates as sst_all')
-                            ->whereColumn('sst_all.plan_id', 'ps.plan_id')
-                            ->where('sst_all.is_active', true)
-                            ->whereNull('sst_all.deleted_at');
-                    })
-                    // Case 2: Plan HAS session templates, and has at least one active template for today's day_of_week and not cancelled
-                    ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $todayString) {
-                        $hasTmplQ->select(DB::raw(1))
-                            ->from('sport_session_templates as sst_today')
-                            ->whereColumn('sst_today.plan_id', 'ps.plan_id')
-                            ->where('sst_today.is_active', true)
-                            ->where('sst_today.day_of_week', $dayOfWeek)
-                            ->whereNull('sst_today.deleted_at')
-                            ->whereNotExists(function ($excQ) use ($todayString) {
-                                $excQ->select(DB::raw(1))
-                                    ->from('session_exceptions as se')
-                                    ->whereColumn('se.sport_session_template_id', 'sst_today.id')
-                                    ->whereDate('se.date', $todayString)
-                                    ->whereIn('se.status', ['cancelled', 'canceled'])
-                                    ->whereNull('se.deleted_at');
-                            });
-                    });
-                })
                 ->select(
                     'ps.id as player_subscription_id',
                     'ps.member_id',
@@ -282,20 +272,13 @@ class ReceptionAttendanceController extends BaseController
                 ->get();
 
             if ($subscriptions->isEmpty()) {
-                $hasAnyActiveSub = DB::table('player_subscriptions as ps')
-                    ->join('subscription_plans as sp', 'sp.id', '=', 'ps.plan_id')
-                    ->where('ps.member_id', $memberId)
-                    ->where('ps.status', 'active')
-                    ->whereNull('ps.deleted_at')
-                    ->whereNull('sp.deleted_at')
-                    ->where(function ($planStatusQ) {
-                        $planStatusQ->whereNull('sp.status')
-                                    ->orWhere('sp.status', '!=', 'inactive');
-                    })
+                $hasAnySub = DB::table('player_subscriptions')
+                    ->where('member_id', $memberId)
+                    ->whereNull('deleted_at')
                     ->exists();
 
-                if ($hasAnyActiveSub) {
-                    return $this->errorResponse(__('لا توجد جلسات مجدولة لهذا المشترك اليوم.'), 404);
+                if ($hasAnySub) {
+                    return $this->errorResponse(__('لا توجد اشتراكات نشطة وصالحة لهذا المشترك (قد يكون الاشتراك منتهياً أو مجمداً أو لم يبدأ بعد).'), 404);
                 }
 
                 return $this->errorResponse(__('لا توجد اشتراكات نشطة لهذا المشترك.'), 404);
@@ -311,12 +294,13 @@ class ReceptionAttendanceController extends BaseController
                 if ($remainingSubscriptions->isEmpty()) {
                     return response()->json([
                         'status'  => 'success',
-                        'message' => __('اللاعب مسجل في كافة فعالياته المتاحة لليوم في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
+                        'message' => __('اللاعب مسجل في كافة فعالياته في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
                         'data'    => [],
                         'meta'    => [
                             'is_currently_checked_in'           => true,
                             'current_attendance_id'             => $openAttendance->id,
-                            'all_today_activities_attended'    => true,
+                            'all_activities_attended'           => true,
+                            'all_today_activities_attended'     => true,
                             'has_current_locker'                => $hasLockerInCurrentAttendance,
                             'show_locker_selection'             => false,
                             'current_locker'                    => $currentLocker,
@@ -387,21 +371,12 @@ class ReceptionAttendanceController extends BaseController
                 $sub->total_sessions_consumed = $sub->items->sum('sessions_consumed');
                 $sub->total_sessions_remaining = $sub->items->sum('sessions_remaining');
 
-                // Attach today's session schedule details
-                $todaySessions = DB::table('sport_session_templates as sst')
+                // Fetch all weekly session templates for this plan
+                $allSessions = DB::table('sport_session_templates as sst')
                     ->leftJoin('facilities as f', 'f.id', '=', 'sst.facility_id')
                     ->where('sst.plan_id', $sub->plan_id)
                     ->where('sst.is_active', true)
-                    ->where('sst.day_of_week', $dayOfWeek)
                     ->whereNull('sst.deleted_at')
-                    ->whereNotExists(function ($excQ) use ($todayString) {
-                        $excQ->select(DB::raw(1))
-                            ->from('session_exceptions as se')
-                            ->whereColumn('se.sport_session_template_id', 'sst.id')
-                            ->whereDate('se.date', $todayString)
-                            ->whereIn('se.status', ['cancelled', 'canceled'])
-                            ->whereNull('se.deleted_at');
-                    })
                     ->select(
                         'sst.id as session_template_id',
                         'sst.day_of_week',
@@ -410,30 +385,68 @@ class ReceptionAttendanceController extends BaseController
                         'sst.facility_id',
                         'f.name as facility_name'
                     )
+                    ->orderBy('sst.day_of_week')
                     ->orderBy('sst.start_time')
-                    ->get();
+                    ->get()
+                    ->map(function ($tmpl) {
+                        $dayNames = [
+                            0 => 'الأحد',
+                            1 => 'الإثنين',
+                            2 => 'الثلاثاء',
+                            3 => 'الأربعاء',
+                            4 => 'الخميس',
+                            5 => 'الجمعة',
+                            6 => 'السبت',
+                        ];
+                        $tmpl->day_name = $dayNames[$tmpl->day_of_week] ?? null;
+                        $tmpl->formatted_time = \Carbon\Carbon::parse($tmpl->start_time)->format('h:i A') . ' - ' . \Carbon\Carbon::parse($tmpl->end_time)->format('h:i A');
+                        return $tmpl;
+                    });
 
+                // Attach today's session schedule details (excluding cancelled sessions today)
+                $cancelledTodayTmplIds = DB::table('session_exceptions')
+                    ->whereIn('sport_session_template_id', $allSessions->pluck('session_template_id'))
+                    ->whereDate('date', $todayString)
+                    ->whereIn('status', ['cancelled', 'canceled'])
+                    ->whereNull('deleted_at')
+                    ->pluck('sport_session_template_id')
+                    ->toArray();
+
+                $todaySessions = $allSessions->where('day_of_week', $dayOfWeek)
+                    ->reject(fn($t) => in_array($t->session_template_id, $cancelledTodayTmplIds))
+                    ->values();
+
+                $sub->all_sessions = $allSessions;
                 $sub->today_sessions = $todaySessions;
                 $sub->has_scheduled_sessions = $todaySessions->isNotEmpty();
+                $sub->is_today_scheduled = $todaySessions->isNotEmpty() || $allSessions->isEmpty();
 
-                // Determine if the subscription has session templates at all across all days
-                $hasAnySessionTemplates = DB::table('sport_session_templates')
-                    ->where('plan_id', $sub->plan_id)
-                    ->where('is_active', true)
-                    ->whereNull('deleted_at')
-                    ->exists();
+                $hasAnySessionTemplates = $allSessions->isNotEmpty();
 
                 // If plan has no session templates at all (open gym / general entrance), it's always on schedule
                 if (!$hasAnySessionTemplates) {
                     $sub->is_on_schedule = true;
                     $sub->requires_override_reason = false;
+                    $sub->off_schedule_reason_type = null;
+                    $sub->schedule_notes = null;
+                } elseif ($todaySessions->isEmpty()) {
+                    // Plan has session templates, but none scheduled for today (different day!)
+                    $sub->is_on_schedule = false;
+                    $sub->requires_override_reason = true;
+                    $sub->off_schedule_reason_type = 'different_day';
+                    $scheduledDays = $allSessions->pluck('day_name')->unique()->values()->implode('، ');
+                    $sub->schedule_notes = "الفعالية غير مجدولة اليوم. الأيام المجدولة: {$scheduledDays}";
                 } else {
                     // Check if current time falls within any of today's active templates
                     $currentTimeStr = now()->format('H:i:s');
                     $isOnSchedule = false;
+                    $formattedScheduleTimes = [];
+
                     foreach ($todaySessions as $sessionTmpl) {
                         $startTimeStr = \Carbon\Carbon::parse($sessionTmpl->start_time)->format('H:i:s');
                         $endTimeStr = \Carbon\Carbon::parse($sessionTmpl->end_time)->format('H:i:s');
+                        $formattedScheduleTimes[] = $sessionTmpl->formatted_time;
+
                         if ($endTimeStr >= $startTimeStr) {
                             if ($currentTimeStr >= $startTimeStr && $currentTimeStr <= $endTimeStr) {
                                 $isOnSchedule = true;
@@ -446,8 +459,17 @@ class ReceptionAttendanceController extends BaseController
                             }
                         }
                     }
+
                     $sub->is_on_schedule = $isOnSchedule;
                     $sub->requires_override_reason = !$isOnSchedule;
+                    if (!$isOnSchedule) {
+                        $sub->off_schedule_reason_type = 'different_time';
+                        $timesList = implode(', ', $formattedScheduleTimes);
+                        $sub->schedule_notes = "الفعالية مجدولة اليوم في الأوقات: {$timesList}";
+                    } else {
+                        $sub->off_schedule_reason_type = null;
+                        $sub->schedule_notes = null;
+                    }
                 }
 
                 // Attach general active lockers
@@ -480,12 +502,13 @@ class ReceptionAttendanceController extends BaseController
                 if ($openAttendance && !empty($alreadyConsumedSubIds)) {
                     return response()->json([
                         'status'  => 'success',
-                        'message' => __('اللاعب مسجل في كافة فعالياته المتاحة لليوم في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
+                        'message' => __('اللاعب مسجل في كافة فعالياته في حضوره الحالي ولا يملك فعاليات أخرى لتسجيله عليها.'),
                         'data'    => [],
                         'meta'    => [
                             'is_currently_checked_in'           => true,
                             'current_attendance_id'             => $openAttendance->id,
-                            'all_today_activities_attended'    => true,
+                            'all_activities_attended'           => true,
+                            'all_today_activities_attended'     => true,
                             'has_current_locker'                => $hasLockerInCurrentAttendance,
                             'show_locker_selection'             => false,
                             'current_locker'                    => $currentLocker,
@@ -494,7 +517,7 @@ class ReceptionAttendanceController extends BaseController
                     ], 200);
                 }
 
-                return $this->errorResponse(__('لا توجد جلسات مجدولة أو متبقية لهذا المشترك اليوم.'), 404);
+                return $this->errorResponse(__('لا توجد جلسات متبقية لهذا المشترك.'), 404);
             }
 
             return response()->json([
@@ -504,7 +527,8 @@ class ReceptionAttendanceController extends BaseController
                 'meta'    => [
                     'is_currently_checked_in'           => (bool) $openAttendance,
                     'current_attendance_id'             => $openAttendance?->id,
-                    'all_today_activities_attended'    => false,
+                    'all_activities_attended'           => false,
+                    'all_today_activities_attended'     => false,
                     'has_current_locker'                => $hasLockerInCurrentAttendance,
                     'show_locker_selection'             => !$hasLockerInCurrentAttendance,
                     'current_locker'                    => $currentLocker,
