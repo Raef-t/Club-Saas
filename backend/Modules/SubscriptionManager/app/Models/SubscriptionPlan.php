@@ -402,6 +402,51 @@ class SubscriptionPlan extends Model
     }
 
     /**
+     * Determine if this subscription plan represents a daily entry pass (دخول يومي / is_daily_entry).
+     */
+    public function isDailyEntryPlan(): bool
+    {
+        $activities = $this->relationLoaded('planActivities')
+            ? $this->planActivities
+            : $this->planActivities()->with('staffActivity.activity.activityType')->get();
+
+        foreach ($activities as $planActivity) {
+            $staffActivity = $planActivity->staffActivity;
+            $activity = $staffActivity ? $staffActivity->activity : ($planActivity->activity ?? null);
+            if ($activity) {
+                $type = $activity->relationLoaded('activityType') ? $activity->activityType : $activity->activityType()->first();
+                if ($type && !empty($type->is_daily_entry)) {
+                    return true;
+                }
+            }
+        }
+
+        if ($this->exists) {
+            $hasDaily = $this->planActivities()
+                ->where(function ($q) {
+                    $q->whereHas('staffActivity.activity.activityType', function ($tq) {
+                        $tq->where('is_daily_entry', true);
+                    })->orWhereHas('activity.activityType', function ($tq) {
+                        $tq->where('is_daily_entry', true);
+                    });
+                })
+                ->exists();
+
+            if ($hasDaily) {
+                return true;
+            }
+        }
+
+        $planName = trim((string) $this->name);
+        $lowerPlanName = strtolower($planName);
+        if ((int) $this->session_count === 1 && (str_contains($planName, 'دخول') || str_contains($planName, 'يومي') || str_contains($lowerPlanName, 'daily'))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * Determine if plan allows unlimited subscribers.
      */
     public function getIsUnlimitedSubscribersAttribute(): bool

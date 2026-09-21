@@ -29,12 +29,14 @@ class AllSubscriptionsReportService
         $query = PlayerSubscription::query()
             ->with([
                 'member.person.contacts',
+                'member.person.user',
                 'member.branch',
                 'plan.branch',
-                'plan.planActivities.staffActivity.activity',
+                'plan.planActivities.staffActivity.activity.activityType',
                 'plan.planActivities.staffActivity.staff.person',
                 'offer',
                 'items',
+                'payments.safe.account',
             ]);
 
         // 0. Filter by Currency
@@ -101,10 +103,26 @@ class AllSubscriptionsReportService
             });
         }
 
+        // 8. Daily Entry Exclusion Filter
+        $excludeDaily = filter_var($filters['exclude_daily_entry'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($excludeDaily) {
+            $query->whereDoesntHave('plan.planActivities.staffActivity.activity.activityType', function ($q) {
+                $q->where('is_daily_entry', true);
+            })->whereDoesntHave('plan', function ($q) {
+                $q->where('session_count', 1)
+                  ->where(function ($nq) {
+                      $nq->where('name', 'like', '%دخولية%')
+                         ->orWhere('name', 'like', '%دخول يومي%')
+                         ->orWhere('name', 'like', '%daily%');
+                  });
+            });
+        }
+
         // Retrieve all matching records
         $allSubscriptions = $query->orderBy('id', 'desc')->get();
 
         // Calculate summary statistics
+        $dailyEntryCount = $allSubscriptions->filter(fn($s) => $s->plan?->isDailyEntryPlan() ?? false)->count();
         $summary = [
             'total_subscriptions'  => $allSubscriptions->count(),
             'total_revenue'        => round((float) $allSubscriptions->sum('total_amount'), 2),
@@ -112,6 +130,7 @@ class AllSubscriptionsReportService
             'total_remaining'      => round((float) $allSubscriptions->sum(fn($s) => max(0, (float)$s->total_amount - (float)$s->paid_amount)), 2),
             'active_count'         => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'active')->count(),
             'finished_count'       => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'finished')->count(),
+            'daily_entry_count'    => $dailyEntryCount,
             'frozen_count'         => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'frozen')->count(),
             'terminated_count'     => $allSubscriptions->filter(fn($s) => (is_object($s->status) ? $s->status->value : $s->status) === 'terminated')->count(),
             'fully_paid_count'     => $allSubscriptions->filter(fn($s) => (float)$s->paid_amount >= (float)$s->total_amount)->count(),
@@ -125,6 +144,14 @@ class AllSubscriptionsReportService
         $records = $allSubscriptions->map(function ($sub) {
             $member = $sub->member;
             $person = $member?->person;
+            $user   = $person?->user;
+
+            // Safe & Account name resolution
+            $safePayment = $sub->payments->first(fn($p) => !empty($p->safe_id));
+            $accountName = $safePayment?->safe?->account?->name ?? $safePayment?->safe?->name ?? null;
+            $safeName    = $safePayment?->safe?->name ?? null;
+            $username    = $user?->username ?? $user?->custom_username ?? null;
+            $isDailyEntry = $sub->plan?->isDailyEntryPlan() ?? false;
 
             // Collect all contact phone numbers
             $phoneNumbers = $person?->contacts
@@ -201,10 +228,23 @@ class AllSubscriptionsReportService
                 $totalAllocated += $allocated;
                 $totalConsumed  += $consumed;
 
+                $coachPerson = $coach?->person;
+                $coachFullName = $coachPerson?->full_name ?? 'غير مسند';
+                $nameParts = explode(' ', trim($coachFullName));
+                $firstName = $coachPerson?->first_name ?? ($nameParts[0] ?? $coachFullName);
+                $lastName  = $coachPerson?->last_name ?? (count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '');
+
                 return [
                     'item_id'            => $item->id,
                     'activity_name'      => $activity?->name ?? 'نشاط عام',
-                    'coach_name'         => $coach?->person?->full_name ?? 'غير مسند',
+                    'coach_name'         => $coachFullName,
+                    'coach'              => $coach ? [
+                        'id'         => $coach->id,
+                        'name'       => $coachFullName,
+                        'full_name'  => $coachFullName,
+                        'first_name' => $firstName,
+                        'last_name'  => $lastName,
+                    ] : null,
                     'is_unlimited'       => (bool) $item->is_unlimited,
                     'sessions_allocated' => $allocated,
                     'sessions_consumed'  => $consumed,
@@ -219,14 +259,20 @@ class AllSubscriptionsReportService
                 'member_id'            => $sub->member_id,
                 'member_number'        => $member?->member_number ?? '',
                 'member_name'          => $person?->full_name ?? 'غير محدد',
+                'username'             => $username,
                 'member_phone'         => $memberPhone,
                 'member_contacts'      => $memberContacts,
                 'branch_name'          => $sub->plan?->branch?->name ?? $member?->branch?->name ?? 'غير محدد',
+
+                // Safe & Accounting Account Details
+                'account_name'         => $accountName,
+                'safe_name'            => $safeName,
 
                 // Plan & Offer Details
                 'plan_id'              => $sub->plan_id,
                 'plan_name'            => $sub->plan?->name ?? '',
                 'plan_type'            => $sub->plan?->type ?? '',
+                'is_daily_entry'       => $isDailyEntry,
                 'offer_name'           => $sub->offer?->title ?? null,
 
                 // Dates & Status

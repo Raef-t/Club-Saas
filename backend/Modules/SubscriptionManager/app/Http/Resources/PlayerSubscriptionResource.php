@@ -55,6 +55,13 @@ class PlayerSubscriptionResource extends JsonResource
                 : ($this->branch_receipt_number ?? null),
             'coach_receipt_number' => $this->coach_receipt_number ?? ($this->relationLoaded('revenueSplit') ? $this->revenueSplit?->coach_receipt_number : null),
             'branch_receipt_number' => $this->branch_receipt_number ?? ($this->relationLoaded('revenueSplit') ? $this->revenueSplit?->branch_receipt_number : null),
+            'account_name' => $this->relationLoaded('payments') && $this->payments->isNotEmpty()
+                ? ($this->payments->first(fn($p) => !empty($p->safe_id))?->safe?->account?->name
+                   ?? $this->payments->first(fn($p) => !empty($p->safe_id))?->safe?->name)
+                : null,
+            'safe_name' => $this->relationLoaded('payments') && $this->payments->isNotEmpty()
+                ? $this->payments->first(fn($p) => !empty($p->safe_id))?->safe?->name
+                : null,
             'payments' => PaymentResource::collection($this->whenLoaded('payments')),
             'invoices' => InvoiceResource::collection($this->whenLoaded('invoices')),
             'items' => $this->whenLoaded('items', function () {
@@ -68,6 +75,12 @@ class PlayerSubscriptionResource extends JsonResource
                     $activity = $staffActivity?->activity;
                     $coach = $staffActivity?->staff;
 
+                    $coachPerson = $coach?->person;
+                    $coachFullName = $coachPerson?->full_name;
+                    $nameParts = $coachFullName ? explode(' ', trim($coachFullName)) : [];
+                    $firstName = $coachPerson?->first_name ?? ($nameParts[0] ?? $coachFullName);
+                    $lastName  = $coachPerson?->last_name ?? (count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '');
+
                     return [
                         'id' => $item->id,
                         'activity_id' => $activity?->id,
@@ -76,9 +89,13 @@ class PlayerSubscriptionResource extends JsonResource
                             'name' => $activity->name,
                         ] : null,
                         'coach_id' => $coach?->id,
+                        'coach_name' => $coachFullName,
                         'coach' => $coach ? [
                             'id' => $coach->id,
-                            'name' => $coach->person ? $coach->person->full_name : null,
+                            'name' => $coachFullName,
+                            'full_name' => $coachFullName,
+                            'first_name' => $firstName,
+                            'last_name' => $lastName,
                         ] : null,
                         'sessions_allocated' => $item->sessions_allocated,
                         'sessions_consumed' => $item->sessions_consumed ?? 0,

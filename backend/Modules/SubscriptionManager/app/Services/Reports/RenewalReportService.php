@@ -34,6 +34,18 @@ class RenewalReportService
                 'items',
             ]);
 
+        // Exclude daily entry passes from renewal reports (they are one-time visits, not recurring renewable memberships)
+        $query->whereDoesntHave('plan.planActivities.staffActivity.activity.activityType', function ($q) {
+            $q->where('is_daily_entry', true);
+        })->whereDoesntHave('plan', function ($q) {
+            $q->where('session_count', 1)
+              ->where(function ($nq) {
+                  $nq->where('name', 'like', '%دخولية%')
+                     ->orWhere('name', 'like', '%دخول يومي%')
+                     ->orWhere('name', 'like', '%daily%');
+              });
+        });
+
         if ($branchId) {
             $query->where(function ($q) use ($branchId) {
                 $q->whereHas('plan', fn($pq) => $pq->where('branch_id', $branchId))
@@ -54,7 +66,6 @@ class RenewalReportService
                 $mq->where('member_number', 'like', "%{$search}%")
                    ->orWhereHas('person', function ($pq) use ($search) {
                        $pq->where('full_name', 'like', "%{$search}%")
-                          ->orWhere('mobile1', 'like', "%{$search}%")
                           ->orWhereHas('user', function ($uq) use ($search) {
                               $uq->where('username', 'like', "%{$search}%")
                                 ->orWhere('custom_username', 'like', "%{$search}%");
