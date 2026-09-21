@@ -56,6 +56,9 @@ export function getNotificationAction(notification) {
   if (notification?.notification_id != null) {
     params.set("notification_id", String(notification.notification_id));
   }
+  if (notification?.recipient_id != null) {
+    params.set("recipient_id", String(notification.recipient_id));
+  }
   if (snapshot.period_start) params.set("period_start", String(snapshot.period_start));
   if (snapshot.period_end) params.set("period_end", String(snapshot.period_end));
 

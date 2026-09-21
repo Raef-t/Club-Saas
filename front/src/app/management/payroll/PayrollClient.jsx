@@ -24,6 +24,7 @@ import {
   useGetPayslipsQuery,
   useUpdatePayslipMutation,
 } from "@/lib/api/payslipsApi";
+import { useMarkNotificationReadMutation } from "@/lib/api/notificationsApi";
 import { getApiErrorMessage } from "@/lib/apiError";
 import { formatDate, formatMoney } from "@/lib/utils";
 import {
@@ -87,6 +88,7 @@ export default function PayrollClient({ initialAction = null }) {
     useUpdateBranchSettingsMutation();
   const [updatePayslip, { isLoading: isUpdating }] = useUpdatePayslipMutation();
   const [confirmPayslips, { isLoading: isConfirming }] = useConfirmPayslipsMutation();
+  const [markNotificationRead] = useMarkNotificationReadMutation();
 
   const payrollEndDay = getPayrollEndDay(settingsResponse);
   const savedPayslips = useMemo(
@@ -112,6 +114,7 @@ export default function PayrollClient({ initialAction = null }) {
         initialAction.type,
         initialAction.branchId,
         initialAction.notificationId,
+        initialAction.recipientId,
         initialAction.periodStart,
         initialAction.periodEnd,
       ].join(":")
@@ -137,6 +140,7 @@ export default function PayrollClient({ initialAction = null }) {
     processedActionRef.current = actionKey;
     void loadDraft(initialAction.branchId, {
       source: "notification",
+      recipientId: initialAction.recipientId,
       periodStart: initialAction.periodStart,
       periodEnd: initialAction.periodEnd,
     });
@@ -259,6 +263,9 @@ export default function PayrollClient({ initialAction = null }) {
 
   async function handleConfirm() {
     if (!branchId || !draft?.payslips?.length) return;
+
+    const recipientId = generationRequest?.recipientId;
+
     try {
       const response = await confirmPayslips(createConfirmPayload(branchId, draft)).unwrap();
       setConfirmOpen(false);
@@ -266,6 +273,14 @@ export default function PayrollClient({ initialAction = null }) {
       setGenerationRequest(null);
       setActiveTab("saved");
       toast.success(response?.message || "تم تثبيت واعتماد الرواتب بنجاح.");
+
+      if (recipientId) {
+        try {
+          await markNotificationRead(recipientId).unwrap();
+        } catch {
+          toast.warning("تم اعتماد الرواتب، لكن تعذر تحديث حالة الإشعار.");
+        }
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, "تعذر تثبيت واعتماد الرواتب."));
     }

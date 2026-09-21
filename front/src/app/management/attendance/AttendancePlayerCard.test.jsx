@@ -30,7 +30,7 @@ const baseProps = {
 
 afterEach(cleanup);
 
-function renderCard(requiresOverrideReason) {
+function renderCard(requiresOverrideReason, props = {}) {
   const subscription = {
     id: "108",
     label: "الخطة الشهرية",
@@ -46,6 +46,7 @@ function renderCard(requiresOverrideReason) {
       selectedSubscription={subscription}
       playerSubscriptions={[subscription]}
       requiresCheckInNote={requiresOverrideReason}
+      {...props}
     />,
   );
 }
@@ -64,5 +65,16 @@ describe("AttendancePlayerCard", () => {
 
     expect(screen.queryByLabelText(/سبب الحضور خارج الموعد/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "تسجيل الدخول والخصم" })).toBeEnabled();
+  });
+
+  it("hides locker selection and shows the current locker as read-only", () => {
+    renderCard(false, {
+      showLockerSelection: false,
+      currentLocker: { id: 12, lockerNumber: "A-105" },
+    });
+
+    expect(screen.queryByText("الخزانة (اختياري)")).not.toBeInTheDocument();
+    expect(screen.getByText("الخزانة الحالية")).toBeInTheDocument();
+    expect(screen.getByText("A-105")).toBeInTheDocument();
   });
 });

@@ -1,5 +1,31 @@
 import { resolveWorkStatus } from "@/lib/workStatus";
 
+/** Routes backend coach photos through the local authenticated asset proxy. */
+export function resolveCoachPhotoUrl(value) {
+  if (!value || typeof value !== "string") return "";
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return "";
+  if (
+    trimmedValue.startsWith("data:") ||
+    trimmedValue.startsWith("blob:") ||
+    trimmedValue.startsWith("/img/") ||
+    trimmedValue.startsWith("/api/")
+  ) {
+    return trimmedValue;
+  }
+
+  let assetPath = trimmedValue;
+  try {
+    const remoteUrl = new URL(trimmedValue);
+    assetPath = `${remoteUrl.pathname}${remoteUrl.search}`;
+  } catch {
+    // Relative backend paths are handled below.
+  }
+
+  const normalizedPath = assetPath.replace(/^\/+/, "");
+  return normalizedPath ? `/api/assets/${normalizedPath}` : "";
+}
+
 /**
  * Maps the coach details response to the controlled edit-form values.
  */

@@ -51,6 +51,10 @@ const toneMap = {
     icon: "bg-[rgba(0,188,212,0.22)] text-cyan-400",
     spark: "#00BCD4",
   },
+  red: {
+    icon: "bg-[rgba(228,0,0,0.22)] text-app-red",
+    spark: "#E40000",
+  },
 };
 
 function MiniSpark({ tone = "yellow" }) {

@@ -45,6 +45,44 @@ export function normalizeCoachEmploymentFilter(value) {
   return ["fixed_salary", "commission_based", "hybrid"].includes(normalized) ? normalized : "all";
 }
 
+function normalizeBranchIds(branchIds, selectedBranchId = "all") {
+  const normalized = (Array.isArray(branchIds) ? branchIds : [])
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  if (normalized.length > 0) return [...new Set(normalized)];
+
+  const selectedId = Number(selectedBranchId);
+  return selectedBranchId !== "all" && Number.isFinite(selectedId) && selectedId > 0
+    ? [selectedId]
+    : [];
+}
+
+export function createCoachUpdatePayload(values, selectedBranchId = "all") {
+  return {
+    first_name: values.first_name.trim(),
+    last_name: values.last_name.trim(),
+    gender: values.gender || "male",
+    dob: values.dob || null,
+    phone_number: values.phone_number?.trim() || null,
+    country_code: values.country_code?.trim() || "+963",
+    address: values.address?.trim() || null,
+    branch_ids: normalizeBranchIds(values.branch_ids, selectedBranchId),
+    experience_years: Number(values.experience_years) || 0,
+    start_date: values.start_date || null,
+    work_status: values.work_status,
+    is_active: values.work_status === "active",
+    employment_type: values.employment_type || "fixed_salary",
+    base_salary: Number(values.base_salary) || 0,
+    default_commission_rate: Number(values.default_commission_rate) || 0,
+    private_commission_rate: Number(values.private_commission_rate) || 0,
+    reason: values.reason?.trim() || "",
+    work_types: Array.isArray(values.work_types) ? values.work_types : [],
+    activity_ids: normalizeBranchIds(values.activity_ids),
+    shifts: normalizeBranchIds(values.shifts),
+  };
+}
+
 /**
  * Coordinates coach data, filters, drawer state, and CRUD mutations.
  */
@@ -229,18 +267,23 @@ export function useCoaches(params = {}) {
   async function handleCreate(values) {
     setFormError("");
     try {
+      const branchIds = normalizeBranchIds(values.branch_ids, branchFilter);
+      if (branchIds.length === 0) {
+        setFormError("يرجى اختيار فرع واحد على الأقل.");
+        return false;
+      }
+
       const formData = new FormData();
       formData.append("first_name", values.first_name);
       formData.append("last_name", values.last_name);
       formData.append("gender", values.gender || "male");
       formData.append("dob", values.dob);
-      if (values.phone_number) formData.append("phone_number", values.phone_number);
-      formData.append("country_code", values.country_code || "+963");
+      const phoneNumber = values.phone_number?.trim();
+      if (phoneNumber) formData.append("phone_number", phoneNumber);
+      formData.append("country_code", values.country_code?.trim() || "+963");
       if (values.address) formData.append("address", values.address);
 
-      if (Array.isArray(values.branch_ids)) {
-        values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
-      }
+      branchIds.forEach((id) => formData.append("branch_ids[]", String(id)));
       formData.append("experience_years", String(Number(values.experience_years) || 0));
       if (values.start_date) formData.append("start_date", values.start_date);
       formData.append("work_status", values.work_status);
@@ -284,47 +327,15 @@ export function useCoaches(params = {}) {
     if (!selectedCoachId) return;
     setFormError("");
     try {
-      const formData = new FormData();
-      formData.append("first_name", values.first_name);
-      formData.append("last_name", values.last_name);
-      formData.append("gender", values.gender || "male");
-      formData.append("dob", values.dob);
-      formData.append("phone_number", values.phone_number || "");
-      formData.append("country_code", values.country_code || "+963");
-      formData.append("address", values.address || "");
-
-      if (Array.isArray(values.branch_ids)) {
-        values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
-      }
-      formData.append("experience_years", String(Number(values.experience_years) || 0));
-      formData.append("start_date", values.start_date || "");
-      formData.append("work_status", values.work_status);
-      formData.append("is_active", values.work_status === "active" ? "1" : "0");
-      formData.append("employment_type", values.employment_type || "fixed_salary");
-      formData.append("base_salary", String(Number(values.base_salary) || 0));
-      formData.append(
-        "default_commission_rate",
-        String(Number(values.default_commission_rate) || 0),
-      );
-      formData.append(
-        "private_commission_rate",
-        String(Number(values.private_commission_rate) || 0),
-      );
-      formData.append("reason", values.reason?.trim() || "");
-
-      if (Array.isArray(values.work_types)) {
-        values.work_types.forEach((type) => formData.append("work_types[]", type));
-      }
-      if (Array.isArray(values.activity_ids)) {
-        values.activity_ids.forEach((id) => formData.append("activity_ids[]", String(id)));
-      }
-      if (Array.isArray(values.shifts)) {
-        values.shifts.forEach((shift) => formData.append("shifts[]", String(shift)));
+      const body = createCoachUpdatePayload(values, branchFilter);
+      if (body.branch_ids.length === 0) {
+        setFormError("يرجى اختيار فرع واحد على الأقل.");
+        return false;
       }
 
       await updateCoach({
         id: selectedCoachId,
-        body: formData,
+        body,
       }).unwrap();
 
       if (values.photoChanged) {

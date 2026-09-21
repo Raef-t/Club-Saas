@@ -63,6 +63,8 @@ export default function AttendanceClient({ initialBranches }) {
             attendanceNote={attendance.attendanceNote}
             attendanceErrorMessage={attendance.attendanceModalErrorMessage}
             requiresCheckInNote={attendance.requiresCheckInNote}
+            showLockerSelection={attendance.showLockerSelection}
+            currentLocker={attendance.currentLocker}
             lockerNumber={attendance.lockerNumber}
             availableLockerOptions={attendance.availableLockerOptions}
             isMemberLoading={attendance.isMemberLoading}

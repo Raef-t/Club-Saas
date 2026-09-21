@@ -130,3 +130,54 @@ export function getGenderForBranchId(branches, branchId, fallback) {
 
   return getDefaultGenderForBranch(branch, fallback);
 }
+
+/**
+ * Returns the single gender required by the selected branches. A null result
+ * means that the branches are mixed/unrestricted or that male-only and
+ * female-only branches were selected together.
+ */
+export function getRequiredGenderForBranches(branches, branchIds = []) {
+  const selectedIds = new Set((Array.isArray(branchIds) ? branchIds : []).map(String));
+  const restrictions = new Set(
+    getBranchesArray(branches)
+      .filter((branch) => selectedIds.has(String(branch.id)))
+      .map((branch) => branch.gender_restriction)
+      .filter((restriction) => restriction === "male" || restriction === "female"),
+  );
+
+  return restrictions.size === 1 ? [...restrictions][0] : null;
+}
+
+/**
+ * Detects an impossible selection containing both male-only and female-only
+ * branches.
+ */
+export function hasConflictingBranchGenderRestrictions(branches, branchIds = []) {
+  const selectedIds = new Set((Array.isArray(branchIds) ? branchIds : []).map(String));
+  const restrictions = new Set(
+    getBranchesArray(branches)
+      .filter((branch) => selectedIds.has(String(branch.id)))
+      .map((branch) => branch.gender_restriction)
+      .filter((restriction) => restriction === "male" || restriction === "female"),
+  );
+
+  return restrictions.size > 1;
+}
+
+/**
+ * Validates a person's gender against every selected branch.
+ */
+export function getBranchGenderValidationError(branches, branchIds, gender) {
+  if (hasConflictingBranchGenderRestrictions(branches, branchIds)) {
+    return "لا يمكن الجمع بين فرع مخصص للذكور وفرع مخصص للإناث.";
+  }
+
+  const requiredGender = getRequiredGenderForBranches(branches, branchIds);
+  if (requiredGender && gender && requiredGender !== gender) {
+    return requiredGender === "female"
+      ? "الفرع المحدد مخصص للإناث فقط."
+      : "الفرع المحدد مخصص للذكور فقط.";
+  }
+
+  return "";
+}

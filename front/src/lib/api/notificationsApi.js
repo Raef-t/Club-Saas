@@ -11,7 +11,14 @@ export const notificationsApi = createBackendApi({
       }),
       providesTags: ["Notifications"],
     }),
+    markNotificationRead: builder.mutation({
+      query: (recipientId) => ({
+        url: `notifications/${recipientId}/read`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
   }),
 });
 
-export const { useGetNotificationsQuery } = notificationsApi;
+export const { useGetNotificationsQuery, useMarkNotificationReadMutation } = notificationsApi;

@@ -43,7 +43,21 @@ export default function SubscriptionsReportTable({ rows, summary, isLoading }) {
       sortable: false,
     },
     { key: "accountName", label: "اسم الحساب", width: "130px" },
-    { key: "memberName", label: "اللاعب", width: "minmax(160px,1.35fr)" },
+    {
+      key: "memberName",
+      label: "اللاعب",
+      width: "minmax(160px,1.35fr)",
+      render: (value, row) => (
+        <div>
+          <span className="block font-medium text-app-text">{value}</span>
+          {row.username && row.username !== "-" && (
+            <span className="block text-xs text-app-muted-light" dir="ltr">
+              @{row.username}
+            </span>
+          )}
+        </div>
+      ),
+    },
     { key: "phone", label: "رقم الهاتف", width: "130px" },
     { key: "planName", label: "خطة الاشتراك", width: "minmax(160px,1.2fr)" },
     { key: "coachName", label: "الكوتش", width: "minmax(140px,1fr)" },

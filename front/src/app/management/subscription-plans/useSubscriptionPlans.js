@@ -26,8 +26,6 @@ import {
   SUBSCRIPTION_PLAN_STATUS,
 } from "./subscriptionPlanStatus";
 import { getSubscriptionPlanSuspensionId } from "./subscriptionPlanSuspension";
-//test
-//testtest
 function parseAmount(value) {
   const number = Number.parseFloat(value || 0);
   return Number.isFinite(number) ? number : 0;
@@ -67,16 +65,20 @@ export function useSubscriptionPlans({
   );
   const paginationFilterKey = [selectedBranchId, statusFilter, search].join("|");
   const { page, perPage, setPage, setPerPage } = useServerPagination(paginationFilterKey);
-  const needsAllPlans = !["all", "active"].includes(statusFilter);
-  const listQueryParams = useMemo(
-    () => ({
+  const listQueryParams = useMemo(() => {
+    const params = {
       ...branchQueryParams,
-      ...(statusFilter === "active" ? { status: "active" } : {}),
+      page,
+      per_page: perPage,
       ...(search.trim() ? { search: search.trim() } : {}),
-      ...(needsAllPlans ? { per_page: "all" } : { page, per_page: perPage }),
-    }),
-    [branchQueryParams, needsAllPlans, page, perPage, search, statusFilter],
-  );
+    };
+
+    if (statusFilter && statusFilter !== "all") {
+      params.status = statusFilter;
+    }
+
+    return params;
+  }, [branchQueryParams, page, perPage, search, statusFilter]);
   const {
     currentData: data,
     error,
@@ -153,7 +155,6 @@ export function useSubscriptionPlans({
   const [resumePlan, { isLoading: isResuming }] = useResumeSubscriptionPlanMutation();
 
   const canUseInitialPlans =
-    !needsAllPlans &&
     page === 1 &&
     perPage === 15 &&
     selectedBranchId === "all" &&
@@ -175,29 +176,50 @@ export function useSubscriptionPlans({
   );
   const detailsPlan = useMemo(() => getPlanDetails(detailsData), [detailsData]);
 
-  const filteredPlans = useMemo(() => {
-    return plans.filter((plan) => {
-      const matchesStatus =
-        statusFilter === "all" ||
-        (statusFilter === "active"
-          ? isSubscriptionPlanActive(plan)
-          : !isSubscriptionPlanActive(plan));
+  const filteredPlans = plans;
+  const totalResults = pagination.total;
 
-      return matchesStatus;
-    });
-  }, [plans, statusFilter]);
-  const totalResults = needsAllPlans ? filteredPlans.length : pagination.total;
+  const responseStats = listResponse?.stats || listResponse?.data?.stats;
+  const [cachedStats, setCachedStats] = useState(null);
+
+  useEffect(() => {
+    if (responseStats) {
+      setCachedStats(responseStats);
+    }
+  }, [responseStats]);
+
+  useEffect(() => {
+    setCachedStats(null);
+  }, [selectedBranchId]);
+
+  const apiStats = responseStats || cachedStats;
 
   const stats = useMemo(() => {
-    const activeCount = plans.filter(isSubscriptionPlanActive).length;
-    const averagePrice = plans.length
-      ? plans.reduce((sum, plan) => sum + parseAmount(plan.base_price), 0) / plans.length
-      : 0;
+    const activeCountFallback = plans.filter(isSubscriptionPlanActive).length;
+    const inactiveCountFallback = Math.max(0, plans.length - activeCountFallback);
+    const maxSessionsFallback = Math.max(0, ...plans.map((plan) => plan.sessions_per_week || 0));
+
+    const totalPlans =
+      apiStats?.total_plans !== undefined && apiStats?.total_plans !== null
+        ? Number(apiStats.total_plans)
+        : (pagination.total || plans.length);
+    const activePlans =
+      apiStats?.active_plans !== undefined && apiStats?.active_plans !== null
+        ? Number(apiStats.active_plans)
+        : activeCountFallback;
+    const inactivePlans =
+      apiStats?.inactive_plans !== undefined && apiStats?.inactive_plans !== null
+        ? Number(apiStats.inactive_plans)
+        : inactiveCountFallback;
+    const maxSessions =
+      apiStats?.max_sessions_per_week !== undefined && apiStats?.max_sessions_per_week !== null
+        ? Number(apiStats.max_sessions_per_week)
+        : maxSessionsFallback;
 
     return [
       {
         title: "إجمالي الخطط",
-        value: plans.length.toLocaleString("ar"),
+        value: totalPlans.toLocaleString("ar"),
         helper: "كل الخطط المتاحة",
         tone: "yellow",
         compact: true,
@@ -206,7 +228,7 @@ export function useSubscriptionPlans({
       },
       {
         title: "الخطط الفعالة",
-        value: activeCount.toLocaleString("ar"),
+        value: activePlans.toLocaleString("ar"),
         helper: "جاهزة للاستخدام",
         tone: "green",
         compact: true,
@@ -214,21 +236,23 @@ export function useSubscriptionPlans({
         active: statusFilter === "active",
       },
       {
-        title: "متوسط السعر",
-        value: formatMoney(averagePrice),
-        helper: "حسب أسعار الخطط",
-        tone: "blue",
+        title: "الخطط غير النشطة",
+        value: inactivePlans.toLocaleString("ar"),
+        helper: "غير متاحة حالياً",
+        tone: "red",
         compact: true,
+        onClick: () => setStatusFilter(statusFilter === "inactive" ? "all" : "inactive"),
+        active: statusFilter === "inactive",
       },
       {
         title: "أكثر جلسات أسبوعياً",
-        value: `${Math.max(0, ...plans.map((plan) => plan.sessions_per_week || 0)).toLocaleString("ar")} جلسة`,
+        value: `${maxSessions.toLocaleString("ar")} جلسة`,
         helper: "أكثر عدد جلسات أسبوعية",
         tone: "purple",
         compact: true,
       },
     ];
-  }, [plans, statusFilter]);
+  }, [apiStats, pagination.total, plans, statusFilter]);
 
   function closeDrawer() {
     setDrawerMode(null);

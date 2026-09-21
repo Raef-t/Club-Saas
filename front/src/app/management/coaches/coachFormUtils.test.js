@@ -8,6 +8,7 @@ import {
   getCoachRulesForActivities,
   getEmploymentTypeForWorkTypes,
   calculateAge,
+  resolveCoachPhotoUrl,
 } from "./coachFormUtils";
 
 describe("coach form utilities", () => {
@@ -187,5 +188,18 @@ describe("coach form utilities", () => {
     const age1995 = calculateAge("1995-01-01");
     expect(typeof age1995).toBe("number");
     expect(age1995).toBeGreaterThan(25);
+  });
+
+  it("resolves coach photo URL through authenticated asset proxy", () => {
+    expect(resolveCoachPhotoUrl("")).toBe("");
+    expect(resolveCoachPhotoUrl(null)).toBe("");
+    expect(resolveCoachPhotoUrl("blob:http://localhost/123")).toBe("blob:http://localhost/123");
+    expect(resolveCoachPhotoUrl("/img/coach.png")).toBe("/img/coach.png");
+    expect(resolveCoachPhotoUrl("storage/people/photos/coach.jpg")).toBe(
+      "/api/assets/storage/people/photos/coach.jpg",
+    );
+    expect(resolveCoachPhotoUrl("https://technogym.example/storage/coach.jpg?v=2")).toBe(
+      "/api/assets/storage/coach.jpg?v=2",
+    );
   });
 });

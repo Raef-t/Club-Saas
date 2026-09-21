@@ -191,9 +191,16 @@ export function createPayrollAction(searchParams = {}) {
     branchId: String(branchId),
     notificationId:
       searchParams.notification_id == null ? null : String(searchParams.notification_id),
+    recipientId: getPositiveIntegerQueryValue(searchParams.recipient_id),
     periodStart: typeof searchParams.period_start === "string" ? searchParams.period_start : "",
     periodEnd: typeof searchParams.period_end === "string" ? searchParams.period_end : "",
   };
+}
+
+function getPositiveIntegerQueryValue(value) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const number = Number(rawValue);
+  return Number.isInteger(number) && number > 0 ? String(number) : null;
 }
 
 export function getPayslipStaffName(payslip) {

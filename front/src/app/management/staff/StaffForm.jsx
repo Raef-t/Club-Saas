@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Dropdown from "@/components/ui/Dropdown";
@@ -11,6 +11,11 @@ import ModificationReasonField from "@/components/forms/ModificationReasonField"
 import { useGetBranchSettingsQuery } from "@/lib/api/branchesApi";
 import { useGetRolesQuery } from "@/lib/api/usersApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
+import {
+  getBranchGenderValidationError,
+  getRequiredGenderForBranches,
+  hasConflictingBranchGenderRestrictions,
+} from "@/lib/managementBranchUtils";
 import { staffFormSchema, staffUpdateFormSchema } from "@/lib/validations/staffSchema";
 import { CURRENCY_SYMBOL, formatLocalizedName } from "@/lib/utils";
 import {
@@ -68,10 +73,36 @@ export default function StaffForm({
       : defaults;
   });
   const [errors, setErrors] = useState({});
+  const didApplyLoadedBranchDefault = useRef(branches.length > 0);
   const primaryBranchId = form.branch_ids[0];
   const { data: branchSettingsResponse } = useGetBranchSettingsQuery(primaryBranchId, {
     skip: !primaryBranchId,
   });
+
+  useEffect(() => {
+    if (initialValues || didApplyLoadedBranchDefault.current || branches.length === 0) return;
+
+    didApplyLoadedBranchDefault.current = true;
+    setForm((current) => {
+      if (current.branch_ids.length > 0) return current;
+
+      const defaults = createStaffInitialValues({ branches, selectedBranchId });
+      return {
+        ...current,
+        branch_ids: defaults.branch_ids,
+        gender: getRequiredGenderForBranches(branches, defaults.branch_ids) || current.gender,
+      };
+    });
+  }, [branches, initialValues, selectedBranchId]);
+
+  const selectedBranchIdsKey = form.branch_ids.join(",");
+  useEffect(() => {
+    const requiredGender = getRequiredGenderForBranches(branches, form.branch_ids);
+    if (!requiredGender || requiredGender === form.gender) return;
+
+    setForm((current) => ({ ...current, gender: requiredGender }));
+    setErrors((current) => ({ ...current, gender: null }));
+  }, [branches, form.branch_ids, form.gender, selectedBranchIdsKey]);
 
   useEffect(() => {
     if (initialValues) return;
@@ -115,9 +146,7 @@ export default function StaffForm({
   useEffect(() => {
     if (initialValues) return;
     if (roleOptions.length > 0 && !roleOptions.some((opt) => opt.value === form.role)) {
-      const preferred =
-        roleOptions.find((opt) => opt.value === "reception") ||
-        roleOptions[0];
+      const preferred = roleOptions.find((opt) => opt.value === "reception") || roleOptions[0];
       if (preferred) {
         setForm((current) => ({ ...current, role: preferred.value }));
       }
@@ -129,8 +158,47 @@ export default function StaffForm({
     if (errors[field]) setErrors((current) => ({ ...current, [field]: null }));
   }
 
+  function updateGender(value) {
+    const genderError = getBranchGenderValidationError(branches, form.branch_ids, value);
+    if (genderError) {
+      setErrors((current) => ({ ...current, gender: genderError }));
+      return;
+    }
+
+    updateField("gender", value);
+  }
+
+  function updateBranchIds(branchIds) {
+    if (hasConflictingBranchGenderRestrictions(branches, branchIds)) {
+      setErrors((current) => ({
+        ...current,
+        branch_ids: "لا يمكن الجمع بين فرع مخصص للذكور وفرع مخصص للإناث.",
+      }));
+      return;
+    }
+
+    const requiredGender = getRequiredGenderForBranches(branches, branchIds);
+    setForm((current) => ({
+      ...current,
+      branch_ids: branchIds,
+      gender: requiredGender || current.gender,
+    }));
+    setErrors((current) => ({ ...current, branch_ids: null, gender: null }));
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
+    const genderError = getBranchGenderValidationError(branches, form.branch_ids, form.gender);
+    if (genderError) {
+      setErrors((current) => ({
+        ...current,
+        [hasConflictingBranchGenderRestrictions(branches, form.branch_ids)
+          ? "branch_ids"
+          : "gender"]: genderError,
+      }));
+      return;
+    }
+
     const schema = initialValues ? staffUpdateFormSchema : staffFormSchema;
     const result = schema.safeParse(form);
 
@@ -193,7 +261,7 @@ export default function StaffForm({
           className="mt-2 text-app-text"
           buttonClassName="h-11 bg-app-card-soft"
           value={form.gender}
-          onChange={(value) => updateField("gender", value)}
+          onChange={updateGender}
           options={STAFF_GENDER_OPTIONS}
           placeholder="اختر الجنس"
           error={errors.gender}
@@ -265,8 +333,7 @@ export default function StaffForm({
                   label={formatLocalizedName(branch.name)}
                   checked={checked}
                   onChange={() =>
-                    updateField(
-                      "branch_ids",
+                    updateBranchIds(
                       checked
                         ? form.branch_ids.filter((branchId) => branchId !== id)
                         : [...form.branch_ids, id],

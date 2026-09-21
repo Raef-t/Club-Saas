@@ -18,6 +18,7 @@ import { getApiErrorMessage } from "@/lib/apiError";
 import { OfferStatusBadge, OfferTypeBadge } from "./_components/OfferBadges";
 import OfferDetailsDrawer from "./_components/OfferDetailsDrawer";
 import OffersToolbar from "./_components/OffersToolbar";
+import { getDurationInMonths } from "./_lib/durationHelpers";
 import { filterOffers, getOffersCollection, getPlanCapacity } from "./_lib/offerPresentation";
 
 const TABLE_GRID_COLUMNS = "48px minmax(180px,1.2fr) minmax(260px,2fr) 110px 120px 105px 110px";
@@ -231,6 +232,8 @@ export default function OffersClient() {
         align: "center",
         sortable: false,
         render: (_, offer) => {
+          const durationMultiplier = getDurationInMonths(offer.duration_days) || 1;
+
           if (offer.offer_type === "single_choice") {
             const plansList = offer.plans || [];
             if (plansList.length === 0) {
@@ -240,7 +243,8 @@ export default function OffersClient() {
             return (
               <div className="w-full flex flex-col justify-center divide-y divide-app-line/40">
                 {plansList.map((plan) => {
-                  const regularPrice = Number(plan.base_price ?? plan.price) || 0;
+                  const regularPrice =
+                    (Number(plan.base_price ?? plan.price) || 0) * durationMultiplier;
                   const offerPrice = Number(offer.price) || 0;
                   const savings = regularPrice > offerPrice ? regularPrice - offerPrice : 0;
 
@@ -262,7 +266,8 @@ export default function OffersClient() {
 
           const regularPrice =
             offer.regular_price ||
-            (offer.plans || []).reduce((s, p) => s + (Number(p.base_price) || 0), 0);
+            (offer.plans || []).reduce((s, p) => s + (Number(p.base_price) || 0), 0) *
+              durationMultiplier;
           const savings = regularPrice - Number(offer.price || 0);
 
           if (savings > 0) {

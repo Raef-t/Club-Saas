@@ -3,7 +3,7 @@ import DetailItem from "@/components/ui/DetailItem";
 import { formatLocalizedName, formatMoney } from "@/lib/utils";
 import { OfferStatusBadge, OfferTypeBadge } from "./OfferBadges";
 import { getPlanCapacity } from "../_lib/offerPresentation";
-import { formatDurationDays } from "../_lib/durationHelpers";
+import { formatDurationDays, getDurationInMonths } from "../_lib/durationHelpers";
 
 export default function OfferDetailsDrawer({ offer, onClose }) {
   return (
@@ -81,7 +81,9 @@ export default function OfferDetailsDrawer({ offer, onClose }) {
             <div className="space-y-2">
               {(offer.plans || []).map((plan) => {
                 const capacity = getPlanCapacity(plan);
-                const regularPrice = Number(plan.base_price ?? plan.price) || 0;
+                const durationMultiplier = getDurationInMonths(offer.duration_days) || 1;
+                const monthlyPrice = Number(plan.base_price ?? plan.price) || 0;
+                const regularPrice = monthlyPrice * durationMultiplier;
                 const savings = Math.max(0, regularPrice - (Number(offer.price) || 0));
 
                 return (
@@ -109,6 +111,11 @@ export default function OfferDetailsDrawer({ offer, onClose }) {
                       <span className="block text-sm font-semibold text-app-yellow">
                         {formatMoney(regularPrice)}
                       </span>
+                      {durationMultiplier !== 1 && (
+                        <span className="block text-[10px] text-app-muted-light">
+                          {formatMoney(monthlyPrice)} شهرياً
+                        </span>
+                      )}
                       {offer.offer_type === "single_choice" && savings > 0 && (
                         <span className="block text-[11px] font-medium text-emerald-400">
                           توفير {formatMoney(savings)}

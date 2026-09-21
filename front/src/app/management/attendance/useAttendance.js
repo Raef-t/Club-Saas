@@ -37,6 +37,7 @@ import {
   createAvailableLockerOptions,
   createManualCheckInTimestamp,
   findAttendanceLockerId,
+  getAttendanceLockerSelection,
   getInitialAttendanceSelection,
   toggleRequiredSubscription,
 } from "./attendanceUtils";
@@ -80,6 +81,7 @@ export function useAttendance({ initialBranches } = {}) {
   const [scannerActive, setScannerActive] = useState(false);
   const [selectedSubscriptionIds, setSelectedSubscriptionIds] = useState([]);
   const [lockerNumber, setLockerNumber] = useState("");
+  const [manualMemberCheckInAt, setManualMemberCheckInAt] = useState(null);
   const [attendanceNote, setAttendanceNote] = useState("");
   const [attendanceModalErrorMessage, setAttendanceModalErrorMessage] = useState("");
   const [registeredMemberId, setRegisteredMemberId] = useState(null);
@@ -119,6 +121,19 @@ export function useAttendance({ initialBranches } = {}) {
   };
   const { currentData: attendanceMembersResponse } = useGetMembersQuery(peopleQueryParams);
   const { currentData: attendanceStaffResponse } = useGetStaffQuery(peopleQueryParams);
+  const {
+    currentData: memberSubscriptionsResponse,
+    error: subscriptionsError,
+    isLoading: isSubscriptionsLoading,
+    isFetching: isSubscriptionsFetching,
+    refetch: refetchSubscriptions,
+  } = useGetMemberSubscriptionsQuery(scannedMemberId, {
+    skip: !scannedMemberId,
+  });
+  const lockerSelection = useMemo(
+    () => getAttendanceLockerSelection(memberSubscriptionsResponse),
+    [memberSubscriptionsResponse],
+  );
   const availableLockersParams = useMemo(
     () => ({ branch_id: branchId, status: "available", per_page: "all" }),
     [branchId],
@@ -130,7 +145,11 @@ export function useAttendance({ initialBranches } = {}) {
     isFetching: isAvailableLockersFetching,
     refetch: refetchAvailableLockers,
   } = useGetLockersQuery(availableLockersParams, {
-    skip: !branchId || !scannedMemberId,
+    skip:
+      !branchId ||
+      !scannedMemberId ||
+      !memberSubscriptionsResponse ||
+      !lockerSelection.showLockerSelection,
   });
   const { currentData: branchLockersResponse, refetch: refetchBranchLockers } = useGetLockersQuery({
     ...(branchId ? { branch_id: branchId } : {}),
@@ -171,15 +190,6 @@ export function useAttendance({ initialBranches } = {}) {
     isFetching: isMemberFetching,
     refetch: refetchMember,
   } = useGetMemberQuery(scannedMemberId, {
-    skip: !scannedMemberId,
-  });
-  const {
-    currentData: memberSubscriptionsResponse,
-    error: subscriptionsError,
-    isLoading: isSubscriptionsLoading,
-    isFetching: isSubscriptionsFetching,
-    refetch: refetchSubscriptions,
-  } = useGetMemberSubscriptionsQuery(scannedMemberId, {
     skip: !scannedMemberId,
   });
   const activeMember = useMemo(
@@ -308,6 +318,7 @@ export function useAttendance({ initialBranches } = {}) {
   function resetMemberSelection() {
     setSelectedSubscriptionIds([]);
     setLockerNumber("");
+    setManualMemberCheckInAt(null);
     setAttendanceNote("");
     setAttendanceModalErrorMessage("");
     setIsCombinedCheckInPending(false);
@@ -334,8 +345,9 @@ export function useAttendance({ initialBranches } = {}) {
   /**
    * Opens the subscription confirmation modal without creating an attendance yet.
    */
-  function openMemberCheckIn(memberId) {
+  function openMemberCheckIn(memberId, checkInAt = null) {
     selectScannedMember(Number(memberId));
+    setManualMemberCheckInAt(checkInAt);
     setIsCombinedCheckInPending(true);
   }
 
@@ -509,12 +521,13 @@ export function useAttendance({ initialBranches } = {}) {
       return false;
     }
 
+    const checkInAt = createManualCheckInTimestamp(checkInTime);
+
     if (attendableType === "member") {
-      openMemberCheckIn(attendableId);
+      openMemberCheckIn(attendableId, checkInAt);
       return true;
     }
 
-    const checkInAt = createManualCheckInTimestamp(checkInTime);
     const requestBody = {
       attendable_type: attendableType,
       attendable_id: Number(attendableId),
@@ -696,6 +709,7 @@ export function useAttendance({ initialBranches } = {}) {
               branchId,
               selectedSubscriptionIds,
               attendanceNote,
+              manualMemberCheckInAt,
             ),
           ).unwrap()
         : await deductAttendance({
@@ -709,11 +723,14 @@ export function useAttendance({ initialBranches } = {}) {
       );
       setLastAttendanceId(null);
       setIsCombinedCheckInPending(false);
+      setManualMemberCheckInAt(null);
       setAttendanceNote("");
       setIsPlayerModalOpen(false);
       toast.success(response?.message || "تم تسجيل الحضور وخصم الجلسة بنجاح.");
       await refetchAttendanceHistory();
-      await refetchAvailableLockers();
+      if (lockerSelection.showLockerSelection) {
+        await refetchAvailableLockers();
+      }
       await refetchBranchLockers();
     } catch (error) {
       if (assignedLockerId) {
@@ -743,6 +760,9 @@ export function useAttendance({ initialBranches } = {}) {
     attendanceNote,
     attendanceModalErrorMessage,
     requiresCheckInNote,
+    showLockerSelection:
+      Boolean(memberSubscriptionsResponse) && lockerSelection.showLockerSelection,
+    currentLocker: lockerSelection.currentLocker,
     lockerNumber: selectedLockerNumber,
     availableLockerOptions,
     branchId,
