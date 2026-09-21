@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import DataTable from "./DataTable";
 
@@ -160,5 +160,68 @@ describe("DataTable sorting functionality", () => {
     expect(rows[0]).toHaveTextContent("أحمد");
     expect(rows[1]).toHaveTextContent("باسم");
     expect(rows[2]).toHaveTextContent("خالد");
+  });
+});
+
+describe("DataTable pagination", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  const columns = [{ key: "name", label: "الاسم" }];
+
+  it("keeps every page number inside a wrapping pagination footer", () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      id: index + 1,
+      name: `لاعب ${index + 1}`,
+    }));
+
+    render(
+      <DataTable
+        columns={columns}
+        rows={rows}
+        showToolbar={false}
+        pageSize={5}
+        pageSizeOptions={[]}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "الصفحة 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "الصفحة 2" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "الصفحة 3" })).toBeInTheDocument();
+
+    const navigation = screen.getByRole("navigation", { name: "ترقيم صفحات الجدول" });
+    expect(navigation.parentElement).toHaveClass("flex-wrap");
+    expect(navigation).toHaveClass("max-w-full", "shrink-0", "flex-wrap");
+  });
+
+  it("shows the active rows-per-page value and all API page-size options", () => {
+    render(
+      <DataTable
+        columns={columns}
+        rows={Array.from({ length: 15 }, (_, index) => ({
+          id: index + 1,
+          name: `لاعب ${index + 1}`,
+        }))}
+        showToolbar={false}
+        pageSize={15}
+        pageSizeOptions={[15, 30, 50, 100]}
+      />,
+    );
+
+    const pageSizeDropdown = screen.getByRole("button", {
+      name: "عدد الصفوف في الصفحة",
+    });
+    expect(pageSizeDropdown).toHaveTextContent("15");
+
+    fireEvent.click(pageSizeDropdown);
+
+    const listbox = screen.getByRole("listbox");
+    expect(listbox).not.toHaveClass("bottom-full");
+    expect(listbox.style.top).not.toBe("");
+    expect(within(listbox).getByRole("option", { name: /15/ })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: /30/ })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: /50/ })).toBeInTheDocument();
+    expect(within(listbox).getByRole("option", { name: /100/ })).toBeInTheDocument();
   });
 });

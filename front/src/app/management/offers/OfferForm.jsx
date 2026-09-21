@@ -15,12 +15,21 @@ import { offerSchema } from "@/lib/validations/offersSchema";
 import { withAllItems } from "@/lib/pagination";
 import { getEntityBranchIds, getPreferredBranchId } from "@/lib/managementBranchUtils";
 import OfferFormSection from "./_components/OfferFormSection";
-import { formatDurationDays, DURATION_PRESETS, getDurationInMonths } from "./_lib/durationHelpers";
+import {
+  formatDurationDays,
+  DURATION_PRESETS,
+  getDurationInDays,
+  getDurationInMonths,
+} from "./_lib/durationHelpers";
 
 const OFFER_TYPE_OPTIONS = [
   { value: "bundle", label: "باقة" },
   { value: "single_choice", label: "يختار المشترك فعالية واحدة" },
 ];
+
+function roundMoneyAmount(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
 
 function normalizeArabicText(str) {
   return (str || "")
@@ -93,9 +102,9 @@ export default function OfferForm({
         initialValues?.price !== undefined && initialValues?.price !== null
           ? String(initialValues.price)
           : "",
-      duration_days:
+      duration_months:
         initialValues?.duration_days !== undefined && initialValues?.duration_days !== null
-          ? String(initialValues.duration_days)
+          ? String(getDurationInMonths(initialValues.duration_days))
           : "",
       start_date: initialValues?.start_date || "",
       end_date: initialValues?.end_date || "",
@@ -267,10 +276,10 @@ export default function OfferForm({
     });
   }, [allPlans, selectedActivityTypeId, activityTypeOptions, planSearchTerm]);
 
-  function updateField(key, value) {
+  function updateField(key, value, errorKey = key) {
     setForm((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors((prev) => ({ ...prev, [key]: null }));
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: null }));
     }
   }
 
@@ -461,26 +470,34 @@ export default function OfferForm({
     return planPrices.reduce((sum, val) => sum + val, 0);
   }, [planPrices]);
 
+  const offerPriceNum = Number(form.price) || 0;
+  const durationMonths = Number(form.duration_months) || 0;
+  const durationDaysNum = getDurationInDays(durationMonths);
+
+  const priceDurationMultiplier = durationMonths > 0 ? durationMonths : 1;
+  const effectivePlanPrices = useMemo(
+    () => planPrices.map((price) => roundMoneyAmount(price * priceDurationMultiplier)),
+    [planPrices, priceDurationMultiplier],
+  );
+
   const minRegularPrice = useMemo(() => {
-    return planPrices.length > 0 ? Math.min(...planPrices) : 0;
-  }, [planPrices]);
+    return effectivePlanPrices.length > 0 ? Math.min(...effectivePlanPrices) : 0;
+  }, [effectivePlanPrices]);
 
   const maxRegularPrice = useMemo(() => {
-    return planPrices.length > 0 ? Math.max(...planPrices) : 0;
-  }, [planPrices]);
+    return effectivePlanPrices.length > 0 ? Math.max(...effectivePlanPrices) : 0;
+  }, [effectivePlanPrices]);
 
   const avgRegularPrice = useMemo(() => {
-    return planCount > 0 ? totalRegularPrice / planCount : 0;
-  }, [totalRegularPrice, planCount]);
+    return planCount > 0
+      ? effectivePlanPrices.reduce((sum, price) => sum + price, 0) / planCount
+      : 0;
+  }, [effectivePlanPrices, planCount]);
 
-  const offerPriceNum = Number(form.price) || 0;
-  const durationDaysNum = Number(form.duration_days) || 0;
-  const durationMonths = getDurationInMonths(form.duration_days);
-
-  // New calculated price: duration in months * sum of original prices
+  // The activity price is monthly; scale it by the month count entered by the user.
   const calculatedDurationPrice =
     durationMonths > 0 && totalRegularPrice > 0
-      ? Math.round(durationMonths * totalRegularPrice)
+      ? roundMoneyAmount(durationMonths * totalRegularPrice)
       : 0;
 
   const effectiveOriginalPrice =
@@ -517,7 +534,7 @@ export default function OfferForm({
       description: form.description ? form.description.trim() : undefined,
       offer_type: form.offer_type,
       price: form.price,
-      duration_days: form.duration_days ? form.duration_days : undefined,
+      duration_days: form.duration_months ? durationDaysNum : undefined,
       start_date: !isUnlimitedDuration && form.start_date ? form.start_date : undefined,
       end_date: !isUnlimitedDuration && form.end_date ? form.end_date : undefined,
       is_active: form.is_active,
@@ -746,16 +763,16 @@ export default function OfferForm({
             error={errors.name}
           />
 
-          {/* 2. مدة الاشتراك (بالأيام) */}
+          {/* 2. مدة الاشتراك (بالأشهر) */}
           <div>
             <Field
-              label="مدة الاشتراك (بالأيام)"
+              label="مدة الاشتراك (بالأشهر)"
               type="number"
-              min="1"
-              step="1"
-              value={form.duration_days}
-              onChange={(e) => updateField("duration_days", e.target.value)}
-              placeholder="مثال: 30"
+              min="0.5"
+              step="0.5"
+              value={form.duration_months}
+              onChange={(e) => updateField("duration_months", e.target.value, "duration_days")}
+              placeholder="مثال: 1"
               error={errors.duration_days}
             />
 
@@ -763,26 +780,28 @@ export default function OfferForm({
             <div className="flex flex-wrap gap-1.5 mt-2">
               {DURATION_PRESETS.map((preset) => (
                 <button
-                  key={preset.days}
+                  key={preset.months}
                   type="button"
-                  onClick={() => updateField("duration_days", String(preset.days))}
+                  onClick={() =>
+                    updateField("duration_months", String(preset.months), "duration_days")
+                  }
                   className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
-                    String(form.duration_days) === String(preset.days)
+                    String(form.duration_months) === String(preset.months)
                       ? "border-app-yellow bg-app-yellow/20 text-app-yellow"
                       : "border-app-line bg-app-card-soft text-app-muted-light hover:border-app-yellow/50 hover:text-white cursor-pointer"
                   }`}
                 >
-                  {preset.label} ({preset.days})
+                  {preset.label}
                 </button>
               ))}
             </div>
 
             {/* تلميح المدة التلقائي */}
-            {form.duration_days && Number(form.duration_days) > 0 && (
+            {durationMonths > 0 && (
               <p className="mt-1.5 text-[11px] text-cyan-400 flex items-center gap-1">
                 <span>⏱</span>
                 <span>
-                  يعادل <strong>{formatDurationDays(form.duration_days)}</strong>
+                  مدة العرض: <strong>{formatDurationDays(durationDaysNum)}</strong>
                 </span>
               </p>
             )}
@@ -835,7 +854,7 @@ export default function OfferForm({
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-app-muted-light">
                       <span>
-                        {durationDaysNum > 0
+                        {durationMonths > 0
                           ? `مجموع السعر الأصلي للفعاليات (${formatDurationDays(durationDaysNum)}):`
                           : "مجموع السعر الأصلي للفعاليات:"}
                       </span>
@@ -871,21 +890,24 @@ export default function OfferForm({
             )}
           </div>
 
-          {/* 4. حقل سعر جديد حاصل ناتجه: مدة الاشتراك (بالأشهر) * مجموع السعر الأصلي للفعاليات */}
+          {/* 4. السعر الشهري الإجمالي مضروباً بعدد أشهر الاشتراك */}
           <div>
             <Field
-              label="إجمالي السعر الأصلي للفعاليات حسب المدة"
+              label="إجمالي السعر الأصلي للفعاليات حسب عدد الأشهر"
               required={false}
               readOnly
               value={calculatedDurationPrice > 0 ? formatMoney(calculatedDurationPrice) : ""}
-              placeholder="يُحسب تلقائياً: مدة الاشتراك (بالأشهر) × مجموع السعر الأصلي للفعاليات"
+              placeholder="يُحسب تلقائياً: عدد الأشهر × مجموع الأسعار الشهرية للفعاليات"
               className="bg-app-card-soft/40"
             />
             {durationMonths > 0 && totalRegularPrice > 0 && (
               <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-app-muted-light">
                 <span>
-                  {formatDurationDays(durationDaysNum)} ({durationMonths} {durationMonths === 1 ? "شهر" : "أشهر"}) × {formatMoney(totalRegularPrice)} ={" "}
-                  <strong className="text-app-yellow">{formatMoney(calculatedDurationPrice)}</strong>
+                  {durationMonths} {durationMonths === 1 ? "شهر" : "أشهر"} ×{" "}
+                  {formatMoney(totalRegularPrice)} شهرياً ={" "}
+                  <strong className="text-app-yellow">
+                    {formatMoney(calculatedDurationPrice)}
+                  </strong>
                 </span>
                 <button
                   type="button"
@@ -1049,11 +1071,11 @@ export default function OfferForm({
                 <dt className="text-app-muted-light">الفعاليات المحددة</dt>
                 <dd className="font-medium text-app-text">{planCount.toLocaleString("ar")}</dd>
               </div>
-              {form.duration_days && Number(form.duration_days) > 0 && (
+              {durationMonths > 0 && (
                 <div className="flex items-center justify-between gap-3 border-b border-app-line/70 pb-3">
                   <dt className="text-app-muted-light">مدة الاشتراك</dt>
                   <dd className="font-medium text-cyan-400">
-                    {formatDurationDays(form.duration_days)}
+                    {formatDurationDays(durationDaysNum)}
                   </dd>
                 </div>
               )}

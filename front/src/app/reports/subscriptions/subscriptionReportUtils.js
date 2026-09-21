@@ -84,21 +84,44 @@ function getPersonName(record) {
 }
 
 function getCoachName(record) {
+  if (Array.isArray(record?.items) && record.items.length > 0) {
+    const itemCoaches = record.items
+      .map((item) => {
+        return (
+          item?.coach_name ||
+          item?.coach?.name ||
+          item?.coach?.person?.full_name ||
+          (item?.coach?.first_name
+            ? `${item.coach.first_name} ${item.coach.last_name || ""}`.trim()
+            : null)
+        );
+      })
+      .filter(Boolean);
+    if (itemCoaches.length > 0) {
+      return [...new Set(itemCoaches)].join("، ");
+    }
+  }
+
+  if (record?.coaches_names) return record.coaches_names;
+  if (Array.isArray(record?.coaches_list) && record.coaches_list.length > 0) {
+    return record.coaches_list.filter(Boolean).join("، ");
+  }
+
   const coach = record?.coach || record?.trainer || record?.plan?.coach || {};
   const person = coach?.person || {};
-  const splitName = `${firstValue(coach?.first_name, person?.first_name, "")} ${firstValue(
-    coach?.last_name,
-    person?.last_name,
-    "",
-  )}`.trim();
+  const firstName = firstValue(coach?.first_name, person?.first_name, "");
+  const lastName = firstValue(coach?.last_name, person?.last_name, "");
+  const splitName = firstName ? `${firstName} ${lastName}`.trim() : "";
 
   return firstValue(
     record?.coach_name,
     record?.trainer_name,
+    coach?.name,
     coach?.full_name,
     person?.full_name,
-    splitName,
-    getDisplayName(coach?.name),
+    splitName || null,
+    getDisplayName(coach?.name, null),
+    "لا يوجد مدرب مسند",
   );
 }
 
@@ -168,9 +191,32 @@ export function normalizeSubscriptionReportRecord(record, index = 0) {
 
   return {
     id: firstValue(record?.id, record?.subscription_id, `subscription-${index}`),
-    accountName: getMemberAccountName(member, record) || "-",
+    accountName: firstValue(
+      record?.account_name,
+      record?.safe_name,
+      record?.safe?.name,
+      record?.account?.name,
+      getMemberAccountName(member, record),
+      "-",
+    ),
+    username: firstValue(
+      record?.username,
+      record?.member_username,
+      getMemberAccountName(member, record),
+      "-",
+    ),
     memberName: getPersonName(record),
-    phone: firstValue(record?.phone, member?.phone, member?.phone_number, person?.phone, "-"),
+    phone: firstValue(
+      record?.member_phone,
+      record?.phone,
+      member?.phone,
+      person?.phone,
+      member?.person?.phone,
+      record?.member_contacts?.[0]?.phone_number,
+      member?.contacts?.[0]?.phone_number,
+      member?.phone_number,
+      "-",
+    ),
     planName: firstValue(
       record?.plan_name,
       record?.subscription_plan_name,

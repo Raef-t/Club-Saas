@@ -24,7 +24,23 @@ import {
 } from "./staffUtils";
 import { getPaginationMeta, useServerPagination, withAllItems } from "@/lib/pagination";
 
-export function createStaffFormData(values, { includePhoto = false } = {}) {
+function normalizeStaffBranchIds(branchIds, selectedBranchId = "all") {
+  const normalized = (Array.isArray(branchIds) ? branchIds : [])
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0);
+
+  if (normalized.length > 0) return [...new Set(normalized)];
+
+  const selectedId = Number(selectedBranchId);
+  return selectedBranchId !== "all" && Number.isFinite(selectedId) && selectedId > 0
+    ? [selectedId]
+    : [];
+}
+
+export function createStaffFormData(
+  values,
+  { includePhoto = false, selectedBranchId = "all" } = {},
+) {
   const formData = new FormData();
   formData.append("first_name", values.first_name.trim());
   formData.append("last_name", values.last_name.trim());
@@ -43,7 +59,9 @@ export function createStaffFormData(values, { includePhoto = false } = {}) {
   if (values.address) formData.append("address", values.address.trim());
   if (values.reason) formData.append("reason", values.reason.trim());
 
-  values.branch_ids.forEach((id) => formData.append("branch_ids[]", String(id)));
+  normalizeStaffBranchIds(values.branch_ids, selectedBranchId).forEach((id) =>
+    formData.append("branch_ids[]", String(id)),
+  );
 
   if (includePhoto && values.photo instanceof File) {
     formData.append("photo", values.photo);
@@ -52,7 +70,7 @@ export function createStaffFormData(values, { includePhoto = false } = {}) {
   return formData;
 }
 
-export function createStaffUpdatePayload(values) {
+export function createStaffUpdatePayload(values, selectedBranchId = "all") {
   return {
     reason: values.reason?.trim() || "",
     first_name: values.first_name.trim(),
@@ -69,7 +87,7 @@ export function createStaffUpdatePayload(values) {
     start_time: values.start_time || null,
     end_time: values.end_time || null,
     address: values.address?.trim() || null,
-    branch_ids: Array.isArray(values.branch_ids) ? values.branch_ids.map(Number) : [],
+    branch_ids: normalizeStaffBranchIds(values.branch_ids, selectedBranchId),
   };
 }
 
@@ -238,9 +256,16 @@ export function useStaff({
   async function handleCreate(values) {
     setFormError("");
     try {
-      const response = await createStaffMember(
-        createStaffFormData(values, { includePhoto: true }),
-      ).unwrap();
+      const body = createStaffFormData(values, {
+        includePhoto: true,
+        selectedBranchId: branchFilter,
+      });
+      if (body.getAll("branch_ids[]").length === 0) {
+        setFormError("يرجى اختيار فرع واحد على الأقل.");
+        return false;
+      }
+
+      const response = await createStaffMember(body).unwrap();
       toast.success(response?.message || "تمت إضافة الموظف بنجاح.");
       return response;
     } catch (submitError) {
@@ -255,9 +280,15 @@ export function useStaff({
     if (!selectedStaffId) return false;
     setFormError("");
     try {
+      const body = createStaffUpdatePayload(values, branchFilter);
+      if (body.branch_ids.length === 0) {
+        setFormError("يرجى اختيار فرع واحد على الأقل.");
+        return false;
+      }
+
       const response = await updateStaffMember({
         id: selectedStaffId,
-        body: createStaffUpdatePayload(values),
+        body,
       }).unwrap();
 
       if (values.photoChanged) {

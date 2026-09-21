@@ -69,11 +69,27 @@ export function getEndDateFromDuration(startDate, durationDays) {
  * Quick-select presets for common subscription durations.
  */
 export const DURATION_PRESETS = [
-  { label: "شهر", days: 30 },
-  { label: "شهر ونصف", days: 45 },
-  { label: "3 أشهر", days: 90 },
-  { label: "سنة", days: 365 },
+  { label: "شهر", months: 1 },
+  { label: "شهر ونصف", months: 1.5 },
+  { label: "3 أشهر", months: 3 },
+  { label: "سنة", months: 12 },
 ];
+
+/**
+ * Converts the month value entered in the offer form to the legacy API duration in days.
+ * Full years retain the existing 365-day behavior; other values use 30-day billing months.
+ *
+ * @param {number|string} months
+ * @returns {number} Duration in whole days
+ */
+export function getDurationInDays(months) {
+  const value = Number(months);
+  if (!value || value <= 0 || !Number.isFinite(value)) return 0;
+  if (value === 12) return 365;
+  if (value === 24) return 730;
+
+  return Math.round(value * 30);
+}
 
 /**
  * Converts a duration in days into months (e.g. 30 days -> 1, 45 -> 1.5, 60 -> 2, 365 -> 12).

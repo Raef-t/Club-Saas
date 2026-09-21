@@ -583,10 +583,10 @@ export default function DataTable({
 
       {pagination && !isLoading && (resolvedTotalItems > 0 || hasControlledPagination) && (
         <div
-          className="flex flex-col gap-4 border-t border-app-line px-3 py-4 text-xs text-app-muted-light sm:px-4 xl:flex-row xl:items-center xl:justify-between"
+          className="flex flex-col flex-wrap gap-4 border-t border-app-line px-3 py-4 text-xs text-app-muted-light sm:px-4 xl:flex-row xl:items-center xl:justify-between"
           dir="rtl"
         >
-          <div className="flex flex-wrap items-center justify-center gap-3 xl:justify-start">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-3 xl:justify-start">
             <span>
               {hasKnownTotalItems
                 ? `عرض ${firstVisibleItem}–${lastVisibleItem} من ${resolvedTotalItems}`
@@ -596,7 +596,7 @@ export default function DataTable({
               <div className="inline-flex items-center gap-2">
                 <span>صفوف الصفحة</span>
                 <Dropdown
-                  value={activeRowsPerPage}
+                  value={Number(activeRowsPerPage)}
                   onChange={(val) => {
                     const nextPageSize = Number(val);
                     if (hasControlledPagination) {
@@ -607,16 +607,17 @@ export default function DataTable({
                     }
                   }}
                   options={dropdownOptions}
-                  className="w-16 text-app-text"
+                  ariaLabel="عدد الصفوف في الصفحة"
+                  compact
+                  className="w-20 text-app-text"
                   buttonClassName="h-8 bg-app-panel-soft/40 border border-app-line rounded-lg px-2 text-xs"
-                  menuClassName="bottom-full mb-2 !mt-0"
                 />
               </div>
             )}
           </div>
 
           <nav
-            className="flex flex-wrap items-center justify-center gap-2"
+            className="flex max-w-full shrink-0 flex-wrap items-center justify-center gap-2"
             aria-label="ترقيم صفحات الجدول"
             dir="rtl"
           >

@@ -69,6 +69,8 @@ export default function AttendancePlayerCard({
   attendanceNote,
   attendanceErrorMessage,
   requiresCheckInNote,
+  showLockerSelection = true,
+  currentLocker,
   lockerNumber,
   availableLockerOptions,
   isMemberLoading,
@@ -241,38 +243,49 @@ export default function AttendancePlayerCard({
           )}
         </div>
 
-        <div className="block text-right text-sm text-app-muted-light">
-          <span>الخزانة (اختياري)</span>
-          <Dropdown
-            searchable
-            className="mt-2 text-white"
-            buttonClassName="h-11 bg-app-card-soft"
-            value={lockerNumber}
-            onChange={onLockerChange}
-            options={availableLockerOptions}
-            placeholder={
-              isAvailableLockersLoading
-                ? "جاري تحميل الخزائن المتاحة..."
-                : availableLockerOptions.length
-                  ? "اختر الخزانة"
-                  : "لا توجد خزائن متاحة"
-            }
-            disabled={isRegistering || isAvailableLockersLoading || !availableLockerOptions.length}
-          />
-          {availableLockersErrorMessage && (
-            <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-app-red/30 bg-app-red/10 p-3">
-              <p className="text-xs text-app-red">{availableLockersErrorMessage}</p>
-              <Button
-                type="button"
-                tone="outline"
-                className="h-8 shrink-0 px-3 text-xs"
-                onClick={onRetryAvailableLockers}
-              >
-                إعادة المحاولة
-              </Button>
-            </div>
-          )}
-        </div>
+        {showLockerSelection ? (
+          <div className="block text-right text-sm text-app-muted-light">
+            <span>الخزانة (اختياري)</span>
+            <Dropdown
+              searchable
+              className="mt-2 text-white"
+              buttonClassName="h-11 bg-app-card-soft"
+              value={lockerNumber}
+              onChange={onLockerChange}
+              options={availableLockerOptions}
+              placeholder={
+                isAvailableLockersLoading
+                  ? "جاري تحميل الخزائن المتاحة..."
+                  : availableLockerOptions.length
+                    ? "اختر الخزانة"
+                    : "لا توجد خزائن متاحة"
+              }
+              disabled={
+                isRegistering || isAvailableLockersLoading || !availableLockerOptions.length
+              }
+            />
+            {availableLockersErrorMessage && (
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-app-red/30 bg-app-red/10 p-3">
+                <p className="text-xs text-app-red">{availableLockersErrorMessage}</p>
+                <Button
+                  type="button"
+                  tone="outline"
+                  className="h-8 shrink-0 px-3 text-xs"
+                  onClick={onRetryAvailableLockers}
+                >
+                  إعادة المحاولة
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : currentLocker?.lockerNumber ? (
+          <div className="rounded-xl border border-app-yellow/30 bg-app-yellow/10 px-4 py-3 text-right">
+            <span className="text-xs text-app-muted-light">الخزانة الحالية</span>
+            <strong className="mt-1 block text-sm text-app-yellow" dir="ltr">
+              {currentLocker.lockerNumber}
+            </strong>
+          </div>
+        ) : null}
 
         {requiresCheckInNote && (
           <div>

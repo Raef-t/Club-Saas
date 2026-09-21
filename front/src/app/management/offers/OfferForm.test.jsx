@@ -268,7 +268,7 @@ describe("OfferForm", () => {
     expect(screen.getByRole("button", { name: "تحديد الكل" })).toBeInTheDocument();
   });
 
-  it("calculates total duration price (duration * sum of plans prices) and allows applying as offer price", () => {
+  it("calculates the total from a duration entered in months and allows applying it", () => {
     render(
       <OfferForm
         mode="create"
@@ -282,9 +282,9 @@ describe("OfferForm", () => {
     fireEvent.click(screen.getByText("اشتراك سباحة شهري"));
     fireEvent.click(screen.getByText("اشتراك حديد ولياقة"));
 
-    // Enter duration = 60 days (2 months) -> 2 * 1800 = 3600
-    const durationInput = screen.getByPlaceholderText("مثال: 30");
-    fireEvent.change(durationInput, { target: { value: "60" } });
+    // Enter duration = 2 months -> 2 * 1800 = 3600
+    const durationInput = screen.getByPlaceholderText("مثال: 1");
+    fireEvent.change(durationInput, { target: { value: "2" } });
 
     // Calculated price field should display the formatted total (3,600 ل.س)
     expect(screen.getByDisplayValue(/3,600/)).toBeInTheDocument();
@@ -296,6 +296,30 @@ describe("OfferForm", () => {
     // Price input should now be 3600
     const priceInput = screen.getByPlaceholderText("أدخل سعر العرض");
     expect(priceInput).toHaveValue(3600);
+  });
+
+  it("converts the selected month duration to days only when submitting to the API", () => {
+    const handleSubmit = vi.fn();
+    render(
+      <OfferForm
+        mode="create"
+        onSubmit={handleSubmit}
+        onCancel={vi.fn()}
+        branches={[{ id: 1, name: "الفرع الرئيسي" }]}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("اشتراك سباحة شهري"));
+    fireEvent.change(screen.getByPlaceholderText("مثال: 1"), { target: { value: "1.5" } });
+    fireEvent.change(screen.getByPlaceholderText("أدخل سعر العرض"), { target: { value: "1200" } });
+    fireEvent.click(screen.getByText("إنشاء العرض"));
+
+    expect(handleSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        duration_days: 45,
+        price: 1200,
+      }),
+    );
   });
 
   it("toggles start_date and end_date fields when 'فعالية غير محدودة' checkbox is toggled", () => {

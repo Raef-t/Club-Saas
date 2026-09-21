@@ -90,6 +90,55 @@ describe("subscriptionReportUtils", () => {
     });
   });
 
+  it("normalizes coach name from items or coaches_names, member phone from member_phone/contacts, and financial account name", () => {
+    const recordWithItems = normalizeSubscriptionReportRecord({
+      id: 104,
+      account_name: "صندوق الصالة الرئيسي",
+      username: "aya_player",
+      member_phone: "0912345678",
+      items: [
+        {
+          item_id: 104,
+          activity_name: "أجهزة خاص",
+          coach_name: "آية مزور",
+          is_unlimited: false,
+          sessions_allocated: 12,
+          sessions_consumed: 0,
+          sessions_remaining: 12,
+        },
+      ],
+      total_amount: 500000,
+      paid_amount: 500000,
+      remaining_amount: 0,
+      status: "active",
+      payment_status: "paid",
+    });
+
+    expect(recordWithItems.coachName).toBe("آية مزور");
+    expect(recordWithItems.phone).toBe("0912345678");
+    expect(recordWithItems.accountName).toBe("صندوق الصالة الرئيسي");
+    expect(recordWithItems.username).toBe("aya_player");
+
+    // Test row-level coaches_names and member_contacts fallback
+    const recordWithCoachesNames = normalizeSubscriptionReportRecord({
+      id: 105,
+      coaches_names: "آية مزور",
+      member_contacts: [{ id: 1, phone_number: "0987654321" }],
+      safe_name: "خزينة الفرع",
+    });
+
+    expect(recordWithCoachesNames.coachName).toBe("آية مزور");
+    expect(recordWithCoachesNames.phone).toBe("0987654321");
+    expect(recordWithCoachesNames.accountName).toBe("خزينة الفرع");
+
+    // Test fallback when no coach is assigned
+    const recordWithoutCoach = normalizeSubscriptionReportRecord({
+      id: 106,
+    });
+    expect(recordWithoutCoach.coachName).toBe("لا يوجد مدرب مسند");
+    expect(recordWithoutCoach.phone).toBe("-");
+  });
+
   it("rejects an inverted date range", () => {
     expect(
       validateSubscriptionsReportFilters({

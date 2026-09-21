@@ -8,6 +8,7 @@ import { FormCard, UploadBox } from "@/components/forms/FormControls";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { CoachCreateForm } from "../CoachForm";
 import { useCoaches } from "../useCoaches";
+import { resolveCoachPhotoUrl } from "../coachFormUtils";
 import { extractCreatedAccount } from "@/lib/generatedAccount";
 
 const FORM_ID = "create-coach-form";
@@ -41,7 +42,7 @@ export default function CoachesCreateClient() {
   const initialPhoto = editInitialValues?.photo;
   useEffect(() => {
     if (!isEdit || !initialPhoto || photoChanged) return;
-    setPhoto([initialPhoto]);
+    setPhoto([resolveCoachPhotoUrl(initialPhoto)]);
   }, [initialPhoto, isEdit, photoChanged]);
 
   async function submit(values) {

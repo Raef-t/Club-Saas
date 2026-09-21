@@ -71,4 +71,65 @@ describe("RenewSubscriptionModal", () => {
     expect(screen.getByText("المبلغ المدفوع مطلوب")).toBeInTheDocument();
     expect(handleSubmit).not.toHaveBeenCalled();
   });
+
+  it("supports private equipment plan renewal with split receipts and auto-calculated total", async () => {
+    const handleSubmit = vi.fn(async () => true);
+    const privatePlan = {
+      id: 25,
+      name: "أجهزة خاص",
+      is_private_equipment: true,
+      coach_price: 300,
+      branch_price: 200,
+      base_price: 500,
+    };
+
+    render(
+      <RenewSubscriptionModal
+        open
+        subscription={expiredSubscription}
+        plans={[expiredSubscription.plan, privatePlan]}
+        onClose={vi.fn()}
+        onSubmit={handleSubmit}
+      />,
+    );
+
+    // Switch to private plan
+    const planDropdown = screen.getByRole("button", {
+      name: "اسم الاشتراك السابق مع إمكانية التعديل",
+    });
+    fireEvent.click(planDropdown);
+    fireEvent.click(screen.getByRole("option", { name: "أجهزة خاص" }));
+
+    // Should display split receipt and paid amount fields
+    const branchPaidInput = screen.getByLabelText(/مدفوع النادي/);
+    const coachPaidInput = screen.getByLabelText(/مدفوع الكوتش/);
+    const branchReceiptInput = screen.getByLabelText(/رقم إيصال النادي/);
+    const coachReceiptInput = screen.getByLabelText(/رقم إيصال الكوتش/);
+
+    expect(branchPaidInput).toHaveValue(200);
+    expect(coachPaidInput).toHaveValue(300);
+
+    // Update amounts and receipts
+    fireEvent.change(branchPaidInput, { target: { value: "220" } });
+    fireEvent.change(coachPaidInput, { target: { value: "330" } });
+    fireEvent.change(branchReceiptInput, { target: { value: "REC-BR-99" } });
+    fireEvent.change(coachReceiptInput, { target: { value: "REC-CH-99" } });
+
+    // Submit
+    fireEvent.click(screen.getByRole("button", { name: "تأكيد التجديد" }));
+
+    await waitFor(() =>
+      expect(handleSubmit).toHaveBeenCalledWith({
+        plan_id: 25,
+        paid_amount: 550,
+        payment_method: "cash",
+        receipt_number: "REC-BR-99",
+        branch_paid_amount: 220,
+        coach_paid_amount: 330,
+        branch_receipt_number: "REC-BR-99",
+        coach_receipt_number: "REC-CH-99",
+      }),
+    );
+  });
 });
+

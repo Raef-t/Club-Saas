@@ -123,7 +123,27 @@ export default function SubscriptionDetails({
   const totalConsumed = items.reduce((sum, item) => sum + (item.sessions_consumed || 0), 0);
   const remainingSessions = totalAllocated - totalConsumed;
   const coachNames =
-    [...new Set(items.map((item) => item.coach?.name).filter(Boolean))].join("، ") || "-";
+    [
+      ...new Set(
+        items
+          .map(
+            (item) =>
+              item?.coach_name ||
+              item?.coach?.name ||
+              item?.coach?.person?.full_name ||
+              (item?.coach?.first_name
+                ? `${item.coach.first_name} ${item.coach.last_name || ""}`.trim()
+                : null),
+          )
+          .filter(Boolean),
+      ),
+    ].join("، ") ||
+    subscription.coaches_names ||
+    subscription.coach_name ||
+    (Array.isArray(subscription.coaches_list)
+      ? subscription.coaches_list.filter(Boolean).join("، ")
+      : null) ||
+    "-";
   const activityNames =
     [...new Set(items.map((item) => item.activity?.name).filter(Boolean))].join("، ") || "-";
   const revenueSplit = subscription.revenue_split;
