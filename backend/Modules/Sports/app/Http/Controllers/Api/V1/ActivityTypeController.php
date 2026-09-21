@@ -89,7 +89,7 @@ class ActivityTypeController extends BaseController
                 new OA\Property(property: 'description', type: 'string', nullable: true, description: 'وصف نوع النشاط', example: 'تمارين وتدريبات السباحة بجميع أنواعها'),
                 new OA\Property(property: 'is_session_based', type: 'boolean', description: 'هل يعتمد على حصص/جلسات محددة', example: true),
                 new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', description: 'هل عدد المشتركين غير محدود', example: false),
-                new OA\Property(property: 'has_shifts', type: 'boolean', description: 'هل يعتمد على ورديات', example: true),
+                new OA\Property(property: 'has_shifts', type: 'boolean', description: 'هل يعتمد على ورديات', example: false),
                 new OA\Property(property: 'is_daily_entry', type: 'boolean', description: 'هل يسمح بالدخول اليومي', example: false),
                 new OA\Property(property: 'is_private_equipment', type: 'boolean', description: 'هل المعدات خاصة بالنشاط', example: true)
             ]
@@ -111,7 +111,7 @@ class ActivityTypeController extends BaseController
                         new OA\Property(property: 'description', type: 'string', example: 'تمارين وتدريبات السباحة بجميع أنواعها'),
                         new OA\Property(property: 'is_session_based', type: 'boolean', example: true),
                         new OA\Property(property: 'has_unlimited_subscribers', type: 'boolean', example: false),
-                        new OA\Property(property: 'has_shifts', type: 'boolean', example: true),
+                        new OA\Property(property: 'has_shifts', type: 'boolean', example: false),
                         new OA\Property(property: 'is_daily_entry', type: 'boolean', example: false),
                         new OA\Property(property: 'is_private_equipment', type: 'boolean', example: true),
                         new OA\Property(property: 'created_at', type: 'string', example: '2026-09-06T12:00:00.000000Z'),

@@ -37,6 +37,12 @@ class ActivityType extends Model
 
     protected static function booted()
     {
+        static::saving(function ($activityType) {
+            if ($activityType->is_private_equipment) {
+                $activityType->has_shifts = false;
+            }
+        });
+
         static::deleted(function ($activityType) {
             $activityType->activities->each(function ($activity) {
                 $activity->delete();
