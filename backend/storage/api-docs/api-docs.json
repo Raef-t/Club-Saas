@@ -3906,8 +3906,8 @@
                 "tags": [
                     "Reception"
                 ],
-                "summary": "📋 اشتراكات اللاعب النشطة المتاحة اليوم (للاستقبال)",
-                "description": "يعرض اشتراكات اللاعب النشطة التي تحتوي على جلسات مجدولة لهذا اليوم (أو اشتراكات الدخول العام/المفتوح) مع تفاصيل الجلسات المتبقية وجلسات اليوم، مع استبعاد الاشتراكات غير المبدوءة، المنتهية، المجمدة، الموقوفة، المحذوفة، أو منتهية الرصيد. يستخدمه موظف الاستقبال لاختيار الاشتراك المناسب عند تسجيل الحضور.",
+                "summary": "📋 جميع فعاليات واشتراكات اللاعب المسجل بها (لتسجيل الحضور في الاستقبال)",
+                "description": "يعرض كافة الفعاليات والاشتراكات النشطة التي سجل فيها اللاعب مع تفاصيل الجلسات المتبقية، الجدول الأسبوعي الكامل (all_sessions)، وجلسات اليوم (today_sessions). يوضح لكل اشتراك ما إذا كان الحضور في نفس اليوم والوقت المجدول (is_on_schedule) أو يتطلب إدخال سبب التجاوز (requires_override_reason: true عند الحضور بغير يوم different_day أو بغير وقت different_time).",
                 "operationId": "f1db92d243e3d4c288a81cc1fe3e5231",
                 "parameters": [
                     {
@@ -3973,19 +3973,36 @@
                                             "total_sessions_allocated": 24,
                                             "total_sessions_consumed": 8,
                                             "total_sessions_remaining": 16,
+                                            "all_sessions": [
+                                                {
+                                                    "session_template_id": 101,
+                                                    "day_of_week": 1,
+                                                    "day_name": "الإثنين",
+                                                    "start_time": "16:00:00",
+                                                    "end_time": "17:30:00",
+                                                    "formatted_time": "04:00 PM - 05:30 PM",
+                                                    "facility_id": 2,
+                                                    "facility_name": "المسبح الأولمبي"
+                                                }
+                                            ],
                                             "today_sessions": [
                                                 {
                                                     "session_template_id": 101,
-                                                    "day_of_week": 3,
+                                                    "day_of_week": 1,
+                                                    "day_name": "الإثنين",
                                                     "start_time": "16:00:00",
                                                     "end_time": "17:30:00",
+                                                    "formatted_time": "04:00 PM - 05:30 PM",
                                                     "facility_id": 2,
                                                     "facility_name": "المسبح الأولمبي"
                                                 }
                                             ],
                                             "has_scheduled_sessions": true,
+                                            "is_today_scheduled": true,
                                             "is_on_schedule": true,
                                             "requires_override_reason": false,
+                                            "off_schedule_reason_type": null,
+                                            "schedule_notes": null,
                                             "active_lockers": [
                                                 {
                                                     "reservation_id": 1,
@@ -4004,13 +4021,13 @@
                         }
                     },
                     "404": {
-                        "description": "❌ لا توجد اشتراكات نشطة أو لا توجد جلسات مجدولة اليوم",
+                        "description": "❌ لا توجد اشتراكات نشطة أو لا توجد جلسات متبقية",
                         "content": {
                             "application/json": {
                                 "schema": {},
                                 "example": {
                                     "status": "error",
-                                    "message": "لا توجد جلسات مجدولة لهذا المشترك اليوم."
+                                    "message": "لا توجد جلسات متبقية لهذا المشترك."
                                 }
                             }
                         }
@@ -12858,6 +12875,12 @@
                                         "format": "float",
                                         "example": 35,
                                         "nullable": true
+                                    },
+                                    "safe_id": {
+                                        "description": "معرف الصندوق المالي الذي سيتم إرجاع المبلغ منه (اختياري - إن لم يحدد يُستخدم صندوق الحجز الأصلي أو الصندوق الافتراضي)",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -19189,7 +19212,7 @@
                                     "has_shifts": {
                                         "description": "هل يعتمد على ورديات",
                                         "type": "boolean",
-                                        "example": true
+                                        "example": false
                                     },
                                     "is_daily_entry": {
                                         "description": "هل يسمح بالدخول اليومي",
@@ -19246,7 +19269,7 @@
                                                 },
                                                 "has_shifts": {
                                                     "type": "boolean",
-                                                    "example": true
+                                                    "example": false
                                                 },
                                                 "is_daily_entry": {
                                                     "type": "boolean",
@@ -27538,6 +27561,25 @@
                                                         "format": "float",
                                                         "example": 1500
                                                     },
+                                                    "duration_days": {
+                                                        "description": "مدة اشتراك اللاعب في العرض بالأيام (مثال: 45، 365)",
+                                                        "type": "integer",
+                                                        "example": 45,
+                                                        "nullable": true
+                                                    },
+                                                    "duration_months": {
+                                                        "description": "المدة المحسوبة بالأشهر",
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1.5,
+                                                        "nullable": true
+                                                    },
+                                                    "duration_formatted": {
+                                                        "description": "النص المنسق للمدة",
+                                                        "type": "string",
+                                                        "example": "شهر ونصف (45 يوم)",
+                                                        "nullable": true
+                                                    },
                                                     "start_date": {
                                                         "type": "string",
                                                         "format": "date",
@@ -27616,7 +27658,7 @@
                     "Offers"
                 ],
                 "summary": "➕ إنشاء عرض ترويجي جديد",
-                "description": "إنشاء عرض جديد وتحديد السعر الإجمالي وربطه بمجموعة من خطط الأنشطة.",
+                "description": "إنشاء عرض جديد وتحديد السعر الإجمالي ومدة اشتراك اللاعب بالأيام وربطه بمجموعة من خطط الأنشطة.",
                 "operationId": "a868cf3516258dce81eaee9658832e98",
                 "requestBody": {
                     "required": true,
@@ -27661,14 +27703,19 @@
                                         "format": "float",
                                         "example": 1200
                                     },
+                                    "duration_days": {
+                                        "description": "(اختياري) مدة اشتراك اللاعب في العرض بالأيام (مثال: 45، 30، 365)",
+                                        "type": "integer",
+                                        "example": 45
+                                    },
                                     "start_date": {
-                                        "description": "(اختياري) تاريخ البداية",
+                                        "description": "(اختياري) تاريخ توفر العرض",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-09-20"
                                     },
                                     "end_date": {
-                                        "description": "(اختياري) تاريخ النهاية",
+                                        "description": "(اختياري) تاريخ انتهاء توفر العرض",
                                         "type": "string",
                                         "format": "date",
                                         "example": "2026-09-30"
@@ -27728,6 +27775,10 @@
                                                 "price": {
                                                     "type": "number",
                                                     "example": 1200
+                                                },
+                                                "duration_days": {
+                                                    "type": "integer",
+                                                    "example": 45
                                                 },
                                                 "is_active": {
                                                     "type": "boolean",
@@ -27846,6 +27897,18 @@
                                                     "type": "number",
                                                     "example": 1500
                                                 },
+                                                "duration_days": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "duration_months": {
+                                                    "type": "number",
+                                                    "example": 1.5
+                                                },
+                                                "duration_formatted": {
+                                                    "type": "string",
+                                                    "example": "شهر ونصف (45 يوم)"
+                                                },
                                                 "start_date": {
                                                     "type": "string",
                                                     "example": "2026-06-01"
@@ -27931,7 +27994,7 @@
                     "Offers"
                 ],
                 "summary": "✏️ تعديل العرض الترويجي",
-                "description": "تحديث بيانات العرض والأسعار والخطط المرتبطة به.",
+                "description": "تحديث بيانات العرض والأسعار والمدة والخطط المرتبطة به.",
                 "operationId": "f2a8e4ab45d365fb1556fb31cc7888c1",
                 "parameters": [
                     {
@@ -27970,6 +28033,11 @@
                                     "price": {
                                         "type": "number",
                                         "example": 800
+                                    },
+                                    "duration_days": {
+                                        "description": "مدة اشتراك اللاعب بالأيام (مثال: 45، 30، 365)",
+                                        "type": "integer",
+                                        "example": 45
                                     },
                                     "start_date": {
                                         "type": "string",
@@ -28026,6 +28094,10 @@
                                                 "price": {
                                                     "type": "number",
                                                     "example": 800
+                                                },
+                                                "duration_days": {
+                                                    "type": "integer",
+                                                    "example": 45
                                                 },
                                                 "updated_at": {
                                                     "type": "string",
@@ -32126,6 +32198,27 @@
                                                 },
                                                 "type": "object"
                                             }
+                                        },
+                                        "stats": {
+                                            "properties": {
+                                                "total_plans": {
+                                                    "type": "integer",
+                                                    "example": 25
+                                                },
+                                                "active_plans": {
+                                                    "type": "integer",
+                                                    "example": 18
+                                                },
+                                                "inactive_plans": {
+                                                    "type": "integer",
+                                                    "example": 7
+                                                },
+                                                "max_sessions_per_week": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
                                         },
                                         "meta": {
                                             "properties": {

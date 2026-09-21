@@ -20,6 +20,7 @@ class ActivityTypeSeeder extends Seeder
                 'is_session_based' => false,
                 'has_unlimited_subscribers' => true,
                 'has_shifts' => true,
+                'is_private_equipment' => false,
             ],
             [
                 'name' => 'تدريب خاص',
@@ -27,6 +28,7 @@ class ActivityTypeSeeder extends Seeder
                 'is_session_based' => false,
                 'has_unlimited_subscribers' => true,
                 'has_shifts' => false,
+                'is_private_equipment' => true,
             ],
             [
                 'name' => 'حصة جماعية',
@@ -34,6 +36,7 @@ class ActivityTypeSeeder extends Seeder
                 'is_session_based' => true,
                 'has_unlimited_subscribers' => false,
                 'has_shifts' => false,
+                'is_private_equipment' => false,
             ],
             [
                 'name' => 'دخول يومي',
@@ -41,6 +44,7 @@ class ActivityTypeSeeder extends Seeder
                 'is_session_based' => false,
                 'has_unlimited_subscribers' => true,
                 'has_shifts' => false,
+                'is_private_equipment' => false,
             ],
         ];
 
