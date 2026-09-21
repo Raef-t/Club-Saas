@@ -262,6 +262,104 @@ describe("subscription create validation", () => {
   });
 });
 
+describe("subscription edit offer selection", () => {
+  const member = { id: 1, person: { full_name: "لاعب تجريبي" } };
+  const plan = {
+    id: 2,
+    name: "اشتراك سباحة",
+    base_price: 500,
+    activity_types: [{ id: 5, name: "سباحة" }],
+  };
+  const offer = {
+    id: 10,
+    name: "عرض السباحة",
+    offer_type: "single_choice",
+    price: 350,
+    duration_days: 60,
+    is_available: true,
+    plans: [plan],
+  };
+
+  it("applies the selected offer price, duration, and identifiers while editing", () => {
+    const onSubmit = vi.fn();
+    const { container } = render(
+      <SubscriptionEditForm
+        subscription={{
+          id: 99,
+          member_id: member.id,
+          plan_id: plan.id,
+          plan,
+          months_count: 1,
+          start_date: "2026-08-01",
+          end_date: "2026-08-31",
+          status: "active",
+          paid_amount: 500,
+        }}
+        members={[member]}
+        plans={[plan]}
+        activityTypes={[{ id: 5, name: "سباحة" }]}
+        selectedActivityTypeId="5"
+        offers={[offer]}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /باقة العروض الترويجية/ }));
+    fireEvent.click(screen.getByRole("option", { name: /عرض السباحة.*اشتراك سباحة/ }));
+
+    expect(screen.getByLabelText(/المبلغ المدفوع/)).toHaveValue(350);
+    expect(screen.getByText("سعر العرض الأساسي")).toBeInTheDocument();
+    expect(screen.getAllByText(/شهرين/).length).toBeGreaterThanOrEqual(1);
+
+    fireEvent.change(screen.getByLabelText(/سبب التعديل/), {
+      target: { value: "تطبيق العرض الترويجي" },
+    });
+    fireEvent.submit(container.querySelector("form"));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        offer_id: offer.id,
+        plan_id: plan.id,
+        paid_amount: offer.price,
+        months_count: 2,
+      }),
+    );
+  });
+
+  it("keeps the subscription's current unavailable offer selectable", () => {
+    render(
+      <SubscriptionEditForm
+        subscription={{
+          id: 99,
+          member_id: member.id,
+          plan_id: plan.id,
+          plan,
+          offer_id: offer.id,
+          offer: { ...offer, is_available: false },
+          months_count: 2,
+          start_date: "2026-08-01",
+          end_date: "2026-09-29",
+          status: "active",
+          paid_amount: offer.price,
+        }}
+        members={[member]}
+        plans={[plan]}
+        activityTypes={[{ id: 5, name: "سباحة" }]}
+        selectedActivityTypeId="5"
+        offers={[{ ...offer, is_available: false }]}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /باقة العروض الترويجية/ })).toHaveTextContent(
+      "عرض السباحة",
+    );
+    expect(screen.getByText("سعر العرض الأساسي")).toBeInTheDocument();
+  });
+});
+
 describe("subscription discount calculations", () => {
   it("uses the base-price title until a discount is enabled", () => {
     render(

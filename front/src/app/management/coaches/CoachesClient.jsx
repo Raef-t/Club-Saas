@@ -37,6 +37,7 @@ import { getWorkStatusMeta, WORK_STATUS_OPTIONS } from "@/lib/workStatus";
 import {
   createCoachFormInitialValues,
   getEmploymentTypeForWorkTypes,
+  resolveCoachPhotoUrl,
 } from "@/app/management/coaches/coachFormUtils";
 import {
   getCoachBranchNames,
@@ -191,10 +192,7 @@ export default function CoachesClient({ initialData }) {
         align: "start",
         sortValue: (coach) => coach.person?.full_name || "",
         render: (_, coach) => {
-          let photoUrl = coach.person?.photo_url || coach.person?.photo;
-          if (photoUrl && !photoUrl.startsWith("http") && !photoUrl.startsWith("blob:")) {
-            photoUrl = `/${photoUrl.replace(/^\//, "")}`;
-          }
+          const photoUrl = resolveCoachPhotoUrl(coach.person?.photo_url || coach.person?.photo);
 
           return (
             <div className="flex items-center gap-3 justify-start px-4">

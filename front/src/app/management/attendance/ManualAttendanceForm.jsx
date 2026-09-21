@@ -194,21 +194,19 @@ export default function ManualAttendanceForm({ attendance }) {
                 disabled={!attendance.branchId || isLoadingCheckInPeople}
               />
             </label>
-            {attendableType === "staff" && (
-              <div>
-                <TimePickerSmart
-                  label="وقت الدخول (اختياري)"
-                  value={checkInTime}
-                  onChange={setCheckInTime}
-                  placeholder="HH:MM"
-                  allowClear
-                  disabled={attendance.isManualCheckingIn}
-                />
-                <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
-                  اتركه فارغاً لاستخدام وقت السيرفر تلقائياً.
-                </p>
-              </div>
-            )}
+            <div>
+              <TimePickerSmart
+                label="وقت الدخول (اختياري)"
+                value={checkInTime}
+                onChange={setCheckInTime}
+                placeholder="HH:MM"
+                allowClear
+                disabled={attendance.isManualCheckingIn}
+              />
+              <p className="mt-1.5 text-right text-[11px] text-app-muted-light">
+                اتركه فارغاً لاستخدام وقت السيرفر تلقائياً.
+              </p>
+            </div>
             <Button
               type="submit"
               className="h-11 w-full"

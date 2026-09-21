@@ -12,7 +12,11 @@ import { TrashIcon } from "@/components/icons/Icons";
 import { useGetBranchSettingsQuery, useGetBranchShiftsQuery } from "@/lib/api/branchesApi";
 import { useManagementBranch } from "@/lib/ManagementBranchContext";
 import { useTimeFormat } from "@/lib/TimeFormatContext";
-import { getGenderForBranchId } from "@/lib/managementBranchUtils";
+import {
+  getBranchGenderValidationError,
+  getRequiredGenderForBranches,
+  hasConflictingBranchGenderRestrictions,
+} from "@/lib/managementBranchUtils";
 import { getSettingsRecord } from "@/app/management/settings/settingsUtils";
 import { coachFormSchema, coachUpdateFormSchema } from "@/lib/validations/coachesSchema";
 import { CURRENCY_SYMBOL } from "@/lib/utils";
@@ -46,10 +50,12 @@ export function CoachCreateForm({
   const [form, setForm] = useState(() => {
     const values = createCoachFormInitialValues(initialValues, branches, selectedBranchId);
     if (!initialValues) {
-      values.gender = getGenderForBranchId(branches, values.branch_ids?.[0], values.gender);
+      values.gender = getRequiredGenderForBranches(branches, values.branch_ids) || values.gender;
     }
     return values;
   });
+  const [errors, setErrors] = useState({});
+  const didApplyLoadedBranchDefault = useRef(branches.length > 0);
   const lastBaseSalaryRef = useRef(form.base_salary);
   const shouldSyncPrivateCommissionFromSettingsRef = useRef(
     String(form.private_club_commission_rate ?? "").trim() === "",
@@ -103,11 +109,31 @@ export function CoachCreateForm({
   const branchId2 = form.branch_ids?.[1];
   const branchId3 = form.branch_ids?.[2];
   useEffect(() => {
-    setForm((current) => ({
-      ...current,
-      gender: getGenderForBranchId(branches, current.branch_ids?.[0], current.gender),
-    }));
-  }, [branchId1, branches]);
+    if (initialValues || didApplyLoadedBranchDefault.current || branches.length === 0) return;
+
+    didApplyLoadedBranchDefault.current = true;
+    setForm((current) => {
+      if (current.branch_ids.length > 0) return current;
+
+      const defaults = createCoachFormInitialValues(null, branches, selectedBranchId);
+      return {
+        ...current,
+        branch_ids: defaults.branch_ids,
+        gender: getRequiredGenderForBranches(branches, defaults.branch_ids) || current.gender,
+      };
+    });
+  }, [branches, initialValues, selectedBranchId]);
+
+  const selectedBranchIdsKey = form.branch_ids.join(",");
+  useEffect(() => {
+    if (hasConflictingBranchGenderRestrictions(branches, form.branch_ids)) return;
+
+    const requiredGender = getRequiredGenderForBranches(branches, form.branch_ids);
+    if (!requiredGender || requiredGender === form.gender) return;
+
+    setForm((current) => ({ ...current, gender: requiredGender }));
+    setErrors((current) => ({ ...current, gender: null }));
+  }, [branches, form.branch_ids, form.gender, selectedBranchIdsKey]);
 
   const { data: shiftsResponse1, isFetching: isLoadingShifts1 } = useGetBranchShiftsQuery(
     branchId1,
@@ -212,8 +238,6 @@ export function CoachCreateForm({
     return all;
   }, [shiftsResponse1, shiftsResponse2, shiftsResponse3]);
 
-  const [errors, setErrors] = useState({});
-
   function updateField(field, value) {
     setForm((current) => {
       const updated = { ...current, [field]: value };
@@ -229,6 +253,39 @@ export function CoachCreateForm({
     if (errors && errors[field]) {
       setErrors((current) => ({ ...current, [field]: null }));
     }
+  }
+
+  function updateGender(value) {
+    const genderError = getBranchGenderValidationError(branches, form.branch_ids, value);
+    if (genderError) {
+      setErrors((current) => ({ ...current, gender: genderError }));
+      return;
+    }
+
+    updateField("gender", value);
+  }
+
+  function updateBranchIds(branchIds) {
+    if (hasConflictingBranchGenderRestrictions(branches, branchIds)) {
+      setErrors((current) => ({
+        ...current,
+        branch_ids: "لا يمكن الجمع بين فرع مخصص للذكور وفرع مخصص للإناث.",
+      }));
+      return;
+    }
+
+    shouldSyncPrivateCommissionFromSettingsRef.current = true;
+    const requiredGender = getRequiredGenderForBranches(branches, branchIds);
+    setForm((current) => ({
+      ...current,
+      branch_ids: branchIds,
+      gender: requiredGender || current.gender,
+      shifts: [],
+      private_club_commission_rate: "",
+      private_commission_rate: "0",
+      default_commission_rate: "0",
+    }));
+    setErrors((current) => ({ ...current, branch_ids: null, gender: null }));
   }
 
   function updateActivityIds(activityIds) {
@@ -280,6 +337,17 @@ export function CoachCreateForm({
   function handleSubmit(event) {
     event.preventDefault();
 
+    const genderError = getBranchGenderValidationError(branches, form.branch_ids, form.gender);
+    if (genderError) {
+      setErrors((current) => ({
+        ...current,
+        [hasConflictingBranchGenderRestrictions(branches, form.branch_ids)
+          ? "branch_ids"
+          : "gender"]: genderError,
+      }));
+      return;
+    }
+
     if (activityRules.hasDailyEntry) {
       setErrors({ activity_ids: "نشاط الدخول اليومي لا يُسند إلى مدرب." });
       return;
@@ -327,7 +395,7 @@ export function CoachCreateForm({
       phone_number: normalizedForm.phone_number.trim() || null,
       country_code: normalizedForm.country_code.trim() || "+963",
       address: normalizedForm.address.trim() || null,
-      branch_ids: normalizedForm.branch_ids,
+      branch_ids: normalizedForm.branch_ids.map(Number),
       experience_years: Number(normalizedForm.experience_years) || 0,
       start_date: normalizedForm.start_date || null,
       work_status: normalizedForm.work_status,
@@ -369,7 +437,7 @@ export function CoachCreateForm({
             className="mt-2 text-white"
             buttonClassName="bg-app-card-soft h-11"
             value={form.gender}
-            onChange={(val) => updateField("gender", val)}
+            onChange={updateGender}
             options={[
               { value: "male", label: "ذكر" },
               { value: "female", label: "أنثى" },
@@ -436,7 +504,7 @@ export function CoachCreateForm({
                   const newIds = checked
                     ? form.branch_ids.filter((x) => x !== id)
                     : [...form.branch_ids, id];
-                  updateField("branch_ids", newIds);
+                  updateBranchIds(newIds);
                 }}
               />
             );

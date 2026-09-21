@@ -33,21 +33,81 @@ const discountFields = {
   currency: z.string().trim().max(10).optional(),
 };
 
-export const subscriptionRenewalSchema = z.object({
-  plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
-  paid_amount: z.preprocess(
-    (value) => (value === "" || value === null ? undefined : Number(value)),
-    z
-      .number({ error: "المبلغ المدفوع مطلوب" })
-      .finite("المبلغ المدفوع غير صالح")
-      .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
-  ),
-  receipt_number: z
-    .string()
-    .trim()
-    .min(1, "رقم الإيصال مطلوب")
-    .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف"),
-});
+export const subscriptionRenewalSchema = z
+  .preprocess(
+    (raw) => {
+      if (raw && typeof raw === "object") {
+        return {
+          ...raw,
+          is_private_plan: Boolean(raw.is_private_plan),
+        };
+      }
+      return raw;
+    },
+    z.discriminatedUnion("is_private_plan", [
+      z.object({
+        is_private_plan: z.literal(false),
+        plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
+        paid_amount: z.preprocess(
+          (value) => (value === "" || value === null ? undefined : Number(value)),
+          z
+            .number({ error: "المبلغ المدفوع مطلوب" })
+            .finite("المبلغ المدفوع غير صالح")
+            .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
+        ),
+        receipt_number: z
+          .string({ required_error: "رقم الإيصال مطلوب" })
+          .trim()
+          .min(1, "رقم الإيصال مطلوب")
+          .max(100, "رقم الإيصال يجب ألا يتجاوز 100 حرف"),
+        coach_receipt_number: optionalReceiptSchema,
+        branch_receipt_number: optionalReceiptSchema,
+        coach_paid_amount: optionalAmountSchema,
+        branch_paid_amount: optionalAmountSchema,
+      }),
+      z.object({
+        is_private_plan: z.literal(true),
+        plan_id: z.coerce.number().int().positive("يرجى اختيار خطة الاشتراك"),
+        paid_amount: z.preprocess(
+          (value) => (value === "" || value === null ? undefined : Number(value)),
+          z
+            .number({ error: "المبلغ المدفوع مطلوب" })
+            .finite("المبلغ المدفوع غير صالح")
+            .nonnegative("المبلغ المدفوع يجب أن يكون صفراً أو أكثر"),
+        ),
+        receipt_number: optionalReceiptSchema,
+        coach_receipt_number: z
+          .string({ required_error: "رقم إيصال الكوتش مطلوب" })
+          .trim()
+          .min(1, "رقم إيصال الكوتش مطلوب")
+          .max(100, "رقم إيصال الكوتش يجب ألا يتجاوز 100 حرف"),
+        branch_receipt_number: z
+          .string({ required_error: "رقم إيصال النادي مطلوب" })
+          .trim()
+          .min(1, "رقم إيصال النادي مطلوب")
+          .max(100, "رقم إيصال النادي يجب ألا يتجاوز 100 حرف"),
+        coach_paid_amount: optionalAmountSchema,
+        branch_paid_amount: optionalAmountSchema,
+      }),
+    ]),
+  )
+  .transform(({ is_private_plan, ...data }) => {
+    const normalizedData = { ...data };
+    if (is_private_plan) {
+      normalizedData.branch_paid_amount = Number(normalizedData.branch_paid_amount || 0);
+      normalizedData.coach_paid_amount = Number(normalizedData.coach_paid_amount || 0);
+      normalizedData.paid_amount = Number(
+        (normalizedData.branch_paid_amount + normalizedData.coach_paid_amount).toFixed(2),
+      );
+      normalizedData.receipt_number = normalizedData.branch_receipt_number;
+    } else {
+      delete normalizedData.coach_receipt_number;
+      delete normalizedData.branch_receipt_number;
+      delete normalizedData.coach_paid_amount;
+      delete normalizedData.branch_paid_amount;
+    }
+    return normalizedData;
+  });
 
 export const subscriptionSchema = z
   .object({
@@ -127,6 +187,11 @@ export const subscriptionSchema = z
     const normalizedData = { ...data };
 
     if (is_private_plan) {
+      normalizedData.branch_paid_amount = Number(normalizedData.branch_paid_amount || 0);
+      normalizedData.coach_paid_amount = Number(normalizedData.coach_paid_amount || 0);
+      normalizedData.paid_amount = Number(
+        (normalizedData.branch_paid_amount + normalizedData.coach_paid_amount).toFixed(2),
+      );
       // The API keeps the general receipt as an alias of the branch receipt,
       // while the UI only asks the user for the two real private-plan receipts.
       normalizedData.receipt_number = normalizedData.branch_receipt_number;

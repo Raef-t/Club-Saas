@@ -45,6 +45,30 @@ vi.mock("@/lib/TimeFormatContext", () => ({
   useTimeFormat: () => ({ formatTime: (value) => value }),
 }));
 
+describe("coach branch defaults", () => {
+  it("selects the global branch and its required gender after branches load", async () => {
+    const props = {
+      formId: "coach-form",
+      activities: [],
+      onSubmit: vi.fn(),
+      onCancel: vi.fn(),
+    };
+    const { rerender } = render(<CoachCreateForm {...props} branches={[]} />);
+
+    rerender(
+      <CoachCreateForm
+        {...props}
+        branches={[{ id: 5, name: "فرع السيدات", gender_restriction: "female" }]}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("checkbox", { name: "فرع السيدات" })).toBeChecked(),
+    );
+    expect(screen.getByText("أنثى")).toBeInTheDocument();
+  });
+});
+
 describe("coach private-training commissions", () => {
   it("replaces a cached club share when the latest branch settings arrive", async () => {
     settingsQuery.currentData = {

@@ -320,6 +320,46 @@ export function createAttendanceSubscriptions(response) {
 }
 
 /**
+ * Reads the locker-selection metadata returned with reception subscriptions.
+ * Older backend responses do not include these fields, so locker selection
+ * remains available unless the backend explicitly says that it should be hidden.
+ */
+export function getAttendanceLockerSelection(response) {
+  const candidates = [response, response?.data, response?.data?.data];
+  const metadata =
+    candidates.find(
+      (candidate) =>
+        candidate &&
+        !Array.isArray(candidate) &&
+        (Object.hasOwn(candidate, "show_locker_selection") ||
+          Object.hasOwn(candidate, "has_locker_in_current_attendance") ||
+          Object.hasOwn(candidate, "current_locker")),
+    ) || {};
+  const hasCurrentLocker =
+    metadata.has_locker_in_current_attendance === true ||
+    metadata.has_locker_in_current_attendance === 1 ||
+    metadata.has_locker_in_current_attendance === "true" ||
+    metadata.has_locker_in_current_attendance === "1";
+  const explicitlyHidden =
+    metadata.show_locker_selection === false ||
+    metadata.show_locker_selection === 0 ||
+    metadata.show_locker_selection === "false" ||
+    metadata.show_locker_selection === "0";
+  const currentLocker = metadata.current_locker;
+
+  return {
+    showLockerSelection: !explicitlyHidden && !hasCurrentLocker,
+    currentLocker:
+      currentLocker && typeof currentLocker === "object"
+        ? {
+            id: currentLocker.id ?? null,
+            lockerNumber: currentLocker.locker_number ?? null,
+          }
+        : null,
+  };
+}
+
+/**
  * Clears member-specific choices so reception explicitly selects today's subscription.
  */
 export function getInitialAttendanceSelection() {
@@ -344,11 +384,18 @@ export function createAttendanceDeductionBody(subscriptionIds, note = "") {
 /**
  * Builds the single-request payload that creates attendance and deducts its sessions.
  */
-export function createCheckInAndDeductBody(memberId, branchId, subscriptionIds, note = "") {
+export function createCheckInAndDeductBody(
+  memberId,
+  branchId,
+  subscriptionIds,
+  note = "",
+  checkInAt = null,
+) {
   return {
     member_id: Number(memberId),
     branch_id: Number(branchId),
     ...createAttendanceDeductionBody(subscriptionIds, note),
+    ...(checkInAt ? { check_in_at: checkInAt } : {}),
   };
 }
 

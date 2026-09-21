@@ -173,7 +173,10 @@ export function calculateDiscountFromPercentage(originalTotal, enteredPercentage
 export function getSubscriptionDiscountSummary(subscription) {
   const planTotals = getSubscriptionOriginalAmounts(subscription?.plan, subscription?.months_count);
   const apiOriginal = parseSubscriptionAmount(subscription?.original_total_amount);
-  const originalTotal = apiOriginal || planTotals.originalTotal;
+  const offerPrice = subscription?.offer_id || subscription?.offer?.id
+    ? parseSubscriptionAmount(subscription?.offer?.price)
+    : 0;
+  const originalTotal = apiOriginal || offerPrice || planTotals.originalTotal;
   const apiDiscountAmount = parseSubscriptionAmount(subscription?.discount_amount);
   const apiPercentage = parseSubscriptionAmount(subscription?.discount_percentage);
   const apiTotal = parseSubscriptionAmount(subscription?.total_amount);

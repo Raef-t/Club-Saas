@@ -9,6 +9,7 @@ const mockOffers = [
     description: "تختار اللاعبة مدربة أيروبيك واحدة",
     offer_type: "single_choice",
     price: 300,
+    duration_days: 60,
     is_active: true,
     is_available: true,
     available_slots: 14,
@@ -46,6 +47,7 @@ const mockOffers = [
     description: "تشمل كل الفعاليات",
     offer_type: "bundle",
     price: 1200,
+    duration_days: 60,
     is_active: true,
     is_available: true,
     available_slots: 5,
@@ -105,9 +107,9 @@ describe("OffersClient", () => {
     // Price column renders the offer price 300 for each activity sub-row
     expect(screen.getAllByText("300 ل.س").length).toBeGreaterThanOrEqual(3);
 
-    // Discount column renders the savings for each activity
-    expect(screen.getAllByText("50 ل.س").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("100 ل.س").length).toBeGreaterThanOrEqual(1);
+    // Discount uses the two-month duration: (monthly price × 2) - offer price.
+    expect(screen.getAllByText("400 ل.س").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("500 ل.س").length).toBeGreaterThanOrEqual(1);
 
     // Status column renders capacity badge for each activity
     expect(screen.getAllByText("10 مقعد").length).toBeGreaterThanOrEqual(1);
@@ -132,8 +134,8 @@ describe("OffersClient", () => {
     expect(screen.getAllByText("اشتراك سباحة شهري").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("اشتراك لياقة بدنية").length).toBeGreaterThanOrEqual(1);
 
-    // Bundle total savings (1500 - 1200 = 300)
-    expect(screen.getAllByText("300 ل.س").length).toBeGreaterThanOrEqual(1);
+    // Bundle total savings ((1500 monthly × 2 months) - 1200 = 1800)
+    expect(screen.getAllByText("1,800 ل.س").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("للباقة").length).toBeGreaterThanOrEqual(1);
   });
 });

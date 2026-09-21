@@ -103,15 +103,20 @@ describe("payroll utils", () => {
         payroll_action: "generate",
         branch_id: "11",
         notification_id: "400",
+        recipient_id: "399",
         period_start: "2026-08-03",
       }),
     ).toEqual({
       type: "generate",
       branchId: "11",
       notificationId: "400",
+      recipientId: "399",
       periodStart: "2026-08-03",
       periodEnd: "",
     });
     expect(createPayrollAction({ payroll_action: "generate", branch_id: "bad" })).toBeNull();
+    expect(
+      createPayrollAction({ payroll_action: "generate", branch_id: "11", recipient_id: "bad" }),
+    ).toMatchObject({ recipientId: null });
   });
 });

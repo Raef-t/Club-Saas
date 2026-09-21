@@ -30,7 +30,32 @@ describe("staff form payload", () => {
     expect(body.get("end_time")).toBe("16:45");
     expect(body.get("work_status")).toBe("suspended");
     expect(body.get("gender")).toBe("female");
+    expect(body.get("phone_number")).toBe("999999999");
+    expect(body.get("country_code")).toBe("+963");
+    expect(body.getAll("branch_ids[]")).toEqual(["2"]);
     expect(body.has("shifts[]")).toBe(false);
+  });
+
+  it("falls back to the globally selected branch when creating staff", () => {
+    const body = createStaffFormData(
+      {
+        first_name: "دعاء",
+        last_name: "صباغ",
+        phone_number: "999999999",
+        country_code: "+963",
+        gender: "female",
+        role: "reception",
+        employment_type: "fixed_salary",
+        base_salary: 1000,
+        work_status: "active",
+        start_time: "",
+        end_time: "",
+        branch_ids: [],
+      },
+      { selectedBranchId: "7" },
+    );
+
+    expect(body.getAll("branch_ids[]")).toEqual(["7"]);
   });
 
   it("creates a clean JSON object for PUT updates with proper gender string", () => {

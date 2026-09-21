@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { normalizeCoachEmploymentFilter, useCoaches } from "./useCoaches";
+import { createCoachUpdatePayload, normalizeCoachEmploymentFilter, useCoaches } from "./useCoaches";
 
 const { createCoach, updateCoach, updateCoachPhoto } = vi.hoisted(() => ({
   createCoach: vi.fn(),
@@ -76,6 +76,9 @@ describe("coach creation", () => {
     expect(createCoach).toHaveBeenCalledOnce();
     const submittedFormData = createCoach.mock.calls[0][0];
     expect(submittedFormData.get("reason")).toBeNull();
+    expect(submittedFormData.get("phone_number")).toBe("0999999999");
+    expect(submittedFormData.get("country_code")).toBe("+963");
+    expect(submittedFormData.getAll("branch_ids[]")).toEqual(["5"]);
     expect(submittedFormData.get("default_commission_rate")).toBe("50");
     expect(submittedFormData.get("private_commission_rate")).toBe("70");
   });
@@ -108,10 +111,16 @@ describe("coach creation", () => {
     });
 
     expect(updateCoach).toHaveBeenCalledOnce();
-    const submittedFormData = updateCoach.mock.calls[0][0].body;
-    expect(submittedFormData.get("default_commission_rate")).toBe("15.5");
-    expect(submittedFormData.get("private_commission_rate")).toBe("70");
-    expect(submittedFormData.get("reason")).toBe("تحديث نسب المدرب");
+    const submittedBody = updateCoach.mock.calls[0][0].body;
+    expect(submittedBody).not.toBeInstanceOf(FormData);
+    expect(submittedBody).toMatchObject({
+      phone_number: "0999999999",
+      country_code: "+963",
+      branch_ids: [5],
+      default_commission_rate: 15.5,
+      private_commission_rate: 70,
+      reason: "تحديث نسب المدرب",
+    });
   });
 
   it("deletes the coach photo when photoChanged is true and photo is null", async () => {
@@ -217,6 +226,44 @@ describe("coach creation", () => {
 
     expect(updateCoach).toHaveBeenCalledOnce();
     expect(updateCoachPhoto).not.toHaveBeenCalled();
+  });
+});
+
+describe("coach update payload", () => {
+  it("keeps the country code separate and falls back to the selected branch", () => {
+    expect(
+      createCoachUpdatePayload(
+        {
+          first_name: " أحمد ",
+          last_name: " محمد ",
+          gender: "male",
+          dob: "1990-01-01",
+          phone_number: " 0991234567 ",
+          country_code: " +963 ",
+          address: "",
+          branch_ids: [],
+          experience_years: "3",
+          start_date: "2026-08-18",
+          work_status: "active",
+          employment_type: "fixed_salary",
+          base_salary: "1000",
+          default_commission_rate: "0",
+          private_commission_rate: "0",
+          reason: " تحديث البيانات ",
+          work_types: [],
+          activity_ids: [],
+          shifts: [],
+        },
+        "7",
+      ),
+    ).toMatchObject({
+      first_name: "أحمد",
+      last_name: "محمد",
+      phone_number: "0991234567",
+      country_code: "+963",
+      branch_ids: [7],
+      reason: "تحديث البيانات",
+    });
   });
 });
 

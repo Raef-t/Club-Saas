@@ -13,6 +13,7 @@ import {
   formatAttendanceDateTime,
   formatAttendanceTime,
   findAttendanceLockerId,
+  getAttendanceLockerSelection,
   getInitialAttendanceSelection,
   isAttendanceNoteRequiredMessage,
   toggleRequiredSubscription,
@@ -269,6 +270,39 @@ describe("attendance utilities", () => {
     });
   });
 
+  it("hides locker selection and exposes the current attendance locker", () => {
+    expect(
+      getAttendanceLockerSelection({
+        status: "success",
+        data: [],
+        has_open_attendance: true,
+        has_locker_in_current_attendance: true,
+        show_locker_selection: false,
+        current_locker: { id: 12, locker_number: "A-105" },
+      }),
+    ).toEqual({
+      showLockerSelection: false,
+      currentLocker: { id: 12, lockerNumber: "A-105" },
+    });
+  });
+
+  it("keeps locker selection compatible with older subscription responses", () => {
+    expect(getAttendanceLockerSelection({ data: [] })).toEqual({
+      showLockerSelection: true,
+      currentLocker: null,
+    });
+  });
+
+  it("hides locker selection when the current attendance already has one", () => {
+    expect(
+      getAttendanceLockerSelection({
+        data: [],
+        show_locker_selection: true,
+        has_locker_in_current_attendance: true,
+      }).showLockerSelection,
+    ).toBe(false);
+  });
+
   it("creates naturally sorted options from available lockers only", () => {
     expect(
       createAvailableLockerOptions({
@@ -305,6 +339,12 @@ describe("attendance utilities", () => {
       member_id: 12,
       branch_id: 3,
       player_subscription_ids: [108],
+    });
+    expect(createCheckInAndDeductBody(12, 3, [108], "", "2026-08-08 14:30:00")).toEqual({
+      member_id: 12,
+      branch_id: 3,
+      player_subscription_ids: [108],
+      check_in_at: "2026-08-08 14:30:00",
     });
     expect(createAttendanceLockerReservation(12, new Date(2026, 7, 8, 12))).toEqual({
       reservation_type: "assign",

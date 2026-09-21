@@ -76,6 +76,10 @@ export function useCreateSubscription({
     useCreatePlayerSubscriptionMutation();
   const [updatePlayerSubscription, { isLoading: isUpdating }] =
     useUpdatePlayerSubscriptionMutation();
+  const selectedSubscription = useMemo(
+    () => getSubscriptionDetail(subscriptionDetailResponse),
+    [subscriptionDetailResponse],
+  );
 
   const offerQueryParams = useMemo(() => {
     const params = { all: true, available_only: true };
@@ -115,14 +119,28 @@ export function useCreateSubscription({
     [activityTypesData, initialData?.activityTypes],
   );
 
-  const rawOffers = useMemo(
-    () => getCollection(offersData || initialData?.offers),
-    [offersData, initialData?.offers],
-  );
+  const rawOffers = useMemo(() => {
+    const availableOffers = getCollection(offersData || initialData?.offers);
+    const currentOffer = selectedSubscription?.offer;
+
+    if (
+      currentOffer?.id &&
+      !availableOffers.some((offer) => String(offer.id) === String(currentOffer.id))
+    ) {
+      return [currentOffer, ...availableOffers];
+    }
+
+    return availableOffers;
+  }, [offersData, initialData?.offers, selectedSubscription]);
 
   const offers = useMemo(() => {
     return rawOffers.filter((offer) => {
-      if (!offer.is_available) return false;
+      const isCurrentOffer =
+        (selectedSubscription?.offer_id != null || selectedSubscription?.offer?.id != null) &&
+        String(offer.id) ===
+          String(selectedSubscription?.offer_id ?? selectedSubscription?.offer?.id);
+      if (!offer.is_available && !isCurrentOffer) return false;
+      if (isCurrentOffer) return true;
       if (
         selectedBranchId &&
         selectedBranchId !== "all" &&
@@ -171,7 +189,7 @@ export function useCreateSubscription({
       }
       return true;
     });
-  }, [rawOffers, selectedBranchId, selectedActivityTypeId, allPlans]);
+  }, [rawOffers, selectedBranchId, selectedActivityTypeId, allPlans, selectedSubscription]);
 
   useEffect(() => {
     setSelectedActivityTypeId((currentId) => {
@@ -200,11 +218,6 @@ export function useCreateSubscription({
     () => filterEntitiesByBranch(allCoaches, selectedBranchId),
     [allCoaches, selectedBranchId],
   );
-  const selectedSubscription = useMemo(
-    () => getSubscriptionDetail(subscriptionDetailResponse),
-    [subscriptionDetailResponse],
-  );
-
   useEffect(() => {
     if (!selectedSubscriptionId || !selectedSubscription) return;
 

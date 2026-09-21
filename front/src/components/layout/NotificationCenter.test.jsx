@@ -62,7 +62,7 @@ describe("NotificationCenter payroll action", () => {
 
     expect(setSelectedBranchId).toHaveBeenCalledWith("11");
     expect(push).toHaveBeenCalledWith(
-      "/management/payroll?payroll_action=generate&branch_id=11&notification_id=400&period_start=2026-08-03&period_end=2026-09-02",
+      "/management/payroll?payroll_action=generate&branch_id=11&notification_id=400&recipient_id=399&period_start=2026-08-03&period_end=2026-09-02",
     );
   });
 });

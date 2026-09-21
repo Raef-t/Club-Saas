@@ -10,6 +10,7 @@ import {
   getSubscriptionEndDate,
   getSubscriptionDetail,
   getSubscriptionCreatorName,
+  getSubscriptionDiscountSummary,
   getSubscriptionActivityTypeId,
   getSubscriptionReceiptNumber,
   getSubscriptionReceiptNumbers,
@@ -204,6 +205,20 @@ describe("subscription utilities", () => {
     });
     expect(calculateDiscountFromPercentage(300000, 140).discountPercentage).toBe(100);
     expect(calculateDiscountFromFinalPrice(300000, -10).finalPrice).toBe(0);
+  });
+
+  it("uses the offer price as the original subscription amount", () => {
+    expect(
+      getSubscriptionDiscountSummary({
+        offer: { id: 10, price: 350 },
+        plan: { base_price: 500 },
+        total_amount: 350,
+      }),
+    ).toMatchObject({
+      originalTotal: 350,
+      finalPrice: 350,
+      isDiscount: false,
+    });
   });
 
   it("reads split payment amounts and falls back to private-plan prices", () => {

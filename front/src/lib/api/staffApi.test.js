@@ -80,4 +80,45 @@ describe("staff API", () => {
     expect(url.pathname).toBe("/api/backend/staff/1/photo");
     expect(request.headers.get("content-type")).toContain("multipart/form-data; boundary=");
   });
+
+  it("sends staff PUT updates as JSON", async () => {
+    let request;
+    const NativeRequest = globalThis.Request;
+    vi.stubGlobal(
+      "Request",
+      class extends NativeRequest {
+        constructor(input, init) {
+          super(typeof input === "string" ? new URL(input, "http://localhost") : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input) => {
+        request = input;
+        return new Response(JSON.stringify({ status: "success" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }),
+    );
+
+    const store = configureStore({
+      reducer: { [staffApi.reducerPath]: staffApi.reducer },
+      middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(staffApi.middleware),
+    });
+    const body = {
+      first_name: "ريم",
+      country_code: "+963",
+      phone_number: "0991234567",
+      branch_ids: [2],
+    };
+
+    await store.dispatch(staffApi.endpoints.updateStaffMember.initiate({ id: 4, body })).unwrap();
+
+    expect(request.method).toBe("PUT");
+    expect(new URL(request.url).pathname).toBe("/api/backend/staff/4");
+    expect(request.headers.get("content-type")).toContain("application/json");
+    await expect(request.clone().json()).resolves.toEqual(body);
+  });
 });

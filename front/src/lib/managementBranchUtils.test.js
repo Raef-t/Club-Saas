@@ -3,9 +3,12 @@ import {
   ALL_BRANCHES_VALUE,
   createManagementBranchOptions,
   filterEntitiesByBranch,
+  getBranchGenderValidationError,
   getEntityBranchIds,
   getGenderForBranchId,
   getPreferredBranchId,
+  getRequiredGenderForBranches,
+  hasConflictingBranchGenderRestrictions,
   normalizeSelectedBranchId,
 } from "./managementBranchUtils";
 
@@ -80,5 +83,23 @@ describe("management branch utilities", () => {
 
     expect(getGenderForBranchId(genderedBranches, "2", "male")).toBe("female");
     expect(getGenderForBranchId(genderedBranches, "1", "male")).toBe("male");
+  });
+
+  it("validates gender against all selected branches", () => {
+    const genderedBranches = [
+      { id: 1, gender_restriction: "mixed" },
+      { id: 2, gender_restriction: "female" },
+      { id: 3, gender_restriction: "male" },
+    ];
+
+    expect(getRequiredGenderForBranches(genderedBranches, [1, 2])).toBe("female");
+    expect(getBranchGenderValidationError(genderedBranches, [1, 2], "male")).toBe(
+      "الفرع المحدد مخصص للإناث فقط.",
+    );
+    expect(getBranchGenderValidationError(genderedBranches, [1, 2], "female")).toBe("");
+    expect(hasConflictingBranchGenderRestrictions(genderedBranches, [2, 3])).toBe(true);
+    expect(getBranchGenderValidationError(genderedBranches, [2, 3], "female")).toBe(
+      "لا يمكن الجمع بين فرع مخصص للذكور وفرع مخصص للإناث.",
+    );
   });
 });

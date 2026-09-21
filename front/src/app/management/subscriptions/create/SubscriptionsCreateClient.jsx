@@ -136,6 +136,8 @@ export default function SubscriptionsCreateClient({ initialData }) {
               plansErrorMessage={plansErrorMessage}
               isActivityTypesLoading={isActivityTypesLoading}
               activityTypesErrorMessage={activityTypesErrorMessage}
+              offers={offers}
+              isOffersLoading={isOffersLoading}
               onSubmit={submitEdit}
               onCancel={() => router.push("/management/subscriptions")}
               isLoading={isUpdating}
