@@ -374,5 +374,170 @@ class OffScheduleAttendanceOverrideTest extends TestCase
         $this->assertArrayHasKey('is_on_schedule', $data[0]);
         $this->assertArrayHasKey('requires_override_reason', $data[0]);
         $this->assertArrayHasKey('today_sessions', $data[0]);
+        $this->assertArrayHasKey('all_sessions', $data[0]);
+        $this->assertArrayHasKey('is_today_scheduled', $data[0]);
+    }
+
+    /**
+     * اختبار الحضور في غير اليوم المجدول للفعالية (Off-Day):
+     * الفعالية مجدولة يوم الأحد (0) فقط، والمشترك يحاول الحضور يوم الثلاثاء (2) بدون سبب.
+     * يفشل مع رسالة تطلب إدخال السبب وتوضح الأيام المجدولة.
+     */
+    public function test_off_day_checkin_fails_without_reason(): void
+    {
+        $plan = $this->createPlanWithActivity('Sunday Football Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $plan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '17:00',
+            'end_time' => '18:30',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createPlayerSubscription($plan, '2026-08-01', '2026-08-31', 12, 0);
+
+        // Attempt check-in on Tuesday 2026-08-18 (dayOfWeek = 2) without reason
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type'         => 'member',
+            'attendable_id'           => $this->member->id,
+            'branch_id'               => $this->branch->id,
+            'check_in_at'             => '2026-08-18 17:00:00',
+            'player_subscription_ids' => [$sub->id],
+        ]);
+
+        $response->assertStatus(400);
+        $this->assertStringContainsString('لا توجد جلسة مجدولة لهذه الفعالية اليوم', $response->json('message'));
+        $this->assertStringContainsString('سبب تسجيل الحضور في غير اليوم المجدول', $response->json('message'));
+
+        $this->assertDatabaseMissing('attendances', [
+            'attendable_id' => $this->member->id,
+            'check_in_at'   => '2026-08-18 17:00:00',
+        ]);
+    }
+
+    /**
+     * اختبار الحضور في غير اليوم المجدول للفعالية مع كتابة السبب:
+     * الفعالية مجدولة يوم الأحد، والمشترك حضر يوم الثلاثاء مع كتابة السبب -> ينجح وتُخصم الجلسة.
+     */
+    public function test_off_day_checkin_succeeds_with_reason_and_deducts_session(): void
+    {
+        $plan = $this->createPlanWithActivity('Sunday Swimming Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $plan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '16:00',
+            'end_time' => '17:30',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createPlayerSubscription($plan, '2026-08-01', '2026-08-31', 10, 0);
+
+        $reason = 'تعويض جلسة فاتته يوم الأحد بعذر مرضي';
+        $response = $this->postJson('/api/v1/attendances/check-in', [
+            'attendable_type'         => 'member',
+            'attendable_id'           => $this->member->id,
+            'branch_id'               => $this->branch->id,
+            'check_in_at'             => '2026-08-18 16:00:00',
+            'player_subscription_ids' => [$sub->id],
+            'notes'                   => $reason,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertEquals($reason, $response->json('data.notes'));
+
+        $this->assertDatabaseHas('attendances', [
+            'attendable_id' => $this->member->id,
+            'status'        => 'checked_in',
+            'notes'         => $reason,
+        ]);
+
+        $this->assertDatabaseHas('player_subscription_items', [
+            'player_subscription_id' => $sub->id,
+            'sessions_consumed'      => 1,
+        ]);
+    }
+
+    /**
+     * اختبار تسجيل الحضور والخصم الفوري بالاستقبال check-in-and-deduct في غير اليوم المجدول مع كتابة السبب
+     */
+    public function test_reception_checkin_and_deduct_on_off_day_with_reason(): void
+    {
+        $plan = $this->createPlanWithActivity('Sunday Karate Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $plan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '18:00',
+            'end_time' => '19:30',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createPlayerSubscription($plan, '2026-08-01', '2026-08-31', 8, 0);
+
+        $reason = 'تبديل يوم التمرين بموافقة الإدارة';
+        $response = $this->postJson('/api/v1/reception/check-in-and-deduct', [
+            'member_id'               => $this->member->id,
+            'branch_id'               => $this->branch->id,
+            'check_in_at'             => '2026-08-18 18:00:00',
+            'player_subscription_ids' => [$sub->id],
+            'reason'                  => $reason,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('attendances', [
+            'attendable_id' => $this->member->id,
+            'notes'         => $reason,
+        ]);
+        $this->assertDatabaseHas('player_subscription_items', [
+            'player_subscription_id' => $sub->id,
+            'sessions_consumed'      => 1,
+        ]);
+    }
+
+    /**
+     * اختبار الخصم اللاحق عبر الاستقبال /deduct في غير اليوم المجدول:
+     * بدون سبب -> يفشل
+     * مع سبب -> ينجح
+     */
+    public function test_reception_two_step_deduct_enforces_reason_when_off_day(): void
+    {
+        $plan = $this->createPlanWithActivity('Sunday Judo Plan');
+        SportSessionTemplate::create([
+            'plan_id' => $plan->id,
+            'day_of_week' => 0, // Sunday
+            'start_time' => '17:00',
+            'end_time' => '18:00',
+            'is_active' => true,
+        ]);
+
+        $sub = $this->createPlayerSubscription($plan, '2026-08-01', '2026-08-31', 10, 0);
+
+        $attendance = Attendance::create([
+            'attendable_type' => 'member',
+            'attendable_id'   => $this->member->id,
+            'branch_id'       => $this->branch->id,
+            'check_in_at'     => '2026-08-18 17:00:00',
+            'status'          => 'checked_in',
+        ]);
+
+        // Deduct on Tuesday without reason -> fails
+        $failRes = $this->postJson("/api/v1/reception/attendances/{$attendance->id}/deduct", [
+            'player_subscription_ids' => [$sub->id],
+        ]);
+        $failRes->assertStatus(400);
+        $this->assertStringContainsString('لا توجد جلسة مجدولة لهذه الفعالية اليوم', $failRes->json('message'));
+
+        // Deduct on Tuesday with reason -> succeeds
+        $successRes = $this->postJson("/api/v1/reception/attendances/{$attendance->id}/deduct", [
+            'player_subscription_ids' => [$sub->id],
+            'override_reason'         => 'حضور تعويضي استثنائي',
+        ]);
+        $successRes->assertStatus(200);
+
+        $attendance = $attendance->fresh();
+        $this->assertEquals('حضور تعويضي استثنائي', $attendance->notes);
+        $this->assertDatabaseHas('player_subscription_items', [
+            'player_subscription_id' => $sub->id,
+            'sessions_consumed'      => 1,
+        ]);
     }
 }

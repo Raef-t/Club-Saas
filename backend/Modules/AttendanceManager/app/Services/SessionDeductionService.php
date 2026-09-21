@@ -414,34 +414,55 @@ class SessionDeductionService
         }
 
         // 5. Check if plan has session templates and whether today has a valid session
-        $hasTemplates = DB::table('sport_session_templates')
-            ->where('plan_id', $subscription->plan_id)
-            ->where('is_active', true)
-            ->whereNull('deleted_at')
-            ->exists();
+        $allTemplates = DB::table('sport_session_templates as sst')
+            ->where('sst.plan_id', $subscription->plan_id)
+            ->where('sst.is_active', true)
+            ->whereNull('sst.deleted_at')
+            ->select('sst.id', 'sst.day_of_week', 'sst.start_time', 'sst.end_time')
+            ->orderBy('sst.day_of_week')
+            ->orderBy('sst.start_time')
+            ->get();
 
-        if ($hasTemplates) {
-            $todayTemplates = DB::table('sport_session_templates as sst')
-                ->where('sst.plan_id', $subscription->plan_id)
-                ->where('sst.is_active', true)
-                ->where('sst.day_of_week', $dayOfWeek)
-                ->whereNull('sst.deleted_at')
-                ->whereNotExists(function ($excQ) use ($dateString) {
-                    $excQ->select(DB::raw(1))
-                        ->from('session_exceptions as se')
-                        ->whereColumn('se.sport_session_template_id', 'sst.id')
-                        ->whereDate('se.date', $dateString)
-                        ->whereIn('se.status', ['cancelled', 'canceled'])
-                        ->whereNull('se.deleted_at');
-                })
-                ->select('sst.id', 'sst.start_time', 'sst.end_time')
-                ->get();
+        if ($allTemplates->isNotEmpty()) {
+            $dayNames = [
+                0 => __('الأحد'),
+                1 => __('الإثنين'),
+                2 => __('الثلاثاء'),
+                3 => __('الأربعاء'),
+                4 => __('الخميس'),
+                5 => __('الجمعة'),
+                6 => __('السبت'),
+            ];
 
-            if ($todayTemplates->isEmpty()) {
-                throw new Exception(__('لا يمكن تسجيل الحضور: لا توجد جلسة مجدولة لهذا الاشتراك اليوم.'));
+            $todayTemplates = $allTemplates->where('day_of_week', $dayOfWeek);
+
+            if ($todayTemplates->isNotEmpty()) {
+                $cancelledTemplateIds = DB::table('session_exceptions')
+                    ->whereIn('sport_session_template_id', $todayTemplates->pluck('id'))
+                    ->whereDate('date', $dateString)
+                    ->whereIn('status', ['cancelled', 'canceled'])
+                    ->whereNull('deleted_at')
+                    ->pluck('sport_session_template_id')
+                    ->toArray();
+
+                $todayTemplates = $todayTemplates->reject(fn($t) => in_array($t->id, $cancelledTemplateIds));
             }
 
-            // Check if attendance check-in time falls within any active template today
+            // Case A: Today is NOT a scheduled day for this activity (or today's sessions are cancelled)
+            if ($todayTemplates->isEmpty()) {
+                if (empty(trim($reason ?? ''))) {
+                    $uniqueScheduledDays = $allTemplates->pluck('day_of_week')
+                        ->unique()
+                        ->map(fn($d) => $dayNames[$d] ?? $d)
+                        ->implode('، ');
+
+                    throw new Exception(__('لا يمكن تسجيل الحضور: لا توجد جلسة مجدولة لهذه الفعالية اليوم (الأيام المجدولة: :days). يرجى إدخال سبب تسجيل الحضور في غير اليوم المجدول.', ['days' => $uniqueScheduledDays]));
+                }
+                // When reason is provided, allow check-in on a different day!
+                return;
+            }
+
+            // Case B: Today IS a scheduled day. Check if attendance check-in time falls within any active template today
             $checkInTimeStr = $checkCarbon->format('H:i:s');
             $isOnSchedule = false;
             $formattedScheduleTimes = [];

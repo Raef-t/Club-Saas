@@ -157,31 +157,6 @@ class MemberService
                                     });
                                 });
                         })
-                        ->where(function ($sessionQ) use ($dayOfWeek, $today) {
-                            $sessionQ->whereNotExists(function ($noTmplQ) {
-                                $noTmplQ->select(DB::raw(1))
-                                    ->from('sport_session_templates as sst_all')
-                                    ->whereColumn('sst_all.plan_id', 'ps.plan_id')
-                                    ->where('sst_all.is_active', true)
-                                    ->whereNull('sst_all.deleted_at');
-                            })
-                            ->orWhereExists(function ($hasTmplQ) use ($dayOfWeek, $today) {
-                                $hasTmplQ->select(DB::raw(1))
-                                    ->from('sport_session_templates as sst_today')
-                                    ->whereColumn('sst_today.plan_id', 'ps.plan_id')
-                                    ->where('sst_today.is_active', true)
-                                    ->where('sst_today.day_of_week', $dayOfWeek)
-                                    ->whereNull('sst_today.deleted_at')
-                                    ->whereNotExists(function ($excQ) use ($today) {
-                                        $excQ->select(DB::raw(1))
-                                            ->from('session_exceptions as se')
-                                            ->whereColumn('se.sport_session_template_id', 'sst_today.id')
-                                            ->whereDate('se.date', $today)
-                                            ->whereIn('se.status', ['cancelled', 'canceled'])
-                                            ->whereNull('se.deleted_at');
-                                    });
-                            });
-                        })
                         ->where(function ($itemQ) {
                             $itemQ->whereNotExists(function ($limitedQ) {
                                 $limitedQ->select(DB::raw(1))
