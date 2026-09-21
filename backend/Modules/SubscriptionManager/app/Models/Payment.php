@@ -34,6 +34,11 @@ class Payment extends Model
         return $this->belongsTo(Invoice::class, 'invoice_id')->withTrashed();
     }
 
+    public function safe()
+    {
+        return $this->belongsTo(\Modules\Accounting\Models\AccSafe::class, 'safe_id')->withoutGlobalScopes();
+    }
+
     public function getCurrencyTypeAttribute(): string
     {
         return $this->currency ?? 'SYP';

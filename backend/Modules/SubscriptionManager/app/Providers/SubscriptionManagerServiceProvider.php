@@ -25,6 +25,7 @@ class SubscriptionManagerServiceProvider extends ModuleServiceProvider
     protected array $commands = [
         \Modules\SubscriptionManager\Console\CheckSubscriptionStatus::class,
         \Modules\SubscriptionManager\Console\ProcessPlanSuspensions::class,
+        \Modules\SubscriptionManager\Console\FixPrivateEquipmentBalances::class,
     ];
 
     /**
