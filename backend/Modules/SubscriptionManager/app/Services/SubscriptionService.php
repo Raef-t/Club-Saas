@@ -1522,11 +1522,14 @@ class SubscriptionService
         }
 
         return DB::transaction(function () use ($subscription, $reason) {
+            $trimmedReason = !empty($reason) ? trim((string) $reason) : null;
+            $notesAddition = $trimmedReason ? __('Cancellation reason: ') . $trimmedReason : null;
             $subscription->update([
                 'status' => \Modules\SubscriptionManager\Enums\PlayerSubscriptionStatus::TERMINATED->value,
-                'notes' => $subscription->notes
-                    ? $subscription->notes . "\n" . __('Cancellation reason: ') . $reason
-                    : __('Cancellation reason: ') . $reason,
+                'reason' => $trimmedReason,
+                'notes'  => $subscription->notes
+                    ? ($notesAddition ? $subscription->notes . "\n" . $notesAddition : $subscription->notes)
+                    : $notesAddition,
             ]);
 
             $this->decrementPlanSubscribers($subscription->plan);
