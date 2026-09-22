@@ -590,13 +590,22 @@ class SubscriptionReportController extends BaseController
                             'status_label' => 'مجمد',
                             'member_name' => 'سارة علي',
                             'member_number' => 'MEM-10045',
+                            'username' => 'sara_ali',
+                            'account_name' => 'صندوق الصالة الرئيسي',
                             'member_phone' => '0509876543',
+                            'contact_persons' => [
+                                [
+                                    'id' => 1,
+                                    'name' => 'سارة علي',
+                                    'phone_number' => '0509876543',
+                                    'relation' => 'صاحب الاشتراك'
+                                ]
+                            ],
                             'plan_name' => 'اشتراك ثلاثي الأشهر',
                             'branch_name' => 'فرع الرياض',
                             'event_date' => '2026-07-10',
                             'reason' => 'سفر مؤقت للخارج',
                             'frozen_days' => 14,
-                            'unfreeze_date' => '2026-07-24',
                             'total_amount' => 600.0,
                             'paid_amount' => 600.0
                         ]
